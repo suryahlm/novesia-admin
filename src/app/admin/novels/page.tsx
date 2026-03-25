@@ -8,6 +8,7 @@ const NOVEL_SOURCES = [
   { id: "skynovelvault", label: "SkyNovelVault", icon: "⚔️", color: "from-blue-600 to-cyan-600", shadow: "shadow-blue-500/20" },
   { id: "nobadnovel", label: "NoBadNovel", icon: "💎", color: "from-rose-500 to-pink-600", shadow: "shadow-rose-500/20" },
   { id: "transcendentaltls", label: "TranscendentalTLS", icon: "📖", color: "from-orange-600 to-amber-600", shadow: "shadow-orange-500/20" },
+  { id: "general", label: "General", icon: "🌐", color: "from-gray-600 to-slate-600", shadow: "shadow-gray-500/20" },
 ];
 
 async function getNovels() {

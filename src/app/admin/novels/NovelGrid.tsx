@@ -15,11 +15,12 @@ interface Novel {
   novel_type: string | null;
   original_status: string | null;
   source: string;
+  status: string;
 }
 
 export default function NovelGrid({ novels }: { novels: Novel[] }) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "ongoing" | "completed">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "ongoing" | "completed">("all");
   const [genreFilter, setGenreFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"newest" | "chapters" | "title">("newest");
 
@@ -47,9 +48,10 @@ export default function NovelGrid({ novels }: { novels: Novel[] }) {
     // Status
     if (statusFilter !== "all") {
       result = result.filter((n) => {
+        if (statusFilter === "draft") return n.status === "draft";
         const s = (n.original_status || "").toLowerCase();
         if (statusFilter === "completed") return s.includes("completed");
-        return !s.includes("completed");
+        return !s.includes("completed") && n.status !== "draft";
       });
     }
 
@@ -108,9 +110,12 @@ export default function NovelGrid({ novels }: { novels: Novel[] }) {
           <div className="flex gap-1.5">
             {[
               { key: "all" as const, label: "Semua", color: "violet" },
+              { key: "draft" as const, label: "Draft", color: "amber" },
               { key: "ongoing" as const, label: "Ongoing", color: "blue" },
               { key: "completed" as const, label: "Tamat", color: "emerald" },
-            ].map((s) => (
+            ].map((s) => {
+              const count = s.key === "draft" ? novels.filter(n => n.status === "draft").length : 0;
+              return (
               <button
                 key={s.key}
                 onClick={() => setStatusFilter(s.key)}
@@ -118,15 +123,17 @@ export default function NovelGrid({ novels }: { novels: Novel[] }) {
                   statusFilter === s.key
                     ? s.color === "violet"
                       ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
+                      : s.color === "amber"
+                      ? "bg-amber-600 text-white shadow-lg shadow-amber-500/20"
                       : s.color === "blue"
                       ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
                       : "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
                     : "bg-gray-800/80 text-gray-400 hover:text-white hover:bg-gray-700/80"
                 }`}
               >
-                {s.label}
+                {s.label}{s.key === "draft" && count > 0 ? ` (${count})` : ""}
               </button>
-            ))}
+            );})}
           </div>
 
           <div className="w-px h-6 bg-gray-700/50 mx-1" />
@@ -213,6 +220,11 @@ export default function NovelGrid({ novels }: { novels: Novel[] }) {
                 <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[9px] font-bold text-emerald-400 uppercase">
                   {novel.source || "novelib"}
                 </div>
+                {novel.status === "draft" && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-lg rotate-[-12deg]">
+                    DRAFT
+                  </div>
+                )}
               </div>
               <div className="p-4 space-y-2">
                 <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:text-violet-300 transition-colors">
