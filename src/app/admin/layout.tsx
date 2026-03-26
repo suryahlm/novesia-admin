@@ -9,6 +9,7 @@ import {
   RefreshCw,
   ScrollText,
   BookOpen,
+  Bell,
 } from "lucide-react";
 
 const navItems = [
@@ -17,6 +18,7 @@ const navItems = [
   { href: "/admin/novels", label: "Daftar Novel", icon: Library },
   { href: "/admin/update", label: "Update Chapter", icon: RefreshCw },
   { href: "/admin/logs", label: "Log Scraping", icon: ScrollText },
+  { href: "/admin/notifications", label: "Notifikasi", icon: Bell },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
