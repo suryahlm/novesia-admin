@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/supabase";
+
+export const dynamic = 'force-dynamic'; // Selalu fetch fresh, tidak di-cache
 import Link from "next/link";
 import NovelGrid from "./NovelGrid";
 
@@ -23,7 +25,8 @@ async function getSourceCounts() {
   const { data } = await supabase.from("nu_novels").select("source");
   const counts: Record<string, number> = {};
   (data || []).forEach((n: any) => {
-    const src = n.source || "novelib";
+    const src = n.source;
+    if (!src) return; // skip jika source null
     counts[src] = (counts[src] || 0) + 1;
   });
   return counts;
