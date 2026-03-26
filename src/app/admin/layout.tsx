@@ -10,6 +10,7 @@ import {
   ScrollText,
   BookOpen,
   Bell,
+  Settings,
 } from "lucide-react";
 
 const navItems = [
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/admin/update", label: "Update Chapter", icon: RefreshCw },
   { href: "/admin/logs", label: "Log Scraping", icon: ScrollText },
   { href: "/admin/notifications", label: "Notifikasi", icon: Bell },
+  { href: "/admin/config", label: "Pengaturan", icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
