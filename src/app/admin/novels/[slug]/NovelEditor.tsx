@@ -30,7 +30,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
         synopsis: novel.synopsis,
         genres: novel.genres,
         author: novel.author,
-        status: publishStatus || novel.status,
+        status: publishStatus || novel.status || "draft",
         original_status: novel.original_status,
       };
 
