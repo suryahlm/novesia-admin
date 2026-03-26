@@ -43,7 +43,20 @@ export async function DELETE(
 ) {
   const { id } = await params;
 
-  // Chapters cascade-delete via FK
+  // 1. Get novel data to check for R2 cover
+  const { data: novel } = await supabase
+    .from("nu_novels")
+    .select("cover_r2_key")
+    .eq("id", id)
+    .single();
+
+  // 2. Delete from R2 if key exists
+  if (novel?.cover_r2_key) {
+    const { deleteFileFromR2 } = await import("@/lib/r2");
+    await deleteFileFromR2(novel.cover_r2_key);
+  }
+
+  // 3. Delete from Supabase (Chapters cascade-delete via FK)
   const { error } = await supabase.from("nu_novels").delete().eq("id", id);
 
   if (error) {

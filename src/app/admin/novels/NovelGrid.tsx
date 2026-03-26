@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { BookOpen, Search, X } from "lucide-react";
+import { BookOpen, Search, X, Trash2, Loader2 } from "lucide-react";
 
 interface Novel {
   id: string;
@@ -18,11 +18,35 @@ interface Novel {
   status: string;
 }
 
-export default function NovelGrid({ novels }: { novels: Novel[] }) {
+export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }) {
+  const [novels, setNovels] = useState(initialNovels);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "ongoing" | "completed">("all");
   const [genreFilter, setGenreFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"newest" | "chapters" | "title">("newest");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (e: React.MouseEvent, novel: Novel) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!window.confirm(`Hapus novel "${novel.title}" secara permanen?\n\nSemua chapter dan file cover di R2 juga akan dihapus.`)) {
+      return;
+    }
+
+    setDeletingId(novel.id);
+    try {
+      const res = await fetch(`/api/novels/${novel.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal menghapus novel.");
+      
+      setNovels(prev => prev.filter(n => n.id !== novel.id));
+      // alert("Novel berhasil dihapus.");
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   // Extract unique genres
   const allGenres = useMemo(() => {
@@ -225,6 +249,20 @@ export default function NovelGrid({ novels }: { novels: Novel[] }) {
                     DRAFT
                   </div>
                 )}
+
+                {/* Delete Button */}
+                <button
+                  onClick={(e) => handleDelete(e, novel)}
+                  disabled={deletingId === novel.id}
+                  className="absolute top-3 right-3 p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg backdrop-blur-md border border-red-500/20 transition-all opacity-0 group-hover:opacity-100 z-10"
+                  title="Hapus Novel"
+                >
+                  {deletingId === novel.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                </button>
               </div>
               <div className="p-4 space-y-2">
                 <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:text-violet-300 transition-colors">

@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
   region: "auto",
@@ -35,5 +35,23 @@ export async function uploadCoverToR2(
   } catch (err) {
     console.error("R2 upload error:", err);
     return null;
+  }
+}
+
+/**
+ * Hapus objek dari Cloudflare R2.
+ */
+export async function deleteFileFromR2(r2Key: string): Promise<boolean> {
+  try {
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: BUCKET,
+        Key: r2Key,
+      })
+    );
+    return true;
+  } catch (err) {
+    console.error("R2 delete error:", err);
+    return false;
   }
 }
