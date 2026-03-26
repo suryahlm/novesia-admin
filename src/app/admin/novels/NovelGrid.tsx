@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { BookOpen, Search, X, Trash2, Loader2 } from "lucide-react";
+import ConfirmModal from "./ConfirmModal";
 
 interface Novel {
   id: string;
@@ -25,22 +26,26 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
   const [genreFilter, setGenreFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"newest" | "chapters" | "title">("newest");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [targetNovel, setTargetNovel] = useState<Novel | null>(null);
 
-  const handleDelete = async (e: React.MouseEvent, novel: Novel) => {
+  const handleDelete = (e: React.MouseEvent, novel: Novel) => {
     e.preventDefault();
     e.stopPropagation();
+    setTargetNovel(novel);
+    setIsModalOpen(true);
+  };
 
-    if (!window.confirm(`Hapus novel "${novel.title}" secara permanen?\n\nSemua chapter dan file cover di R2 juga akan dihapus.`)) {
-      return;
-    }
+  const confirmDelete = async () => {
+    if (!targetNovel) return;
 
-    setDeletingId(novel.id);
+    setDeletingId(targetNovel.id);
     try {
-      const res = await fetch(`/api/novels/${novel.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/novels/${targetNovel.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Gagal menghapus novel.");
       
-      setNovels(prev => prev.filter(n => n.id !== novel.id));
-      // alert("Novel berhasil dihapus.");
+      setNovels(prev => prev.filter(n => n.id !== targetNovel.id));
+      setIsModalOpen(false);
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -286,6 +291,18 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
           ))}
         </div>
       )}
+
+      {/* Deletion Modal */}
+      <ConfirmModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={confirmDelete}
+        loading={!!deletingId}
+        title="Hapus Novel?"
+        description={`Novel "${targetNovel?.title}" akan dihapus secara permanen beserta semua chapter dan cover di R2.`}
+        confirmText="Hapus Permanen"
+        cancelText="Batal"
+      />
     </>
   );
 }
