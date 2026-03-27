@@ -1,10 +1,37 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Upload, Wand2, Save, Rocket, X, Plus, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import {
+  Upload,
+  Wand2,
+  Save,
+  Rocket,
+  X,
+  Plus,
+  Trash2,
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Globe,
+  Loader2,
+  Search,
+  Check,
+} from "lucide-react";
 
 interface NovelEditorProps {
   novel: any;
+}
+
+interface Chapter {
+  id: string;
+  chapter_number: number;
+  chapter_title: string | null;
+  content_original: string | null;
+  content_translated: string | null;
+  word_count_original: number;
+  word_count_translated: number;
+  translation_status: string;
 }
 
 export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
@@ -16,12 +43,23 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
   const [newGenre, setNewGenre] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Chapter Editor State
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [chaptersLoading, setChaptersLoading] = useState(false);
+  const [chaptersExpanded, setChaptersExpanded] = useState(false);
+  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
+  const [editOriginal, setEditOriginal] = useState("");
+  const [editTranslated, setEditTranslated] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [savingChapter, setSavingChapter] = useState(false);
+  const [chapterSearch, setChapterSearch] = useState("");
+
   const showMsg = (type: "ok" | "err", text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 3000);
   };
 
-  // === SAVE ===
+  // === SAVE NOVEL ===
   const handleSave = async (publishStatus?: string) => {
     setSaving(true);
     try {
@@ -115,7 +153,89 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
     }
   };
 
+  // === LOAD CHAPTERS ===
+  const loadChapters = async () => {
+    if (chapters.length > 0) return; // Already loaded
+    setChaptersLoading(true);
+    try {
+      const res = await fetch(`/api/chapters/${novel.id}`);
+      const data = await res.json();
+      setChapters(data.chapters || []);
+    } catch (e) {
+      showMsg("err", "Gagal memuat chapter");
+    } finally {
+      setChaptersLoading(false);
+    }
+  };
+
+  const toggleChapters = () => {
+    const next = !chaptersExpanded;
+    setChaptersExpanded(next);
+    if (next) loadChapters();
+  };
+
+  // === SELECT CHAPTER ===
+  const selectChapter = (ch: Chapter) => {
+    setSelectedChapter(ch);
+    setEditOriginal(ch.content_original || "");
+    setEditTranslated(ch.content_translated || "");
+    setEditTitle(ch.chapter_title || "");
+  };
+
+  // === SAVE CHAPTER ===
+  const handleSaveChapter = async () => {
+    if (!selectedChapter) return;
+    setSavingChapter(true);
+    try {
+      const res = await fetch(`/api/chapters/${novel.id}/${selectedChapter.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content_original: editOriginal,
+          content_translated: editTranslated,
+          chapter_title: editTitle,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      // Update local state
+      setChapters((prev) =>
+        prev.map((ch) =>
+          ch.id === selectedChapter.id
+            ? {
+                ...ch,
+                content_original: editOriginal,
+                content_translated: editTranslated,
+                chapter_title: editTitle,
+                word_count_original: editOriginal.split(/\s+/).filter(Boolean).length,
+                word_count_translated: editTranslated.split(/\s+/).filter(Boolean).length,
+                translation_status: editTranslated.trim() ? "completed" : "pending",
+              }
+            : ch
+        )
+      );
+
+      showMsg("ok", `✅ Chapter ${selectedChapter.chapter_number} tersimpan!`);
+    } catch (e: any) {
+      showMsg("err", e.message);
+    } finally {
+      setSavingChapter(false);
+    }
+  };
+
+  const filteredChapters = chapters.filter((ch) => {
+    if (!chapterSearch) return true;
+    const q = chapterSearch.toLowerCase();
+    return (
+      ch.chapter_number.toString().includes(q) ||
+      (ch.chapter_title && ch.chapter_title.toLowerCase().includes(q))
+    );
+  });
+
   const isDraft = novel.status === "draft";
+  const translatedCount = chapters.filter((ch) => ch.translation_status === "completed").length;
 
   return (
     <div className="space-y-6">
@@ -318,6 +438,183 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
             Source: {novel.source || "–"} • {novel.total_chapters || 0} chapter
           </span>
         </div>
+      </div>
+
+      {/* ═══ Chapter Editor Section ═══ */}
+      <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 rounded-2xl overflow-hidden">
+        {/* Header - Collapsible */}
+        <button
+          onClick={toggleChapters}
+          className="w-full flex items-center justify-between p-5 hover:bg-gray-800/20 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-violet-400" />
+            </div>
+            <div className="text-left">
+              <h2 className="text-base font-semibold">Chapter Editor</h2>
+              <p className="text-xs text-gray-500">
+                {chapters.length > 0
+                  ? `${chapters.length} chapter • ${translatedCount} diterjemahkan`
+                  : `${novel.total_chapters || 0} chapter total`}
+              </p>
+            </div>
+          </div>
+          {chaptersExpanded ? (
+            <ChevronDown className="w-5 h-5 text-gray-500" />
+          ) : (
+            <ChevronRight className="w-5 h-5 text-gray-500" />
+          )}
+        </button>
+
+        {chaptersExpanded && (
+          <div className="border-t border-gray-800/50">
+            {chaptersLoading ? (
+              <div className="p-8 flex items-center justify-center gap-3 text-gray-500">
+                <Loader2 className="w-5 h-5 animate-spin" /> Memuat chapter...
+              </div>
+            ) : chapters.length === 0 ? (
+              <div className="p-8 text-center text-gray-500 text-sm">
+                Belum ada chapter di database.
+              </div>
+            ) : (
+              <div className="flex" style={{ height: "600px" }}>
+                {/* Left: Chapter List */}
+                <div className="w-72 border-r border-gray-800/50 flex flex-col shrink-0">
+                  {/* Chapter Search */}
+                  <div className="p-3 border-b border-gray-800/50">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+                      <input
+                        type="text"
+                        placeholder="Cari chapter..."
+                        value={chapterSearch}
+                        onChange={(e) => setChapterSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Chapter Items Scrollable */}
+                  <div className="flex-1 overflow-y-auto">
+                    {filteredChapters.map((ch) => {
+                      const isActive = selectedChapter?.id === ch.id;
+                      const isTranslated = ch.translation_status === "completed";
+                      return (
+                        <button
+                          key={ch.id}
+                          onClick={() => selectChapter(ch)}
+                          className={`w-full text-left px-4 py-2.5 border-b border-gray-800/30 transition-all ${
+                            isActive
+                              ? "bg-violet-500/10 border-l-2 border-l-violet-500"
+                              : "hover:bg-gray-800/30 border-l-2 border-l-transparent"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs font-medium ${isActive ? "text-violet-300" : "text-gray-300"}`}>
+                              Ch. {ch.chapter_number}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              {isTranslated && (
+                                <Globe className="w-3 h-3 text-emerald-400" />
+                              )}
+                              <FileText className="w-3 h-3 text-gray-600" />
+                            </div>
+                          </div>
+                          {ch.chapter_title && (
+                            <p className="text-[10px] text-gray-500 truncate mt-0.5">{ch.chapter_title}</p>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right: Editor */}
+                <div className="flex-1 flex flex-col min-w-0">
+                  {selectedChapter ? (
+                    <>
+                      {/* Chapter Header */}
+                      <div className="p-4 border-b border-gray-800/50 flex items-center justify-between shrink-0">
+                        <div className="flex-1 min-w-0 mr-3">
+                          <label className="text-[10px] text-gray-600 block mb-1">Judul Chapter</label>
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="w-full bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 text-sm font-medium focus:border-violet-500/50 focus:outline-none transition-colors"
+                            placeholder="Judul chapter..."
+                          />
+                        </div>
+                        <button
+                          onClick={handleSaveChapter}
+                          disabled={savingChapter}
+                          className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-lg text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+                        >
+                          {savingChapter ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Save className="w-3.5 h-3.5" />
+                          )}
+                          {savingChapter ? "Saving..." : "Simpan Chapter"}
+                        </button>
+                      </div>
+
+                      {/* Dual Textarea */}
+                      <div className="flex-1 grid grid-cols-2 divide-x divide-gray-800/50 min-h-0">
+                        {/* Original */}
+                        <div className="flex flex-col">
+                          <div className="px-4 py-2 border-b border-gray-800/50 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-1.5">
+                              <FileText className="w-3.5 h-3.5 text-blue-400" />
+                              <span className="text-xs font-medium text-blue-400">Original (EN)</span>
+                            </div>
+                            <span className="text-[10px] text-gray-600">
+                              {editOriginal.split(/\s+/).filter(Boolean).length} kata
+                            </span>
+                          </div>
+                          <textarea
+                            value={editOriginal}
+                            onChange={(e) => setEditOriginal(e.target.value)}
+                            className="flex-1 w-full bg-transparent px-4 py-3 text-sm leading-relaxed text-gray-300 resize-none focus:outline-none placeholder-gray-600"
+                            placeholder="Isi original chapter..."
+                          />
+                        </div>
+
+                        {/* Translated */}
+                        <div className="flex flex-col">
+                          <div className="px-4 py-2 border-b border-gray-800/50 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-1.5">
+                              <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-xs font-medium text-emerald-400">Terjemahan (ID)</span>
+                            </div>
+                            <span className="text-[10px] text-gray-600">
+                              {editTranslated.split(/\s+/).filter(Boolean).length} kata
+                            </span>
+                          </div>
+                          <textarea
+                            value={editTranslated}
+                            onChange={(e) => setEditTranslated(e.target.value)}
+                            className="flex-1 w-full bg-transparent px-4 py-3 text-sm leading-relaxed text-gray-300 resize-none focus:outline-none placeholder-gray-600"
+                            placeholder="Terjemahan Indonesia..."
+                          />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-gray-600">
+                      <div className="text-center">
+                        <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-700" />
+                        <p className="text-sm">Pilih chapter dari daftar di kiri</p>
+                        <p className="text-xs text-gray-600 mt-1">untuk mengedit konten original atau terjemahan</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
