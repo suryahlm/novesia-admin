@@ -66,6 +66,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
       const body: any = {
         title: novel.title,
         synopsis: novel.synopsis,
+        synopsis_translated: novel.synopsis_translated,
         genres: novel.genres,
         author: novel.author,
         status: publishStatus || novel.status || "draft",
