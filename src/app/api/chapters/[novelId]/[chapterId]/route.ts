@@ -19,7 +19,7 @@ export async function PUT(
   if (body.content_translated !== undefined) {
     updates.content_translated = body.content_translated;
     updates.word_count_translated = body.content_translated.split(/\s+/).filter(Boolean).length;
-    updates.translation_status = body.content_translated.trim() ? "completed" : "pending";
+    updates.translation_status = body.content_translated.trim() ? "done" : "pending";
     if (body.content_translated.trim()) {
       updates.translated_at = new Date().toISOString();
     }

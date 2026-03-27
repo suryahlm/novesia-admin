@@ -211,7 +211,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                 chapter_title: editTitle,
                 word_count_original: editOriginal.split(/\s+/).filter(Boolean).length,
                 word_count_translated: editTranslated.split(/\s+/).filter(Boolean).length,
-                translation_status: editTranslated.trim() ? "completed" : "pending",
+                translation_status: editTranslated.trim() ? "done" : "pending",
               }
             : ch
         )
