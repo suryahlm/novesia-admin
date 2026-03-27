@@ -10,7 +10,7 @@ export async function PUT(
   const body = await req.json();
 
   const allowedFields = [
-    "title", "synopsis", "genres", "tags", "author", "status",
+    "title", "synopsis", "synopsis_translated", "genres", "tags", "author", "status",
     "original_status", "language", "rating", "cover_url", "cover_r2_key"
   ];
 

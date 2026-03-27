@@ -398,16 +398,39 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
           </div>
         </div>
 
-        {/* Synopsis */}
+        {/* Synopsis Dual Pane */}
         <div className="mt-6 pt-6 border-t border-gray-800/50">
-          <label className="text-xs font-medium text-gray-500 mb-2 block">Sinopsis</label>
-          <textarea
-            value={novel.synopsis || ""}
-            onChange={(e) => setNovel({ ...novel, synopsis: e.target.value })}
-            rows={5}
-            className="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-sm leading-relaxed focus:border-violet-500/50 focus:outline-none transition-colors resize-y"
-            placeholder="Tulis sinopsis novel..."
-          />
+          <div className="grid grid-cols-2 gap-6">
+            {/* Original Synopsis */}
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-2 block flex items-center gap-2">
+                <BookOpen className="w-3.5 h-3.5" />
+                Sinopsis (Original)
+              </label>
+              <textarea
+                value={novel.synopsis || ""}
+                onChange={(e) => setNovel({ ...novel, synopsis: e.target.value })}
+                rows={8}
+                className="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-sm leading-relaxed focus:border-violet-500/50 focus:outline-none transition-colors resize-y"
+                placeholder="Tulis sinopsis original..."
+              />
+            </div>
+
+            {/* Translated Synopsis */}
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-2 block flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5" />
+                Sinopsis (Terjemahan ID)
+              </label>
+              <textarea
+                value={novel.synopsis_translated || ""}
+                onChange={(e) => setNovel({ ...novel, synopsis_translated: e.target.value })}
+                rows={8}
+                className="w-full bg-gray-800/50 border border-emerald-500/20 rounded-xl px-4 py-3 text-sm leading-relaxed focus:border-emerald-500/50 focus:outline-none transition-colors resize-y text-emerald-50/90"
+                placeholder="Tulis terjemahan Indonesia..."
+              />
+            </div>
+          </div>
         </div>
 
         {/* Save Buttons */}
