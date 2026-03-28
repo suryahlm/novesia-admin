@@ -53,6 +53,12 @@ export default function EditNovelPage() {
     novelId?: string;
     novelTitle?: string;
   } | null>(null);
+  const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  const showMsg = (type: "ok" | "err", text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
+  };
 
   useEffect(() => {
     fetchNovels();
@@ -129,7 +135,7 @@ export default function EditNovelPage() {
         return next;
       });
     } catch (err: any) {
-      alert(err.message);
+      showMsg("err", err.message);
     } finally {
       setDeletingId(null);
       setConfirmModal(null);
@@ -149,8 +155,9 @@ export default function EditNovelPage() {
       if (!res.ok) throw new Error("Gagal menghapus");
       setNovels((prev) => prev.filter((n) => !selectedIds.has(n.id)));
       setSelectedIds(new Set());
+      showMsg("ok", `✅ ${ids.length} novel berhasil dihapus`);
     } catch (err: any) {
-      alert(err.message);
+      showMsg("err", err.message);
     } finally {
       setBulkDeleting(false);
       setConfirmModal(null);
@@ -170,11 +177,11 @@ export default function EditNovelPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal meng-generate genre");
       
-      alert(data.message);
+      showMsg("ok", `✅ ${data.message}`);
       await fetchNovels(); // Refresh data
       setSelectedIds(new Set()); // Clear selection
     } catch (err: any) {
-      alert(err.message);
+      showMsg("err", err.message);
     } finally {
       setBulkGenerating(false);
     }
@@ -183,7 +190,16 @@ export default function EditNovelPage() {
   const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Toast Message */}
+      {message && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-2xl text-sm font-medium animate-in slide-in-from-right ${
+          message.type === "ok" ? "bg-emerald-500/90 text-white" : "bg-red-500/90 text-white"
+        }`}>
+          {message.text}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
