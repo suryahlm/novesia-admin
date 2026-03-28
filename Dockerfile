@@ -2,7 +2,8 @@ FROM node:20-alpine AS base
 
 # --- Dependencies ---
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN echo "nameserver 8.8.8.8" >> /etc/resolv.conf && \
+    apk add --no-cache libc6-compat || apk add --no-cache libc6-compat || true
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --legacy-peer-deps
