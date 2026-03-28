@@ -6,7 +6,7 @@ import NovelGrid from "./NovelGrid";
 
 // Source definitions — add new sources here
 const NOVEL_SOURCES = [
-  { id: "novelib", label: "Novelib", icon: "📚", color: "from-emerald-600 to-teal-600", shadow: "shadow-emerald-500/20" },
+  { id: "novelworld", label: "NovelWorld", icon: "📚", color: "from-emerald-600 to-teal-600", shadow: "shadow-emerald-500/20" },
   { id: "skynovelvault", label: "SkyNovelVault", icon: "⚔️", color: "from-blue-600 to-cyan-600", shadow: "shadow-blue-500/20" },
   { id: "nobadnovel", label: "NoBadNovel", icon: "💎", color: "from-rose-500 to-pink-600", shadow: "shadow-rose-500/20" },
   { id: "transcendentaltls", label: "TranscendentalTLS", icon: "📖", color: "from-orange-600 to-amber-600", shadow: "shadow-orange-500/20" },

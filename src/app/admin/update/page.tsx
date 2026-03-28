@@ -32,7 +32,7 @@ interface Novel {
 
 const SOURCE_TABS = [
   { id: "all", label: "Semua", icon: "📋", color: "from-violet-600 to-indigo-600", shadow: "shadow-violet-500/20" },
-  { id: "novelib", label: "Novelib", icon: "📚", color: "from-emerald-600 to-teal-600", shadow: "shadow-emerald-500/20" },
+  { id: "novelworld", label: "NovelWorld", icon: "📚", color: "from-emerald-600 to-teal-600", shadow: "shadow-emerald-500/20" },
   { id: "skynovelvault", label: "SkyNovelVault", icon: "⚔️", color: "from-blue-600 to-cyan-600", shadow: "shadow-blue-500/20" },
   { id: "transcendentaltls", label: "TranscendentalTLS", icon: "📖", color: "from-orange-600 to-amber-600", shadow: "shadow-orange-500/20" },
   { id: "general", label: "General", icon: "🌐", color: "from-pink-600 to-rose-600", shadow: "shadow-pink-500/20" },
@@ -73,7 +73,7 @@ export default function EditNovelPage() {
     let result = novels;
 
     if (activeSource !== "all") {
-      result = result.filter((n) => (n.source || "novelib") === activeSource);
+      result = result.filter((n) => (n.source || "general") === activeSource);
     }
 
     if (search) {
@@ -92,7 +92,7 @@ export default function EditNovelPage() {
   // Source counts
   const sourceCounts: Record<string, number> = { all: novels.length };
   novels.forEach((n) => {
-    const src = n.source || "novelib";
+    const src = n.source || "general";
     sourceCounts[src] = (sourceCounts[src] || 0) + 1;
   });
 
@@ -325,7 +325,7 @@ export default function EditNovelPage() {
 
                   {/* Source Badge */}
                   <span className="text-[10px] px-2 py-1 bg-gray-800/80 text-gray-500 rounded-md font-medium uppercase shrink-0">
-                    {novel.source || "novelib"}
+                    {novel.source || "general"}
                   </span>
 
                   {/* Action Buttons */}

@@ -247,7 +247,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
                   </div>
                 )}
                 <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[9px] font-bold text-emerald-400 uppercase">
-                  {novel.source || "novelib"}
+                  {novel.source || "general"}
                 </div>
                 {novel.status === "draft" && (
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-lg rotate-[-12deg]">
