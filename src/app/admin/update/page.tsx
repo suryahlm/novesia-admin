@@ -12,6 +12,7 @@ import {
   Square,
   X,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 
 interface Novel {
@@ -46,6 +47,7 @@ export default function EditNovelPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkGenerating, setBulkGenerating] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
     type: "single" | "bulk";
     novelId?: string;
@@ -155,6 +157,29 @@ export default function EditNovelPage() {
     }
   };
 
+  // Bulk generate genre
+  const handleBulkGenerate = async () => {
+    setBulkGenerating(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const res = await fetch("/api/novels/bulk-generate-genre", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal meng-generate genre");
+      
+      alert(data.message);
+      await fetchNovels(); // Refresh data
+      setSelectedIds(new Set()); // Clear selection
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setBulkGenerating(false);
+    }
+  };
+
   const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
 
   return (
@@ -170,20 +195,34 @@ export default function EditNovelPage() {
           </p>
         </div>
 
-        {/* Bulk Delete Button */}
+        {/* Bulk Action Buttons */}
         {selectedIds.size > 0 && (
-          <button
-            onClick={() => setConfirmModal({ type: "bulk" })}
-            disabled={bulkDeleting}
-            className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:from-gray-700 disabled:to-gray-700 rounded-xl text-sm font-bold shadow-lg shadow-red-500/20 hover:shadow-red-500/40 transition-all flex items-center gap-2"
-          >
-            {bulkDeleting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Trash2 className="w-4 h-4" />
-            )}
-            Hapus Terpilih ({selectedIds.size})
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBulkGenerate}
+              disabled={bulkGenerating || bulkDeleting}
+              className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-gray-700 disabled:to-gray-700 rounded-xl text-sm font-bold shadow-lg shadow-violet-500/20 hover:shadow-violet-500/40 transition-all flex items-center gap-2"
+            >
+              {bulkGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 text-amber-300" />
+              )}
+              ✨ Auto Generate Genre ({selectedIds.size})
+            </button>
+            <button
+              onClick={() => setConfirmModal({ type: "bulk" })}
+              disabled={bulkDeleting || bulkGenerating}
+              className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:from-gray-700 disabled:to-gray-700 rounded-xl text-sm font-bold shadow-lg shadow-red-500/20 hover:shadow-red-500/40 transition-all flex items-center gap-2"
+            >
+              {bulkDeleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              Hapus Terpilih ({selectedIds.size})
+            </button>
+          </div>
         )}
       </div>
 
