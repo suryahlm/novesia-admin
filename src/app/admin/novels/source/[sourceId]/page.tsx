@@ -4,7 +4,7 @@ import { BookOpen, ArrowLeft } from "lucide-react";
 
 const SOURCE_META: Record<string, { label: string; icon: string; color: string }> = {
   novelworld: { label: "NovelWorld", icon: "📚", color: "text-emerald-400" },
-  skynovelvault: { label: "SkyNovelVault", icon: "⚔️", color: "text-blue-400" },
+  talesinthevalley: { label: "TalesInTheValley", icon: "⚔️", color: "text-blue-400" },
   transcendentaltls: { label: "TranscendentalTLS", icon: "📖", color: "text-orange-400" },
   general: { label: "General", icon: "🌐", color: "text-gray-400" },
 };
