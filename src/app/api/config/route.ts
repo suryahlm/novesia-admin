@@ -16,6 +16,8 @@ const DEFAULT_CONFIG = {
   watch_ad_reward: 40,
   // Interstitial ad interval (setiap N chapter)
   ad_interval_chapters: 5,
+  // Telegram Group / Channel Link
+  telegram_link: 'https://t.me/novesiaforum',
 };
 
 // GET — Fetch all config

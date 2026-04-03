@@ -7,6 +7,7 @@ interface AppConfig {
   referral_bonus: number;
   watch_ad_reward: number;
   ad_interval_chapters: number;
+  telegram_link: string;
 }
 
 const DEFAULT: AppConfig = {
@@ -14,6 +15,7 @@ const DEFAULT: AppConfig = {
   referral_bonus: 50,
   watch_ad_reward: 40,
   ad_interval_chapters: 5,
+  telegram_link: 'https://t.me/novesiaforum',
 };
 
 export default function ConfigPage() {
@@ -211,6 +213,27 @@ export default function ConfigPage() {
           <p style={{ color: '#475569', fontSize: 12, marginTop: 8 }}>
             💡 Rekomendasi: 3-10 chapter. Terlalu sering = user tidak nyaman, terlalu jarang = revenue rendah.
           </p>
+        </div>
+      </div>
+
+      {/* ═══ SOCIAL LINKS ═══ */}
+      <div style={{ ...cardStyle, borderColor: 'rgba(56,189,248,0.2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <span style={{ fontSize: 24 }}>📱</span>
+          <div>
+            <h2 style={cardTitleStyle}>Social Media Links</h2>
+            <p style={cardDescStyle}>Tautan grup komunitas untuk ditampilkan di menu profil aplikasi</p>
+          </div>
+        </div>
+        <div>
+          <label style={labelStyle}>Telegram Channel / Group Link</label>
+          <input
+            type="text"
+            value={config.telegram_link}
+            onChange={(e) => setConfig({ ...config, telegram_link: e.target.value })}
+            style={{ ...inputStyle, textAlign: 'left' }}
+            placeholder="https://t.me/..."
+          />
         </div>
       </div>
 
