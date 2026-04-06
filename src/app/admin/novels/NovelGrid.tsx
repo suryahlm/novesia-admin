@@ -226,12 +226,21 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
                     src={novel.cover_url}
                     alt={novel.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      // Hide the broken image icon and show fallback background
+                      e.currentTarget.style.display = 'none';
+                      if (e.currentTarget.nextElementSibling) {
+                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }
+                    }}
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <BookOpen className="w-12 h-12 text-gray-700" />
-                  </div>
-                )}
+                ) : null}
+                <div 
+                  className="w-full h-full items-center justify-center absolute inset-0 z-0 bg-gray-800" 
+                  style={{ display: novel.cover_url ? 'none' : 'flex' }}
+                >
+                  <BookOpen className="w-12 h-12 text-gray-700" />
+                </div>
                 {novel.rating && (
                   <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-amber-400">
                     ★ {novel.rating}
