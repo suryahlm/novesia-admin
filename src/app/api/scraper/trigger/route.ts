@@ -1,66 +1,49 @@
 import { NextResponse } from 'next/server';
-import { Client } from 'ssh2';
 
-const SCRAPER_CONFIG: Record<string, { cmd: string, name: string }> = {
-  'novelworld': {
-    cmd: 'cd /root/novesia-scraper && /usr/bin/node novelworld_cron.js',
-    name: 'Novelworld'
-  },
-  'talesinthevalley': {
-    cmd: 'cd /root/novesia-scraper && /usr/bin/node titv_cron.js',
-    name: 'TalesInTheValley'
-  },
-  '98novels': {
-    cmd: 'cd /root/novesia-scraper && /usr/bin/node 98novels_cron.js',
-    name: '98Novels'
-  }
+const SCRAPER_NAMES: Record<string, string> = {
+  'novelworld': 'Novelworld',
+  'talesinthevalley': 'TalesInTheValley',
+  '98novels': '98Novels'
 };
+
+const TRIGGER_URL = 'http://host.docker.internal:9898/trigger';
+const TRIGGER_SECRET = 'novesia-trigger-2026';
 
 export async function POST(request: Request) {
   try {
     const { source } = await request.json();
 
-    if (!source || !SCRAPER_CONFIG[source]) {
+    if (!source || !SCRAPER_NAMES[source]) {
       return NextResponse.json({ error: 'Source scraper tidak ditemukan.' }, { status: 400 });
     }
 
-    const script = SCRAPER_CONFIG[source];
+    const name = SCRAPER_NAMES[source];
 
-    return new Promise<NextResponse>((resolve, reject) => {
-      const conn = new Client();
-      
-      // Kita bungkus target eksekusinya dengan nohup agar berjalan di background Server 
-      // bahkan ketika koneksi SSH kita langsung ditutup sepersekian detik kemudian.
-      const runCmd = `nohup bash -c "${script.cmd} > /var/log/scraper_trigger_${source}.log 2>&1" &`;
-
-      conn.on('ready', () => {
-        conn.exec(runCmd, (err, stream) => {
-          if (err) {
-            conn.end();
-            return resolve(NextResponse.json({ error: err.message }, { status: 500 }));
-          }
-          
-          // Sukses dieksekusi di background VPS
-          // Langsung tutup koneksi dan respons OK ke front-end 
-          conn.end();
-          
-          resolve(NextResponse.json({ 
-            success: true, 
-            message: `Scraper ${script.name} berhasil diluncurkan ke Server Utama. Mohon tunggu notifikasi WhatsApp masuk!` 
-          }));
-        });
-      }).on('error', (err) => {
-        resolve(NextResponse.json({ error: 'Gagal menembus VPS Master: ' + err.message }, { status: 500 }));
-      }).connect({
-        host: '141.11.160.187',
-        port: 22,
-        username: 'root',
-        password: 'Surya123!' // Hardcoded for this internal tool only, ideally in .env
-      });
+    // Panggil micro trigger server yang berjalan di VPS host
+    const res = await fetch(TRIGGER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source, secret: TRIGGER_SECRET }),
+      signal: AbortSignal.timeout(10000), // 10 detik timeout
     });
 
-  } catch (error: any) {
-    console.error('Trigger Scraper Error:', error);
-    return NextResponse.json({ error: error.message || 'Terjadi kesalahan sistem.' }, { status: 500 });
+    const data = await res.json();
+
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: data.error || 'Trigger server menolak request.' },
+        { status: res.status }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: data.message || `Scraper ${name} berhasil diluncurkan. Tunggu notifikasi WhatsApp!`
+    });
+
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Terjadi kesalahan sistem.';
+    console.error('Trigger Scraper Error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
