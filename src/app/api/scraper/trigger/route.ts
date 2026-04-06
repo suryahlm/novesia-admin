@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     const script = SCRAPER_CONFIG[source];
 
-    return new Promise((resolve, reject) => {
+    return new Promise<NextResponse>((resolve, reject) => {
       const conn = new Client();
       
       // Kita bungkus target eksekusinya dengan nohup agar berjalan di background Server 
