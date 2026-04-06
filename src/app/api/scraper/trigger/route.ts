@@ -1,21 +1,17 @@
 import { NextResponse } from 'next/server';
-import { spawn } from 'child_process';
-import path from 'path';
+import { Client } from 'ssh2';
 
-const SCRAPER_CONFIG: Record<string, { cmd: string, args: string[], name: string }> = {
+const SCRAPER_CONFIG: Record<string, { cmd: string, name: string }> = {
   'novelworld': {
-    cmd: '/usr/bin/node',
-    args: ['/root/novesia-scraper/novelworld_cron.js'],
+    cmd: 'cd /root/novesia-scraper && /usr/bin/node novelworld_cron.js',
     name: 'Novelworld'
   },
   'talesinthevalley': {
-    cmd: '/usr/bin/node',
-    args: ['/root/novesia-scraper/titv_cron.js'],
+    cmd: 'cd /root/novesia-scraper && /usr/bin/node titv_cron.js',
     name: 'TalesInTheValley'
   },
   '98novels': {
-    cmd: '/usr/bin/node',
-    args: ['/root/novesia-scraper/98novels_cron.js'],
+    cmd: 'cd /root/novesia-scraper && /usr/bin/node 98novels_cron.js',
     name: '98Novels'
   }
 };
@@ -30,19 +26,37 @@ export async function POST(request: Request) {
 
     const script = SCRAPER_CONFIG[source];
 
-    // Menggunakan spawn dengan opsi detached agar proses tetap berjalan di background
-    // meskipun API request Next.js ini sudah mengembalikan response/selesai.
-    const child = spawn(script.cmd, script.args, {
-      detached: true,
-      stdio: 'ignore' // Abaikan log output di terminal Next.js
-    });
+    return new Promise((resolve, reject) => {
+      const conn = new Client();
+      
+      // Kita bungkus target eksekusinya dengan nohup agar berjalan di background Server 
+      // bahkan ketika koneksi SSH kita langsung ditutup sepersekian detik kemudian.
+      const runCmd = `nohup bash -c "${script.cmd} > /var/log/scraper_trigger_${source}.log 2>&1" &`;
 
-    // Lepaskan referensi supaya OS membiarkannya mandiri
-    child.unref();
-
-    return NextResponse.json({ 
-      success: true, 
-      message: `Scraper ${script.name} berhasil diluncurkan di background. Mohon tunggu notifikasi WhatsApp saat proses selesai.` 
+      conn.on('ready', () => {
+        conn.exec(runCmd, (err, stream) => {
+          if (err) {
+            conn.end();
+            return resolve(NextResponse.json({ error: err.message }, { status: 500 }));
+          }
+          
+          // Sukses dieksekusi di background VPS
+          // Langsung tutup koneksi dan respons OK ke front-end 
+          conn.end();
+          
+          resolve(NextResponse.json({ 
+            success: true, 
+            message: `Scraper ${script.name} berhasil diluncurkan ke Server Utama. Mohon tunggu notifikasi WhatsApp masuk!` 
+          }));
+        });
+      }).on('error', (err) => {
+        resolve(NextResponse.json({ error: 'Gagal menembus VPS Master: ' + err.message }, { status: 500 }));
+      }).connect({
+        host: '141.11.160.187',
+        port: 22,
+        username: 'root',
+        password: 'Surya123!' // Hardcoded for this internal tool only, ideally in .env
+      });
     });
 
   } catch (error: any) {
