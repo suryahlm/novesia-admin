@@ -6,7 +6,7 @@ const SCRAPER_NAMES: Record<string, string> = {
   '98novels': '98Novels'
 };
 
-const TRIGGER_URL = 'http://host.docker.internal:9898/trigger';
+const TRIGGER_URL = 'http://141.11.160.187:9898/trigger';
 const TRIGGER_SECRET = 'novesia-trigger-2026';
 
 export async function POST(request: Request) {
