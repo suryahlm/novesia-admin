@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Server, Globe, BookOpen, Cpu, CheckCircle2, Loader2, PlayCircle, Fingerprint } from "lucide-react";
 
-type SourceKey = "novelworld" | "talesinthevalley" | "98novels";
+type SourceKey = "novelworld" | "talesinthevalley" | "98novels" | "tinytranslation";
 
 export default function UpdateScrapingPage() {
   const [isHovered, setIsHovered] = useState<string | null>(null);
@@ -34,6 +34,14 @@ export default function UpdateScrapingPage() {
       color: "from-purple-400 to-pink-400",
       bg: "bg-purple-500/10 border-purple-500/20 hover:border-purple-500/40",
       desc: "Pemrosesan masif untuk direktori Novelworld. Jadwal subuh dan sore."
+    },
+    {
+      id: "tinytranslation",
+      name: "TinyTranslation Sync",
+      icon: CheckCircle2,
+      color: "from-orange-400 to-red-400",
+      bg: "bg-orange-500/10 border-orange-500/20 hover:border-orange-500/40",
+      desc: "Sinkronisasi delta update eksklusif untuk TinyTranslation. Irit bandwidth cloud."
     }
   ];
 
