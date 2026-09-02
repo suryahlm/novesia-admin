@@ -1,7 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Server, Globe, BookOpen, Cpu, CheckCircle2, Loader2, PlayCircle, Fingerprint } from "lucide-react";
+import {
+  Server,
+  Globe,
+  BookOpen,
+  Cpu,
+  CheckCircle2,
+  Loader2,
+  PlayCircle,
+  Fingerprint,
+  Zap,
+  Activity,
+  ShieldAlert,
+} from "lucide-react";
 
 type SourceKey = "novelworld" | "talesinthevalley" | "98novels" | "tinytranslation";
 
@@ -10,39 +22,51 @@ export default function UpdateScrapingPage() {
   const [triggering, setTriggering] = useState<SourceKey | null>(null);
   const [toastMsg, setToastMsg] = useState<{ text: string; isError: boolean } | null>(null);
 
-  const scrapers: { id: SourceKey; name: string; icon: any; color: string; bg: string; desc: string }[] = [
+  const scrapers: {
+    id: SourceKey;
+    name: string;
+    icon: any;
+    color: string;
+    shadow: string;
+    border: string;
+    desc: string;
+  }[] = [
     {
       id: "98novels",
       name: "98Novels Engine",
       icon: Fingerprint,
-      color: "from-blue-400 to-cyan-400",
-      bg: "bg-blue-500/10 border-blue-500/20 hover:border-blue-500/40",
-      desc: "Autopilot Cron. Aktif menarik puluhan novel dengan pengenalan HTML pintar dan CDN Novesia."
+      color: "from-blue-500 via-indigo-500 to-cyan-400",
+      shadow: "shadow-blue-500/20",
+      border: "hover:border-blue-500/40",
+      desc: "Autopilot Cron. Aktif menarik novel dengan pengenalan HTML cerdas dan aset terenkripsi ke Cloudflare R2.",
     },
     {
       id: "talesinthevalley",
       name: "TITV Protocol",
       icon: Globe,
-      color: "from-emerald-400 to-teal-400",
-      bg: "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40",
-      desc: "Menangani sumber TalesInTheValley. Ekstraksi mulus Bypass batas limit koneksi Cloudflare."
+      color: "from-emerald-500 via-teal-500 to-green-400",
+      shadow: "shadow-emerald-500/20",
+      border: "hover:border-emerald-500/40",
+      desc: "Menangani sumber TalesInTheValley. Ekstraksi mulus bypass proteksi batas koneksi Cloudflare.",
     },
     {
       id: "novelworld",
       name: "NovelWorld Scraper",
       icon: BookOpen,
-      color: "from-purple-400 to-pink-400",
-      bg: "bg-purple-500/10 border-purple-500/20 hover:border-purple-500/40",
-      desc: "Pemrosesan masif untuk direktori Novelworld. Jadwal subuh dan sore."
+      color: "from-violet-500 via-purple-500 to-pink-400",
+      shadow: "shadow-violet-500/20",
+      border: "hover:border-violet-500/40",
+      desc: "Pemrosesan masif untuk direktori Novelworld dengan multi-thread parser terorganisir.",
     },
     {
       id: "tinytranslation",
       name: "TinyTranslation Sync",
       icon: CheckCircle2,
-      color: "from-orange-400 to-red-400",
-      bg: "bg-orange-500/10 border-orange-500/20 hover:border-orange-500/40",
-      desc: "Sinkronisasi delta update eksklusif untuk TinyTranslation. Irit bandwidth cloud."
-    }
+      color: "from-amber-500 via-orange-500 to-yellow-400",
+      shadow: "shadow-amber-500/20",
+      border: "hover:border-amber-500/40",
+      desc: "Sinkronisasi delta update eksklusif untuk TinyTranslation dengan penghematan bandwidth tinggi.",
+    },
   ];
 
   const handleTrigger = async (sourceId: SourceKey) => {
@@ -53,11 +77,11 @@ export default function UpdateScrapingPage() {
       const res = await fetch("/api/scraper/trigger", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source: sourceId })
+        body: JSON.stringify({ source: sourceId }),
       });
 
       const data = await res.json();
-      
+
       if (!res.ok) {
         throw new Error(data.error || "Gagal menghubungi server tujuan.");
       }
@@ -66,83 +90,107 @@ export default function UpdateScrapingPage() {
     } catch (err: any) {
       setToastMsg({ text: err.message, isError: true });
     } finally {
-      // Tunggu 1 dtk untuk sensasi "sedang mengeksekusi bash command"
       setTimeout(() => setTriggering(null), 1000);
-      
-      // Hapus toast setelah 8 dtk
       setTimeout(() => setToastMsg(null), 8000);
     }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 relative">
+    <div className="space-y-8 max-w-7xl mx-auto pb-16 animate-in fade-in duration-500 relative">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className={`fixed bottom-8 right-8 z-50 p-5 rounded-2xl shadow-2xl shadow-black/50 border flex items-start gap-4 max-w-sm transition-all duration-300 animate-in slide-in-from-bottom-5 ${
-          toastMsg.isError ? "bg-red-950/80 border-red-500/30 text-red-200" : "bg-emerald-950/80 border-emerald-500/30 text-emerald-100"
-        } backdrop-blur-xl`}>
-          {toastMsg.isError ? <Server className="w-6 h-6 text-red-400 shrink-0 mt-0.5" /> : <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5" />}
-          <div className="text-sm font-medium leading-relaxed">{toastMsg.text}</div>
+        <div
+          className={`fixed bottom-8 right-8 z-50 p-5 rounded-2xl shadow-2xl border flex items-start gap-4 max-w-md transition-all duration-300 animate-in slide-in-from-bottom-5 backdrop-blur-2xl ${
+            toastMsg.isError
+              ? "bg-[#220d11]/95 border-rose-500/40 text-rose-200"
+              : "bg-[#0b1b17]/95 border-emerald-500/40 text-emerald-100"
+          }`}
+        >
+          {toastMsg.isError ? (
+            <Server className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          ) : (
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          )}
+          <div className="text-xs font-semibold leading-relaxed">{toastMsg.text}</div>
         </div>
       )}
 
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent flex items-center gap-3">
-          <Cpu className="w-8 h-8 text-violet-400" />
-          Update Scraping
-        </h1>
-        <p className="text-gray-400 mt-2 text-sm max-w-2xl">
-          Pusat kendali eksekusi instan. Anda dapat memicu Scraper untuk langsung berjalan di <i>background</i> server VPS tanpa harus menunggu cron otomatis. Log pekerjaan akan otomatis di-broadcast via WhatsApp saat semua chapter tuntas.
-        </p>
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl p-7 bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] shadow-2xl">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex items-center gap-3.5 mb-2">
+          <div className="w-10 h-10 rounded-2xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-400 shadow-md">
+            <Cpu className="w-5 h-5" />
+          </div>
+          <div>
+            <h1
+              className="text-2xl lg:text-3xl font-extrabold tracking-tight text-white"
+              style={{ fontFamily: "'Outfit', sans-serif" }}
+            >
+              Pusat Kendali Eksekusi Scraping
+            </h1>
+            <p className="text-slate-400 text-xs mt-0.5 font-medium">
+              Jalankan scraper secara instan di background server tanpa harus menunggu jadwal cron
+              otomatis.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Grid of Sources */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {scrapers.map((sc) => {
           const Icon = sc.icon;
           const isBusy = triggering === sc.id;
 
           return (
-            <div 
+            <div
               key={sc.id}
-              className={`p-6 rounded-3xl border transition-all duration-300 backdrop-blur-md relative overflow-hidden group ${sc.bg}`}
+              className={`p-7 rounded-3xl border border-white/[0.08] ${sc.border} transition-all duration-300 backdrop-blur-2xl bg-[#0c101c]/70 relative overflow-hidden group shadow-xl shadow-black/40 flex flex-col justify-between`}
               onMouseEnter={() => setIsHovered(sc.id)}
               onMouseLeave={() => setIsHovered(null)}
             >
               {/* Glow overlay */}
-              <div className={`absolute -right-20 -top-20 w-40 h-40 bg-gradient-to-br ${sc.color} rounded-full blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity`} />
-              
-              <div className="relative z-10 flex flex-col h-full">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-gray-900/50 shadow-inner border border-gray-700/50`}>
-                    <Icon className={`w-6 h-6 bg-gradient-to-br ${sc.color} text-transparent bg-clip-text`} />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-100">{sc.name}</h3>
-                </div>
-                
-                <p className="text-sm text-gray-400 mb-8 leading-relaxed flex-1">
-                  {sc.desc}
-                </p>
+              <div
+                className={`absolute -right-20 -top-20 w-48 h-48 bg-gradient-to-br ${sc.color} rounded-full blur-[90px] opacity-15 group-hover:opacity-30 transition-opacity`}
+              />
 
+              <div className="relative z-10 space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-13 h-13 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/[0.08] shadow-inner">
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">{sc.name}</h3>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Daemon Service
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">{sc.desc}</p>
+              </div>
+
+              <div className="relative z-10 pt-6 mt-4 border-t border-white/[0.06]">
                 <button
                   onClick={() => handleTrigger(sc.id)}
-                  disabled={triggering !== null} // Disable all while one is triggering
-                  className={`w-full py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 font-medium transition-all duration-300 overflow-hidden relative
-                    ${isBusy 
-                      ? "bg-gray-800 text-gray-400 cursor-not-allowed" 
-                      : `bg-gradient-to-r ${sc.color} text-gray-950 hover:shadow-lg hover:shadow-[var(--tw-gradient-from)]/20 hover:scale-[1.02] active:scale-95`
-                    } disabled:opacity-70`}
+                  disabled={triggering !== null}
+                  className={`w-full py-3 px-4 rounded-2xl flex items-center justify-center gap-2 text-xs font-extrabold transition-all duration-300 cursor-pointer shadow-lg ${
+                    isBusy
+                      ? "bg-slate-800 text-slate-400 cursor-not-allowed"
+                      : `bg-gradient-to-r ${sc.color} text-white hover:scale-[1.02] active:scale-[0.98] ${sc.shadow}`
+                  } disabled:opacity-50`}
                 >
                   {isBusy ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Menjalankan Sistem...</span>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>Menjalankan Background Process...</span>
                     </>
                   ) : (
                     <>
-                      <PlayCircle className={`w-5 h-5 transition-transform duration-300 ${isHovered === sc.id ? 'translate-x-1' : ''}`} />
-                      <span>Jalankan Manual</span>
+                      <PlayCircle className="w-4 h-4" />
+                      <span>Jalankan Manual Sekarang</span>
                     </>
                   )}
                 </button>
@@ -151,12 +199,20 @@ export default function UpdateScrapingPage() {
           );
         })}
       </div>
-      
-      {/* Decorative Warning Element */}
-      <div className="mt-8 p-4 rounded-2xl bg-gray-800/30 border border-gray-700/30 flex items-start gap-4">
-        <Server className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
-        <div className="text-xs text-gray-400 leading-relaxed">
-          <strong className="text-gray-300">Catatan Arsitektur:</strong> Tombol di atas menerapkan teknik <span className="font-mono text-gray-300 bg-gray-800 px-1 py-0.5 rounded">child_process.spawn()</span> dengan metode <span className="font-mono text-emerald-400 bg-emerald-400/10 px-1 py-0.5 rounded">detached: true</span>. Artinya, saat Bapak mengklik eksekusinya, website tidak akan nge-<i>jam</i> atau <i>loading timeout</i>. Bapak bisa langsung menutup web ini dan beraktivitas seperti biasa karena Scraper VPS sudah lepas kandang bekerja secara mandiri di Node Process.
+
+      {/* Decorative Architecture Note */}
+      <div className="p-5 rounded-3xl bg-[#0c101c]/80 border border-white/[0.08] flex items-start gap-4 shadow-xl">
+        <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-400 shrink-0">
+          <Server className="w-4 h-4" />
+        </div>
+        <div className="text-xs text-slate-400 leading-relaxed font-medium">
+          <strong className="text-slate-200 font-bold">Catatan Arsitektur:</strong> Tombol di atas
+          mengeksekusi background daemon process terpisah (
+          <code className="font-mono text-violet-300 bg-white/[0.04] px-1.5 py-0.5 rounded text-[11px]">
+            detached: true
+          </code>
+          ). Anda dapat menutup halaman ini kapan saja tanpa mengganggu scraping yang sedang
+          berjalan.
         </div>
       </div>
     </div>

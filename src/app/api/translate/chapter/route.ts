@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { translateToIndonesian } from "@/lib/groq";
+import { translateText } from "@/lib/translator";
 import { supabase } from "@/lib/supabase";
 
 export const maxDuration = 120;
@@ -108,14 +108,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Konten terlalu pendek — mungkin halaman salah atau ada proteksi" }, { status: 422 });
     }
 
-    // 4. Terjemahkan via Groq
-    const translatedText = await translateToIndonesian(originalText);
+    // 4. Terjemahkan via AI (Guts AI Gemini 3.7 Flash / Groq)
+    const translatedText = await translateText(originalText, "chapter");
     if (!translatedText) {
       await supabase.from("nu_chapter_content")
         .update({ translation_status: "failed", content_original: originalText })
         .eq("novel_id", novelId)
         .eq("chapter_number", chapterNumber);
-      return NextResponse.json({ success: false, error: "Groq translation gagal" }, { status: 502 });
+      return NextResponse.json({ success: false, error: "AI translation gagal" }, { status: 502 });
     }
 
     // 5. Simpan ke database

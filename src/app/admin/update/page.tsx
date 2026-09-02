@@ -190,147 +190,169 @@ export default function EditNovelPage() {
   const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
 
   return (
-    <div className="space-y-6 relative">
-      {/* Toast Message */}
+    <div className="space-y-7 max-w-7xl mx-auto pb-16">
+      {/* Toast Notification */}
       {message && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-2xl text-sm font-medium animate-in slide-in-from-right ${
-          message.type === "ok" ? "bg-emerald-500/90 text-white" : "bg-red-500/90 text-white"
-        }`}>
-          {message.text}
+        <div
+          className={`fixed top-6 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-2xl text-xs font-bold animate-in slide-in-from-right-5 duration-300 border flex items-center gap-2.5 ${
+            message.type === "ok"
+              ? "bg-[#0b1b17]/95 border-emerald-500/40 text-emerald-300 shadow-emerald-500/10"
+              : "bg-[#220d11]/95 border-rose-500/40 text-rose-300 shadow-rose-500/10"
+          }`}
+        >
+          <span>{message.text}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-            Edit Novel
+          <h1
+            className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-violet-300 bg-clip-text text-transparent"
+            style={{ fontFamily: "'Outfit', sans-serif" }}
+          >
+            Pusat Pengelolaan & Bulk Novel
           </h1>
-          <p className="text-gray-500 mt-1">
-            Kelola metadata, chapter, dan terjemahan untuk {novels.length} novel
+          <p className="text-slate-400 text-xs sm:text-sm mt-1 font-medium">
+            Kelola metadata, chapter, dan jalankan aksi massal untuk {novels.length} novel terdaftar
           </p>
         </div>
 
-        {/* Bulk Action Buttons */}
+        {/* Bulk Action Controls */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={handleBulkGenerate}
               disabled={bulkGenerating || bulkDeleting}
-              className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-gray-700 disabled:to-gray-700 rounded-xl text-sm font-bold shadow-lg shadow-violet-500/20 hover:shadow-violet-500/40 transition-all flex items-center gap-2"
+              className="px-4 py-2.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-extrabold shadow-lg shadow-violet-500/25 transition-all flex items-center gap-2 hover:scale-[1.02] cursor-pointer"
             >
               {bulkGenerating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <Sparkles className="w-4 h-4 text-amber-300" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
               )}
-              ✨ Auto Generate Genre ({selectedIds.size})
+              <span>Auto Generate Genre ({selectedIds.size})</span>
             </button>
+
             <button
               onClick={() => setConfirmModal({ type: "bulk" })}
               disabled={bulkDeleting || bulkGenerating}
-              className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:from-gray-700 disabled:to-gray-700 rounded-xl text-sm font-bold shadow-lg shadow-red-500/20 hover:shadow-red-500/40 transition-all flex items-center gap-2"
+              className="px-4 py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white rounded-2xl text-xs font-extrabold shadow-lg shadow-rose-500/25 transition-all flex items-center gap-2 hover:scale-[1.02] cursor-pointer"
             >
               {bulkDeleting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               )}
-              Hapus Terpilih ({selectedIds.size})
+              <span>Hapus ({selectedIds.size})</span>
             </button>
           </div>
         )}
       </div>
 
-      {/* Source Tabs */}
+      {/* Source Luxury Tabs */}
       <div className="flex gap-3 flex-wrap">
         {SOURCE_TABS.map((src) => {
           const count = sourceCounts[src.id] || 0;
           if (src.id !== "all" && count === 0) return null;
           const isActive = activeSource === src.id;
+
           return (
             <button
               key={src.id}
               onClick={() => setActiveSource(src.id)}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 cursor-pointer ${
                 isActive
-                  ? `bg-gradient-to-r ${src.color} shadow-lg ${src.shadow} scale-[1.02]`
-                  : "bg-gray-900/50 border border-gray-800/50 hover:border-gray-700/50"
+                  ? `bg-gradient-to-r ${src.color} shadow-xl ${src.shadow} scale-[1.02] border border-white/20 text-white`
+                  : "bg-[#0c101c]/70 border border-white/[0.06] hover:border-white/[0.15] text-slate-300 hover:bg-white/[0.03]"
               }`}
             >
-              <span className="text-lg">{src.icon}</span>
+              <span className="text-xl">{src.icon}</span>
               <div className="text-left">
-                <p className={`text-xs font-semibold ${isActive ? "text-white" : "text-gray-400"}`}>{src.label}</p>
-                <p className={`text-[9px] font-medium ${isActive ? "text-white/70" : "text-gray-600"}`}>{count} novel</p>
+                <p className={`text-xs font-bold ${isActive ? "text-white" : "text-slate-200"}`}>
+                  {src.label}
+                </p>
+                <p
+                  className={`text-[10px] font-mono mt-0.5 ${
+                    isActive ? "text-white/80" : "text-slate-400"
+                  }`}
+                >
+                  {count} novel
+                </p>
               </div>
             </button>
           );
         })}
       </div>
 
-      {/* Search + Select All */}
-      <div className="flex gap-3 items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+      {/* Search & Selection Bar */}
+      <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-4 shadow-xl flex flex-col sm:flex-row gap-3 items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             placeholder="Cari novel berdasarkan judul, slug, atau author..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-800/80 border border-gray-700/50 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
+            className="w-full pl-10 pr-10 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/60 transition-all shadow-inner"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="w-4 h-4 text-gray-500 hover:text-white" />
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
         <button
           onClick={selectAll}
-          className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
             allSelected
-              ? "bg-violet-500/20 text-violet-300 border border-violet-500/30"
-              : "bg-gray-800/80 text-gray-400 border border-gray-700/50 hover:text-white hover:border-gray-600"
+              ? "bg-violet-600 text-white shadow-lg shadow-violet-500/30 border border-violet-400/40"
+              : "bg-white/[0.04] text-slate-300 border border-white/[0.08] hover:bg-white/[0.08]"
           }`}
         >
           {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-          {allSelected ? "Batal Pilih" : "Pilih Semua"}
+          <span>{allSelected ? "Batal Pilih" : "Pilih Semua"}</span>
         </button>
       </div>
 
-      {/* Novel List */}
-      <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 rounded-2xl overflow-hidden">
+      {/* Novel List Container */}
+      <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl shadow-black/70">
         {loading ? (
-          <div className="p-12 flex items-center justify-center gap-3 text-gray-500">
-            <Loader2 className="w-5 h-5 animate-spin" /> Memuat novel...
+          <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-400">
+            <Loader2 className="w-7 h-7 animate-spin text-violet-400" />
+            <span className="text-xs font-bold">Memuat koleksi novel...</span>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center">
-            <BookOpen className="w-12 h-12 text-gray-700 mx-auto" />
-            <p className="text-gray-500 mt-4">
-              {search ? "Tidak ada novel yang cocok." : "Belum ada novel."}
+          <div className="p-16 text-center text-slate-400">
+            <BookOpen className="w-12 h-12 text-slate-700 mx-auto" />
+            <p className="mt-4 text-xs font-medium">
+              {search ? "Tidak ada novel yang cocok dengan pencarian." : "Belum ada novel di kategori ini."}
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-800/50">
+          <div className="divide-y divide-white/[0.04]">
             {filtered.map((novel) => {
               const isSelected = selectedIds.has(novel.id);
               const isDeleting = deletingId === novel.id;
+
               return (
                 <div
                   key={novel.id}
-                  className={`flex items-center gap-4 px-5 py-3.5 transition-all duration-200 ${
+                  className={`flex items-center gap-4 px-6 py-4 transition-all duration-200 ${
                     isSelected
-                      ? "bg-violet-500/5 border-l-2 border-l-violet-500"
-                      : "hover:bg-gray-800/30 border-l-2 border-l-transparent"
+                      ? "bg-violet-600/15 border-l-4 border-l-violet-400"
+                      : "hover:bg-white/[0.02] border-l-4 border-l-transparent"
                   }`}
                 >
                   {/* Checkbox */}
                   <button
                     onClick={() => toggleSelect(novel.id)}
-                    className={`shrink-0 transition-colors ${
-                      isSelected ? "text-violet-400" : "text-gray-600 hover:text-gray-400"
+                    className={`shrink-0 transition-colors cursor-pointer ${
+                      isSelected ? "text-violet-400" : "text-slate-600 hover:text-slate-400"
                     }`}
                   >
                     {isSelected ? (
@@ -341,37 +363,54 @@ export default function EditNovelPage() {
                   </button>
 
                   {/* Cover */}
-                  {novel.cover_url ? (
-                    <img
-                      src={novel.cover_url}
-                      alt={novel.title}
-                      className="w-10 h-14 object-cover rounded-lg shrink-0"
-                    />
-                  ) : (
-                    <div className="w-10 h-14 bg-gray-800 rounded-lg flex items-center justify-center shrink-0">
-                      <BookOpen className="w-4 h-4 text-gray-600" />
-                    </div>
-                  )}
+                  <div className="w-12 h-16 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-white/[0.08] relative shadow-md">
+                    {novel.cover_url ? (
+                      <img
+                        src={novel.cover_url}
+                        alt={novel.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-700">
+                        <BookOpen className="w-5 h-5" />
+                      </div>
+                    )}
+                  </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-gray-200 truncate">{novel.title}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-gray-500">{novel.total_chapters || 0} ch</span>
-                      <span className="text-[10px] text-gray-600">•</span>
-                      <span className="text-xs text-gray-500">{novel.author || "—"}</span>
-                      <span className="text-[10px] text-gray-600">•</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                        novel.status === "active"
-                          ? "bg-emerald-500/10 text-emerald-400"
+                    <p className="font-bold text-xs sm:text-sm text-slate-100 truncate">
+                      {novel.title}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className="text-xs text-slate-400 font-mono">
+                        {novel.total_chapters || 0} ch
+                      </span>
+                      <span className="text-slate-600 text-xs">•</span>
+                      <span className="text-xs text-slate-400 truncate max-w-[150px]">
+                        {novel.author || "—"}
+                      </span>
+                      <span className="text-slate-600 text-xs">•</span>
+                      <span
+                        className={`text-[9px] px-2 py-0.5 rounded font-extrabold uppercase ${
+                          novel.status === "active"
+                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                            : novel.status === "draft"
+                            ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                            : "bg-slate-500/15 text-slate-400 border border-slate-500/30"
+                        }`}
+                      >
+                        {novel.status === "active"
+                          ? "Published"
                           : novel.status === "draft"
-                          ? "bg-amber-500/10 text-amber-400"
-                          : "bg-gray-500/10 text-gray-400"
-                      }`}>
-                        {novel.status === "active" ? "Published" : novel.status === "draft" ? "Draft" : novel.status}
+                          ? "Draft"
+                          : novel.status}
                       </span>
                       {(novel.genres || []).slice(0, 2).map((g) => (
-                        <span key={g} className="text-[10px] px-1.5 py-0.5 bg-gray-800/80 text-gray-500 rounded">
+                        <span
+                          key={g}
+                          className="text-[9px] px-2 py-0.5 bg-white/[0.04] text-slate-400 border border-white/[0.06] rounded-md font-semibold"
+                        >
                           {g}
                         </span>
                       ))}
@@ -379,35 +418,20 @@ export default function EditNovelPage() {
                   </div>
 
                   {/* Source Badge */}
-                  <span className="text-[10px] px-2 py-1 bg-gray-800/80 text-gray-500 rounded-md font-medium uppercase shrink-0">
+                  <span className="text-[9px] px-2.5 py-1 bg-white/[0.03] border border-white/[0.06] text-emerald-400 rounded-lg font-bold uppercase shrink-0">
                     {novel.source || "general"}
                   </span>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {/* Edit Button */}
+                  <div className="flex items-center gap-2 shrink-0">
                     <Link
                       href={`/admin/novels/${novel.nu_slug}`}
-                      className="p-2 rounded-lg bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 hover:text-violet-300 border border-violet-500/20 transition-all"
-                      title="Edit Novel"
+                      className="p-2.5 rounded-xl bg-violet-600/15 text-violet-300 hover:bg-violet-600 hover:text-white border border-violet-500/30 transition-all cursor-pointer shadow-sm"
+                      title="Edit Studio Novel"
                     >
                       <Edit3 className="w-4 h-4" />
                     </Link>
 
-                    {/* Select Button */}
-                    <button
-                      onClick={() => toggleSelect(novel.id)}
-                      className={`p-2 rounded-lg border transition-all ${
-                        isSelected
-                          ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                          : "bg-blue-500/10 text-blue-400/60 hover:bg-blue-500/20 hover:text-blue-400 border-blue-500/20"
-                      }`}
-                      title="Pilih"
-                    >
-                      {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                    </button>
-
-                    {/* Delete Button */}
                     <button
                       onClick={() =>
                         setConfirmModal({
@@ -417,8 +441,8 @@ export default function EditNovelPage() {
                         })
                       }
                       disabled={isDeleting}
-                      className="p-2 rounded-lg bg-red-500/10 text-red-400/60 hover:bg-red-500/20 hover:text-red-400 border border-red-500/20 transition-all disabled:opacity-50"
-                      title="Hapus"
+                      className="p-2.5 rounded-xl bg-rose-500/15 text-rose-300 hover:bg-rose-600 hover:text-white border border-rose-500/30 transition-all cursor-pointer shadow-sm disabled:opacity-40"
+                      title="Hapus Novel"
                     >
                       {isDeleting ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -436,27 +460,34 @@ export default function EditNovelPage() {
 
       {/* Confirm Modal */}
       {confirmModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0c101c] border border-white/[0.12] rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                <AlertTriangle className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold">
-                {confirmModal.type === "bulk"
-                  ? `Hapus ${selectedIds.size} Novel?`
-                  : "Hapus Novel?"}
-              </h3>
+              <div>
+                <h3 className="text-base font-extrabold text-white">
+                  {confirmModal.type === "bulk"
+                    ? `Hapus ${selectedIds.size} Novel?`
+                    : "Hapus Novel Ini?"}
+                </h3>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                  Tindakan ini tidak dapat dibatalkan
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-gray-400 mb-6">
+
+            <p className="text-xs text-slate-300 leading-relaxed bg-white/[0.02] border border-white/[0.05] p-3.5 rounded-2xl font-medium">
               {confirmModal.type === "bulk"
-                ? `${selectedIds.size} novel yang dipilih akan dihapus secara permanen beserta semua chapter dan cover di R2.`
-                : `Novel "${confirmModal.novelTitle}" akan dihapus secara permanen beserta semua chapter dan cover di R2.`}
+                ? `${selectedIds.size} novel yang dipilih akan dihapus secara permanen beserta semua chapter dan aset di Cloudflare R2.`
+                : `Novel "${confirmModal.novelTitle}" akan dihapus permanen beserta seluruh chapter dan aset terkait.`}
             </p>
-            <div className="flex gap-3 justify-end">
+
+            <div className="flex gap-3 justify-end pt-2">
               <button
                 onClick={() => setConfirmModal(null)}
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-sm font-medium transition-colors"
+                className="px-5 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] text-slate-300 rounded-2xl text-xs font-bold transition-colors cursor-pointer"
               >
                 Batal
               </button>
@@ -467,14 +498,14 @@ export default function EditNovelPage() {
                     : handleDeleteSingle(confirmModal.novelId!)
                 }
                 disabled={bulkDeleting || !!deletingId}
-                className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-bold transition-colors flex items-center gap-2 disabled:opacity-50"
+                className="px-5 py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white rounded-2xl text-xs font-extrabold shadow-lg shadow-rose-500/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                {(bulkDeleting || deletingId) ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                {bulkDeleting || deletingId ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 )}
-                Hapus Permanen
+                <span>Hapus Permanen</span>
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Settings, Save, Calendar, Users, Film, Tv, Share2, Loader2, Sparkles } from 'lucide-react';
 
 interface AppConfig {
   daily_checkin_rewards: number[];
@@ -67,211 +68,198 @@ export default function ConfigPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <div style={{ color: '#94a3b8', fontSize: 16 }}>Memuat pengaturan...</div>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 text-slate-400">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+        <span className="text-xs font-bold">Memuat konfigurasi aplikasi...</span>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
+    <div className="space-y-8 max-w-5xl mx-auto pb-20">
       {/* Toast */}
       {toast && (
-        <div style={{
-          position: 'fixed', top: 20, right: 20, zIndex: 100,
-          background: toast.startsWith('✅') ? 'rgba(34,197,94,0.9)' : 'rgba(239,68,68,0.9)',
-          color: '#fff', padding: '12px 24px', borderRadius: 12, fontWeight: 700,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.3)', fontSize: 14,
-        }}>
+        <div className="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold bg-[#0b1b17]/95 border border-emerald-500/40 text-emerald-300 animate-in slide-in-from-right">
           {toast}
         </div>
       )}
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#e2e8f0', margin: 0 }}>
-            ⚙️ Pengaturan Aplikasi
-          </h1>
-          <p style={{ color: '#64748b', fontSize: 14, margin: '4px 0 0' }}>
-            Atur reward koin dan interval iklan — perubahan langsung berlaku di aplikasi
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 shadow-md">
+            <Settings className="w-5 h-5" />
+          </div>
+          <div>
+            <h1
+              className="text-2xl lg:text-3xl font-extrabold tracking-tight text-white"
+              style={{ fontFamily: "'Outfit', sans-serif" }}
+            >
+              Pengaturan & Ekonomi Koin
+            </h1>
+            <p className="text-slate-400 text-xs font-medium mt-0.5">
+              Atur reward absen harian, referral, dan interval iklan secara realtime.
+            </p>
+          </div>
         </div>
+
         <button
           onClick={handleSave}
           disabled={saving}
-          style={{
-            background: 'linear-gradient(135deg, #d4a843, #b8902f)',
-            color: '#0a0a0f', border: 'none', borderRadius: 12,
-            padding: '12px 28px', fontWeight: 800, fontSize: 15, cursor: 'pointer',
-            opacity: saving ? 0.6 : 1,
-          }}
+          className="px-6 py-3 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-2xl text-xs font-extrabold shadow-xl shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
         >
-          {saving ? 'Menyimpan...' : '💾 Simpan Pengaturan'}
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          <span>{saving ? 'Menyimpan...' : 'Simpan Pengaturan'}</span>
         </button>
       </div>
 
       {/* ═══ ABSEN HARIAN ═══ */}
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <span style={{ fontSize: 24 }}>📅</span>
+      <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-7 shadow-2xl space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-400">
+            <Calendar className="w-4 h-4" />
+          </div>
           <div>
-            <h2 style={cardTitleStyle}>Absen Harian</h2>
-            <p style={cardDescStyle}>Reward koin untuk setiap hari check-in (7 hari cycle)</p>
+            <h2 className="text-sm font-extrabold text-white">Absen Harian (7 Hari Cycle)</h2>
+            <p className="text-xs text-slate-400 font-medium">Reward koin yang didapat pembaca saat check-in setiap hari</p>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {config.daily_checkin_rewards.map((reward, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <label style={{ fontSize: 11, color: '#64748b', fontWeight: 600, display: 'block', marginBottom: 6 }}>
+            <div key={i} className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-center space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Hari {i + 1}
               </label>
               <input
                 type="number"
                 value={reward}
                 onChange={(e) => updateDayReward(i, parseInt(e.target.value) || 0)}
-                style={inputStyle}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl py-2 text-center text-sm font-extrabold text-amber-300 focus:outline-none focus:border-amber-500/60 font-mono shadow-inner"
               />
-              <span style={{ fontSize: 10, color: '#475569', display: 'block', marginTop: 4 }}>🪙</span>
+              <span className="text-[10px] text-slate-500 block font-semibold">🪙 Koin</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* ═══ REFERRAL & ADS ═══ */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Referral */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <span style={{ fontSize: 24 }}>👥</span>
+        <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-7 shadow-xl space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <Users className="w-4 h-4" />
+            </div>
             <div>
-              <h2 style={cardTitleStyle}>Kode Referral</h2>
-              <p style={cardDescStyle}>Bonus koin saat user klaim kode referral teman</p>
+              <h2 className="text-sm font-extrabold text-white">Kode Referral</h2>
+              <p className="text-xs text-slate-400 font-medium">Bonus koin saat klaim kode referral teman</p>
             </div>
           </div>
-          <div>
-            <label style={labelStyle}>Bonus Referral</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              Bonus Reward per Klaim
+            </label>
+            <div className="flex items-center gap-3">
               <input
                 type="number"
                 value={config.referral_bonus}
                 onChange={(e) => setConfig({ ...config, referral_bonus: parseInt(e.target.value) || 0 })}
-                style={{ ...inputStyle, width: 100, textAlign: 'center' }}
+                className="w-32 bg-white/[0.03] border border-white/[0.08] rounded-xl py-2.5 px-4 text-sm font-bold text-amber-300 focus:outline-none focus:border-amber-500/60 font-mono shadow-inner text-center"
               />
-              <span style={{ color: '#64748b', fontSize: 14, fontWeight: 600 }}>🪙 per klaim</span>
+              <span className="text-xs font-semibold text-slate-400">🪙 koin per klaim</span>
             </div>
           </div>
         </div>
 
         {/* Watch Ads */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <span style={{ fontSize: 24 }}>🎬</span>
+        <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-7 shadow-xl space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-pink-500/15 border border-pink-500/30 flex items-center justify-center text-pink-400">
+              <Film className="w-4 h-4" />
+            </div>
             <div>
-              <h2 style={cardTitleStyle}>Tonton Iklan</h2>
-              <p style={cardDescStyle}>Reward koin setiap user menonton iklan rewarded</p>
+              <h2 className="text-sm font-extrabold text-white">Rewarded Ads</h2>
+              <p className="text-xs text-slate-400 font-medium">Reward koin setiap menonton iklan sampai selesai</p>
             </div>
           </div>
-          <div>
-            <label style={labelStyle}>Reward per Iklan</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              Reward per Tonton Iklan
+            </label>
+            <div className="flex items-center gap-3">
               <input
                 type="number"
                 value={config.watch_ad_reward}
                 onChange={(e) => setConfig({ ...config, watch_ad_reward: parseInt(e.target.value) || 0 })}
-                style={{ ...inputStyle, width: 100, textAlign: 'center' }}
+                className="w-32 bg-white/[0.03] border border-white/[0.08] rounded-xl py-2.5 px-4 text-sm font-bold text-amber-300 focus:outline-none focus:border-amber-500/60 font-mono shadow-inner text-center"
               />
-              <span style={{ color: '#64748b', fontSize: 14, fontWeight: 600 }}>🪙 per tonton</span>
+              <span className="text-xs font-semibold text-slate-400">🪙 koin per tonton</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* ═══ INTERSTITIAL AD ═══ */}
-      <div style={{ ...cardStyle, borderColor: 'rgba(239,68,68,0.2)', background: 'linear-gradient(135deg, rgba(239,68,68,0.03), rgba(17,17,24,1))' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <span style={{ fontSize: 24 }}>📺</span>
+      <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-rose-500/20 rounded-3xl p-7 shadow-xl space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+            <Tv className="w-4 h-4" />
+          </div>
           <div>
-            <h2 style={cardTitleStyle}>Iklan Interstitial</h2>
-            <p style={cardDescStyle}>Iklan fullscreen yang muncul otomatis saat membaca novel</p>
+            <h2 className="text-sm font-extrabold text-white">Interval Iklan Interstitial</h2>
+            <p className="text-xs text-slate-400 font-medium">Frekuensi iklan fullscreen otomatis saat membaca chapter</p>
           </div>
         </div>
-        <div>
-          <label style={labelStyle}>Tampilkan iklan setiap</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+
+        <div className="space-y-2">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+            Tampilkan Iklan Setiap
+          </label>
+          <div className="flex items-center gap-3">
             <input
               type="number"
               value={config.ad_interval_chapters}
               onChange={(e) => setConfig({ ...config, ad_interval_chapters: parseInt(e.target.value) || 1 })}
               min={1}
               max={100}
-              style={{ ...inputStyle, width: 80, textAlign: 'center', fontSize: 22, fontWeight: 800 }}
+              className="w-24 bg-white/[0.03] border border-white/[0.08] rounded-xl py-2.5 px-4 text-lg font-black text-rose-400 focus:outline-none focus:border-rose-500/60 font-mono shadow-inner text-center"
             />
-            <span style={{ color: '#94a3b8', fontSize: 15, fontWeight: 600 }}>chapter dibaca</span>
+            <span className="text-xs font-bold text-slate-300">chapter selesai dibaca</span>
           </div>
-          <p style={{ color: '#475569', fontSize: 12, marginTop: 8 }}>
-            💡 Rekomendasi: 3-10 chapter. Terlalu sering = user tidak nyaman, terlalu jarang = revenue rendah.
+          <p className="text-[11px] text-slate-500 font-medium pt-1">
+            💡 Rekomendasi: 3 - 5 chapter agar pengalaman membaca tetap nyaman dan engagement tinggi.
           </p>
         </div>
       </div>
 
       {/* ═══ SOCIAL LINKS ═══ */}
-      <div style={{ ...cardStyle, borderColor: 'rgba(56,189,248,0.2)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <span style={{ fontSize: 24 }}>📱</span>
+      <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-7 shadow-xl space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <Share2 className="w-4 h-4" />
+          </div>
           <div>
-            <h2 style={cardTitleStyle}>Social Media Links</h2>
-            <p style={cardDescStyle}>Tautan grup komunitas untuk ditampilkan di menu profil aplikasi</p>
+            <h2 className="text-sm font-extrabold text-white">Komunitas & Social Links</h2>
+            <p className="text-xs text-slate-400 font-medium">Tautan resmi grup telegram/komunitas di profil aplikasi</p>
           </div>
         </div>
-        <div>
-          <label style={labelStyle}>Telegram Channel / Group Link</label>
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+            Telegram Channel / Group Link
+          </label>
           <input
             type="text"
             value={config.telegram_link}
             onChange={(e) => setConfig({ ...config, telegram_link: e.target.value })}
-            style={{ ...inputStyle, textAlign: 'left' }}
+            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl py-2.5 px-4 text-xs font-semibold text-white focus:outline-none focus:border-cyan-500/60 font-mono shadow-inner"
             placeholder="https://t.me/..."
           />
         </div>
       </div>
-
-      <div style={{ height: 40 }} />
     </div>
   );
 }
-
-// Styles
-const cardStyle: React.CSSProperties = {
-  background: '#111118',
-  border: '1px solid #1e1e2e',
-  borderRadius: 18,
-  padding: 24,
-  marginBottom: 16,
-};
-
-const cardTitleStyle: React.CSSProperties = {
-  fontSize: 18, fontWeight: 800, color: '#e2e8f0', margin: 0,
-};
-
-const cardDescStyle: React.CSSProperties = {
-  fontSize: 12, color: '#64748b', margin: '2px 0 0',
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 13, fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: 8,
-};
-
-const inputStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid #1e1e2e',
-  borderRadius: 10,
-  padding: '10px 12px',
-  color: '#e2e8f0',
-  fontSize: 16,
-  fontWeight: 700,
-  width: '100%',
-  textAlign: 'center' as const,
-  outline: 'none',
-};

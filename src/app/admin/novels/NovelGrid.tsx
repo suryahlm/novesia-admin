@@ -102,202 +102,247 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
   const hasFilters = search || statusFilter !== "all" || genreFilter !== "all";
 
   return (
-    <>
-      {/* ═══ Filter Bar ═══ */}
-      <div className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4 space-y-3">
+    <div className="space-y-6">
+      {/* ═══ Luxury Filter Bar ═══ */}
+      <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-5 shadow-2xl shadow-black/60 space-y-4">
         {/* Row 1: Search + Sort */}
-        <div className="flex gap-3 items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari novel..."
+              placeholder="Cari judul novel atau slug..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-800/80 border border-gray-700/50 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
+              className="w-full pl-10 pr-10 py-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all shadow-inner"
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-                <X className="w-4 h-4 text-gray-500 hover:text-white" />
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 hover:bg-white/[0.08] rounded-full text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-2.5 bg-gray-800/80 border border-gray-700/50 rounded-xl text-sm text-gray-300 focus:outline-none focus:border-violet-500/50 cursor-pointer"
-          >
-            <option value="newest">Terbaru</option>
-            <option value="chapters">Terbanyak Chapter</option>
-            <option value="title">A-Z</option>
-          </select>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="w-full sm:w-auto px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-violet-500/60 cursor-pointer shadow-inner"
+            >
+              <option value="newest" className="bg-slate-900 text-slate-200">
+                ✨ Terbaru
+              </option>
+              <option value="chapters" className="bg-slate-900 text-slate-200">
+                📚 Terbanyak Chapter
+              </option>
+              <option value="title" className="bg-slate-900 text-slate-200">
+                🔤 Abjad (A - Z)
+              </option>
+            </select>
+          </div>
         </div>
 
-        {/* Row 2: Status + Genre */}
-        <div className="flex gap-2 items-center flex-wrap">
-          {/* Status pills */}
-          <div className="flex gap-1.5">
+        {/* Row 2: Status + Genre + Count */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.05]">
+          {/* Status Pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
             {[
-              { key: "all" as const, label: "Semua", color: "violet" },
-              { key: "draft" as const, label: "Draft", color: "amber" },
-              { key: "ongoing" as const, label: "Ongoing", color: "blue" },
-              { key: "completed" as const, label: "Tamat", color: "emerald" },
+              { key: "all" as const, label: "Semua" },
+              { key: "draft" as const, label: "Draft" },
+              { key: "ongoing" as const, label: "Ongoing" },
+              { key: "completed" as const, label: "Completed" },
             ].map((s) => {
-              const count = s.key === "draft" ? novels.filter(n => n.status === "draft").length : 0;
+              const count =
+                s.key === "draft" ? novels.filter((n) => n.status === "draft").length : 0;
+              const isSelected = statusFilter === s.key;
+
               return (
+                <button
+                  key={s.key}
+                  onClick={() => setStatusFilter(s.key)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                    isSelected
+                      ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/30 border border-violet-400/40"
+                      : "bg-white/[0.03] text-slate-400 hover:text-slate-200 hover:bg-white/[0.07] border border-white/[0.05]"
+                  }`}
+                >
+                  {s.label}
+                  {s.key === "draft" && count > 0 ? ` (${count})` : ""}
+                </button>
+              );
+            })}
+
+            <div className="w-px h-5 bg-white/[0.08] mx-1 hidden sm:block" />
+
+            {/* Genre Filter */}
+            <select
+              value={genreFilter}
+              onChange={(e) => setGenreFilter(e.target.value)}
+              className="px-3.5 py-1.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs font-semibold text-slate-300 focus:outline-none focus:border-violet-500/60 cursor-pointer max-w-[180px]"
+            >
+              <option value="all" className="bg-slate-900">
+                Semua Genre
+              </option>
+              {allGenres.map((g) => (
+                <option key={g} value={g} className="bg-slate-900">
+                  {g}
+                </option>
+              ))}
+            </select>
+
+            {hasFilters && (
               <button
-                key={s.key}
-                onClick={() => setStatusFilter(s.key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  statusFilter === s.key
-                    ? s.color === "violet"
-                      ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
-                      : s.color === "amber"
-                      ? "bg-amber-600 text-white shadow-lg shadow-amber-500/20"
-                      : s.color === "blue"
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                      : "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
-                    : "bg-gray-800/80 text-gray-400 hover:text-white hover:bg-gray-700/80"
-                }`}
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                  setGenreFilter("all");
+                }}
+                className="px-3 py-1.5 text-xs font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition-all cursor-pointer"
               >
-                {s.label}{s.key === "draft" && count > 0 ? ` (${count})` : ""}
+                ✕ Reset
               </button>
-            );})}
+            )}
           </div>
 
-          <div className="w-px h-6 bg-gray-700/50 mx-1" />
-
-          {/* Genre dropdown */}
-          <select
-            value={genreFilter}
-            onChange={(e) => setGenreFilter(e.target.value)}
-            className="px-3 py-1.5 bg-gray-800/80 border border-gray-700/50 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-violet-500/50 cursor-pointer max-w-[200px]"
-          >
-            <option value="all">Semua Genre</option>
-            {allGenres.map((g) => (
-              <option key={g} value={g}>{g}</option>
-            ))}
-          </select>
-
-          {/* Clear filters */}
-          {hasFilters && (
-            <button
-              onClick={() => { setSearch(""); setStatusFilter("all"); setGenreFilter("all"); }}
-              className="px-3 py-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
-            >
-              ✕ Reset
-            </button>
-          )}
-
-          {/* Result count */}
-          <span className="ml-auto text-xs text-gray-500">
-            {filtered.length} novel
-          </span>
+          <div className="text-xs font-semibold text-slate-400">
+            Menampilkan <span className="text-violet-300 font-bold">{filtered.length}</span> novel
+          </div>
         </div>
       </div>
 
-      {/* ═══ Novel Grid ═══ */}
+      {/* ═══ Luxury Novel Grid ═══ */}
       {filtered.length === 0 ? (
-        <div className="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-12 text-center">
-          <BookOpen className="w-12 h-12 text-gray-700 mx-auto" />
-          <p className="text-gray-500 mt-4">
-            {hasFilters ? "Tidak ada novel yang cocok dengan filter." : "Belum ada novel."}
+        <div className="bg-[#0c101c]/80 border border-white/[0.08] rounded-3xl p-16 text-center shadow-xl">
+          <BookOpen className="w-14 h-14 text-slate-700 mx-auto" />
+          <p className="text-slate-400 mt-4 text-sm font-medium">
+            {hasFilters ? "Tidak ada novel yang sesuai dengan filter." : "Belum ada novel di katalog."}
           </p>
           {hasFilters && (
             <button
-              onClick={() => { setSearch(""); setStatusFilter("all"); setGenreFilter("all"); }}
-              className="text-violet-400 text-sm mt-2 hover:underline"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+                setGenreFilter("all");
+              }}
+              className="text-violet-400 text-xs font-bold mt-3 hover:underline"
             >
-              Reset filter →
+              Reset Filter Pencarian →
             </button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-          {filtered.map((novel) => (
-            <Link
-              key={novel.id}
-              href={`/admin/novels/${novel.nu_slug}`}
-              className="group bg-gray-900/50 border border-gray-800/50 rounded-2xl overflow-hidden hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-300"
-            >
-              <div className="aspect-[3/4] relative overflow-hidden bg-gray-800">
-                {novel.cover_url ? (
-                  <img
-                    src={novel.cover_url}
-                    alt={novel.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      // Hide the broken image icon and show fallback background
-                      e.currentTarget.style.display = 'none';
-                      if (e.currentTarget.nextElementSibling) {
-                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-                      }
-                    }}
-                  />
-                ) : null}
-                <div 
-                  className="w-full h-full items-center justify-center absolute inset-0 z-0 bg-gray-800" 
-                  style={{ display: novel.cover_url ? 'none' : 'flex' }}
-                >
-                  <BookOpen className="w-12 h-12 text-gray-700" />
-                </div>
-                {novel.rating && (
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-amber-400">
-                    ★ {novel.rating}
-                  </div>
-                )}
-                {novel.original_status && (
-                  <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-sm ${
-                    novel.original_status.toLowerCase().includes("completed")
-                      ? "bg-emerald-500/20 text-emerald-300"
-                      : "bg-blue-500/20 text-blue-300"
-                  }`}>
-                    {novel.original_status.toLowerCase().includes("completed") ? "Tamat" : "Ongoing"}
-                  </div>
-                )}
-                <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[9px] font-bold text-emerald-400 uppercase">
-                  {novel.source || "general"}
-                </div>
-                {novel.status === "draft" && (
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-lg rotate-[-12deg]">
-                    DRAFT
-                  </div>
-                )}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+          {filtered.map((novel) => {
+            const isDraft = novel.status === "draft";
+            const isCompleted = (novel.original_status || "").toLowerCase().includes("completed");
 
-                {/* Delete Button */}
-                <button
-                  onClick={(e) => handleDelete(e, novel)}
-                  disabled={deletingId === novel.id}
-                  className="absolute top-3 right-3 p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg backdrop-blur-md border border-red-500/20 transition-all opacity-0 group-hover:opacity-100 z-10"
-                  title="Hapus Novel"
-                >
-                  {deletingId === novel.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-              <div className="p-4 space-y-2">
-                <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:text-violet-300 transition-colors">
-                  {novel.title}
-                </h3>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>{novel.total_chapters || 0} ch</span>
-                  <span>{novel.novel_type || "Novel"}</span>
-                </div>
-                {novel.genres && novel.genres.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {novel.genres.slice(0, 3).map((genre: string) => (
-                      <span key={genre} className="px-2 py-0.5 bg-gray-800/80 rounded-md text-[10px] text-gray-400">
-                        {genre}
-                      </span>
-                    ))}
+            return (
+              <Link
+                key={novel.id}
+                href={`/admin/novels/${novel.nu_slug}`}
+                className="group bg-[#0c101c]/70 border border-white/[0.06] hover:border-violet-500/40 rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-violet-500/10 hover:-translate-y-1 transition-all duration-300 flex flex-col relative"
+              >
+                {/* Cover Image Container */}
+                <div className="aspect-[3/4.2] relative overflow-hidden bg-slate-900">
+                  {novel.cover_url ? (
+                    <img
+                      src={novel.cover_url}
+                      alt={novel.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        if (e.currentTarget.nextElementSibling) {
+                          (e.currentTarget.nextElementSibling as HTMLElement).style.display = "flex";
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="w-full h-full items-center justify-center absolute inset-0 z-0 bg-slate-900"
+                    style={{ display: novel.cover_url ? "none" : "flex" }}
+                  >
+                    <BookOpen className="w-10 h-10 text-slate-700" />
                   </div>
-                )}
-              </div>
-            </Link>
-          ))}
+
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0c101c] via-transparent to-black/40 opacity-80 group-hover:opacity-90 transition-opacity" />
+
+                  {/* Rating Badge */}
+                  {novel.rating && (
+                    <div className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-lg text-[10px] font-bold text-amber-300 border border-amber-500/30 flex items-center gap-1 shadow-md">
+                      <span>★</span>
+                      <span>{novel.rating}</span>
+                    </div>
+                  )}
+
+                  {/* Status Badge */}
+                  <div
+                    className={`absolute top-2.5 left-2.5 px-2 py-0.5 rounded-lg text-[9px] font-extrabold uppercase backdrop-blur-md border ${
+                      isCompleted
+                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                        : "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                    }`}
+                  >
+                    {isCompleted ? "Tamat" : "Ongoing"}
+                  </div>
+
+                  {/* Draft Watermark */}
+                  {isDraft && (
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500/90 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-black text-black shadow-2xl rotate-[-12deg] tracking-wider">
+                      DRAFT
+                    </div>
+                  )}
+
+                  {/* Source Badge */}
+                  <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded text-[8px] font-bold text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
+                    {novel.source || "general"}
+                  </div>
+
+                  {/* Delete Button Hover */}
+                  <button
+                    onClick={(e) => handleDelete(e, novel)}
+                    disabled={deletingId === novel.id}
+                    className="absolute top-2.5 right-2.5 p-1.5 bg-rose-500/80 hover:bg-rose-600 text-white rounded-lg backdrop-blur-md border border-rose-400 transition-all opacity-0 group-hover:opacity-100 z-10 shadow-lg cursor-pointer"
+                    title="Hapus Novel"
+                  >
+                    {deletingId === novel.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Card Info */}
+                <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-bold text-xs sm:text-sm text-slate-100 leading-snug line-clamp-2 group-hover:text-violet-300 transition-colors">
+                      {novel.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-medium mt-1">
+                      {novel.total_chapters || 0} Chapter
+                    </p>
+                  </div>
+
+                  {novel.genres && novel.genres.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {novel.genres.slice(0, 2).map((genre: string) => (
+                        <span
+                          key={genre}
+                          className="px-2 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-md text-[9px] font-semibold text-slate-400"
+                        >
+                          {genre}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
 
@@ -308,10 +353,10 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
         onConfirm={confirmDelete}
         loading={!!deletingId}
         title="Hapus Novel?"
-        description={`Novel "${targetNovel?.title}" akan dihapus secara permanen beserta semua chapter dan cover di R2.`}
+        description={`Novel "${targetNovel?.title}" akan dihapus secara permanen beserta semua chapter dan aset di R2.`}
         confirmText="Hapus Permanen"
         cancelText="Batal"
       />
-    </>
+    </div>
   );
 }
