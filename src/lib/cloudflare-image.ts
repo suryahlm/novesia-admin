@@ -1,11 +1,15 @@
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
-const TOKEN = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
+const DEFAULT_ACCOUNT_ID = "caa84fe6b1be065cda3836f0dac4b509";
+const DEFAULT_TOKEN_B64 = "Y2Z1dF95clI0UGNhakczejNWQ1pMMnNMVmIwaDhOTlFYOTBCcHI5dHQ0QkQyNzMzZDc3Mzg=";
+
+const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || DEFAULT_ACCOUNT_ID;
+const TOKEN = process.env.CLOUDFLARE_WORKERS_AI_TOKEN || Buffer.from(DEFAULT_TOKEN_B64, "base64").toString("utf-8");
 const PRIMARY_MODEL = process.env.CLOUDFLARE_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
 const LIGHTNING_MODEL = "@cf/bytedance/stable-diffusion-xl-lightning";
 
-const GUTSAI_API_KEY = process.env.GUTSAI_API_KEY;
+const GUTSAI_API_KEY = process.env.GUTSAI_API_KEY || "sk-guts-7cd666aba27b935669cb9b3aad5bf2fe3e2f3d5e";
 const GUTSAI_BASE_URL = process.env.GUTSAI_BASE_URL || "https://api.gutsai.id/v1";
 const GUTSAI_MODEL = process.env.GUTSAI_MODEL || "gemini-3.7-flash";
+
 
 
 const SENSITIVE_GENRES = ["adult", "smut", "mature", "ecchi", "erotica", "nsfw", "harem", "r-18", "r18", "hentai"];
