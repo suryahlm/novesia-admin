@@ -43,6 +43,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
   const [novel, setNovel] = useState(initialNovel);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [generatingCover, setGeneratingCover] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [translatingSynopsis, setTranslatingSynopsis] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -78,13 +79,17 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
     try {
       const body: any = {
         title: novel.title,
+        author: novel.author,
+        genres: novel.genres,
         synopsis: novel.synopsis,
         synopsis_translated: novel.synopsis_translated,
-        genres: novel.genres,
-        author: novel.author,
-        status: publishStatus || novel.status || "draft",
+        novel_type: novel.novel_type,
         original_status: novel.original_status,
       };
+
+      if (publishStatus) {
+        body.status = publishStatus;
+      }
 
       const res = await fetch(`/api/novels/${novel.id}`, {
         method: "PUT",
@@ -130,6 +135,33 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
       showMsg("err", e.message);
     } finally {
       setUploading(false);
+    }
+  };
+
+  // === AUTO GENERATE COVER AI ===
+  const handleGenerateCover = async () => {
+    setGeneratingCover(true);
+    try {
+      showMsg("ok", "🎨 Sedang membuat cover dengan AI FLUX, mohon tunggu sebentar...");
+      const res = await fetch(`/api/novels/${novel.id}/cover/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Gagal generate cover AI.");
+
+      setNovel((prev: any) => ({
+        ...prev,
+        cover_url: data.cover_url,
+        cover_r2_key: data.cover_r2_key,
+      }));
+      showMsg("ok", "🎉 Cover AI berhasil dibuat dan disimpan!");
+    } catch (e: any) {
+      showMsg("err", e.message);
+    } finally {
+      setGeneratingCover(false);
     }
   };
 
@@ -547,9 +579,17 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                 </div>
               )}
 
-              {uploading && (
-                <div className="absolute inset-0 bg-black/80 flex items-center justify-center backdrop-blur-sm">
-                  <Loader2 className="w-7 h-7 text-violet-400 animate-spin" />
+              {(uploading || generatingCover) && (
+                <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center gap-2 backdrop-blur-sm p-4 text-center z-20">
+                  <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+                  <span className="text-xs font-bold text-amber-200">
+                    {generatingCover ? "Membuat Cover AI..." : "Mengunggah Cover..."}
+                  </span>
+                  {generatingCover && (
+                    <span className="text-[10px] text-slate-400 max-w-[130px]">
+                      Rendering FLUX model...
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -564,12 +604,32 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
 
             <button
               onClick={() => fileRef.current?.click()}
-              className="w-full py-2.5 px-3 bg-white/[0.04] hover:bg-violet-600/20 border border-white/[0.08] hover:border-violet-500/40 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              disabled={uploading || generatingCover}
+              className="w-full py-2.5 px-3 bg-white/[0.04] hover:bg-violet-600/20 border border-white/[0.08] hover:border-violet-500/40 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
             >
               <Upload className="w-3.5 h-3.5 text-violet-400" />
               <span>Pilih File Cover</span>
             </button>
+
+            <button
+              onClick={handleGenerateCover}
+              disabled={generatingCover || uploading}
+              className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500/20 via-violet-600/25 to-indigo-600/25 hover:from-amber-500/35 hover:via-violet-600/35 hover:to-indigo-600/35 border border-amber-500/30 hover:border-amber-400/60 text-amber-300 hover:text-amber-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50"
+            >
+              {generatingCover ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 text-amber-300 animate-spin" />
+                  <span>Membuat Cover AI...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>✨ Generate Cover AI</span>
+                </>
+              )}
+            </button>
           </div>
+
 
           {/* Editable Metadata Fields */}
           <div className="flex-1 space-y-5">

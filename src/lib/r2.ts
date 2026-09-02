@@ -19,9 +19,9 @@ const PUBLIC_URL = process.env.R2_PUBLIC_URL!;
 export async function uploadCoverToR2(
   imageBuffer: Buffer,
   filename: string,
-  prefix: string = "nu"
+  prefix?: string
 ): Promise<{ r2Key: string; publicUrl: string } | null> {
-  const r2Key = `${prefix}/covers/${filename}`;
+  const r2Key = prefix ? `${prefix}/${filename}` : filename;
   try {
     await s3.send(
       new PutObjectCommand({
@@ -33,6 +33,7 @@ export async function uploadCoverToR2(
       })
     );
     return { r2Key, publicUrl: `${PUBLIC_URL}/${r2Key}` };
+
   } catch (err) {
     console.error("R2 upload error:", err);
     return null;

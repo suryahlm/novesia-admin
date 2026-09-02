@@ -22,12 +22,16 @@ interface Novel {
 export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }) {
   const [novels, setNovels] = useState(initialNovels);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "ongoing" | "completed">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "ongoing" | "completed" | "no_cover">("all");
   const [genreFilter, setGenreFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"newest" | "chapters" | "title">("newest");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [targetNovel, setTargetNovel] = useState<Novel | null>(null);
+
+  const noCoverCount = useMemo(() => {
+    return novels.filter((n) => !n.cover_url || n.cover_url.trim() === "").length;
+  }, [novels]);
 
   const handleDelete = (e: React.MouseEvent, novel: Novel) => {
     e.preventDefault();
@@ -74,9 +78,12 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
       );
     }
 
-    // Status
+    // Status & Cover
     if (statusFilter !== "all") {
       result = result.filter((n) => {
+        if (statusFilter === "no_cover") {
+          return !n.cover_url || n.cover_url.trim() === "";
+        }
         if (statusFilter === "draft") return n.status === "draft";
         const s = (n.original_status || "").toLowerCase();
         if (statusFilter === "completed") return s.includes("completed");
@@ -100,6 +107,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
   }, [novels, search, statusFilter, genreFilter, sortBy]);
 
   const hasFilters = search || statusFilter !== "all" || genreFilter !== "all";
+
 
   return (
     <div className="space-y-6">
@@ -154,26 +162,45 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
               { key: "draft" as const, label: "Draft" },
               { key: "ongoing" as const, label: "Ongoing" },
               { key: "completed" as const, label: "Completed" },
+              { key: "no_cover" as const, label: "🖼️ Tanpa Cover" },
             ].map((s) => {
-              const count =
-                s.key === "draft" ? novels.filter((n) => n.status === "draft").length : 0;
+              let count = 0;
+              if (s.key === "draft") count = novels.filter((n) => n.status === "draft").length;
+              if (s.key === "no_cover") count = noCoverCount;
               const isSelected = statusFilter === s.key;
 
               return (
                 <button
                   key={s.key}
                   onClick={() => setStatusFilter(s.key)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/30 border border-violet-400/40"
+                      ? s.key === "no_cover"
+                        ? "bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-lg shadow-rose-500/30 border border-amber-400/40"
+                        : "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/30 border border-violet-400/40"
+                      : s.key === "no_cover" && count > 0
+                      ? "bg-amber-500/10 text-amber-300 hover:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
                       : "bg-white/[0.03] text-slate-400 hover:text-slate-200 hover:bg-white/[0.07] border border-white/[0.05]"
                   }`}
                 >
-                  {s.label}
-                  {s.key === "draft" && count > 0 ? ` (${count})` : ""}
+                  <span>{s.label}</span>
+                  {count > 0 && (s.key === "draft" || s.key === "no_cover") && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                        isSelected
+                          ? "bg-black/30 text-white"
+                          : s.key === "no_cover"
+                          ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          : "bg-violet-500/20 text-violet-300 border border-violet-500/30"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  )}
                 </button>
               );
             })}
+
 
             <div className="w-px h-5 bg-white/[0.08] mx-1 hidden sm:block" />
 
