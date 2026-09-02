@@ -52,6 +52,7 @@ export async function buildNovelCoverPrompt(
         "Content-Type": "application/json",
         Authorization: `Bearer ${GUTSAI_API_KEY}`,
       },
+      signal: AbortSignal.timeout(4000),
       body: JSON.stringify({
         model: GUTSAI_MODEL,
         messages: [
@@ -107,6 +108,7 @@ async function callCloudflareWorkersAI(model: string, prompt: string): Promise<B
       Authorization: `Bearer ${TOKEN}`,
       "Content-Type": "application/json",
     },
+    signal: AbortSignal.timeout(10000),
     body: JSON.stringify({
       prompt,
       steps: 4,
@@ -135,7 +137,9 @@ async function callPollinations(prompt: string, width: number, height: number): 
   
   const res = await fetch(url, {
     headers: { "User-Agent": "NovesiaAdmin/2.0" },
+    signal: AbortSignal.timeout(10000),
   });
+
 
   if (!res.ok) {
     throw new Error(`Pollinations gagal: HTTP ${res.status}`);
