@@ -161,22 +161,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ═══ Main Content Viewport ═══ */}
-      <div className="flex-1 ml-72 flex flex-col min-h-screen">
+      <div className="flex-1 ml-72 flex flex-col min-h-screen min-w-0 max-w-[calc(100vw-18rem)] overflow-x-hidden">
         {/* Top Header Bar */}
-        <header className="h-16 sticky top-0 z-20 bg-[#07090e]/70 backdrop-blur-xl border-b border-white/[0.06] px-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-400">Admin</span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            <span className="text-xs font-bold text-slate-200 capitalize">
+        <header className="h-16 sticky top-0 z-20 bg-[#07090e]/80 backdrop-blur-xl border-b border-white/[0.06] px-4 sm:px-8 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className="text-xs font-semibold text-slate-400 shrink-0">Admin</span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+            <span className="text-xs font-bold text-slate-200 capitalize truncate">
               {pathname === "/admin"
                 ? "Overview Dashboard"
                 : pathname.split("/").filter(Boolean).slice(1).join(" / ") || "Page"}
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 shrink-0">
             {/* Quick Live Status Pill */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-medium text-slate-300 shadow-inner">
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-medium text-slate-300 shadow-inner">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400" />
               <span>Guts AI Gemini 3.7 Flash</span>
             </div>
@@ -184,16 +184,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Quick Add Button */}
             <Link
               href="/admin/novels/new"
-              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-violet-500/25 transition-all flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98]"
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-violet-500/25 transition-all flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] shrink-0"
             >
               <BookPlus className="w-3.5 h-3.5" />
-              <span>+ Novel Baru</span>
+              <span className="hidden sm:inline">+ Novel Baru</span>
+              <span className="sm:hidden">+ Baru</span>
             </Link>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-8">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-full min-w-0">{children}</main>
       </div>
     </div>
   );

@@ -320,7 +320,7 @@ export default function EditNovelPage() {
       </div>
 
       {/* Novel List Container */}
-      <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl shadow-black/70">
+      <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl shadow-black/70 w-full min-w-0">
         {loading ? (
           <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="w-7 h-7 animate-spin text-violet-400" />
@@ -342,114 +342,119 @@ export default function EditNovelPage() {
               return (
                 <div
                   key={novel.id}
-                  className={`flex items-center gap-4 px-6 py-4 transition-all duration-200 ${
+                  className={`flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-5 py-3.5 transition-all duration-200 min-w-0 ${
                     isSelected
                       ? "bg-violet-600/15 border-l-4 border-l-violet-400"
                       : "hover:bg-white/[0.02] border-l-4 border-l-transparent"
                   }`}
                 >
-                  {/* Checkbox */}
-                  <button
-                    onClick={() => toggleSelect(novel.id)}
-                    className={`shrink-0 transition-colors cursor-pointer ${
-                      isSelected ? "text-violet-400" : "text-slate-600 hover:text-slate-400"
-                    }`}
-                  >
-                    {isSelected ? (
-                      <CheckSquare className="w-5 h-5" />
-                    ) : (
-                      <Square className="w-5 h-5" />
-                    )}
-                  </button>
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                    {/* Checkbox */}
+                    <button
+                      onClick={() => toggleSelect(novel.id)}
+                      className={`shrink-0 transition-colors cursor-pointer p-1 ${
+                        isSelected ? "text-violet-400" : "text-slate-600 hover:text-slate-400"
+                      }`}
+                    >
+                      {isSelected ? (
+                        <CheckSquare className="w-5 h-5" />
+                      ) : (
+                        <Square className="w-5 h-5" />
+                      )}
+                    </button>
 
-                  {/* Cover */}
-                  <div className="w-12 h-16 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-white/[0.08] relative shadow-md">
-                    {novel.cover_url ? (
-                      <img
-                        src={novel.cover_url}
-                        alt={novel.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-700">
-                        <BookOpen className="w-5 h-5" />
-                      </div>
-                    )}
-                  </div>
+                    {/* Cover */}
+                    <div className="w-10 h-14 sm:w-12 sm:h-16 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-white/[0.08] relative shadow-md">
+                      {novel.cover_url ? (
+                        <img
+                          src={novel.cover_url}
+                          alt={novel.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-700">
+                          <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-xs sm:text-sm text-slate-100 truncate">
-                      {novel.title}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <span className="text-xs text-slate-400 font-mono">
-                        {novel.total_chapters || 0} ch
-                      </span>
-                      <span className="text-slate-600 text-xs">•</span>
-                      <span className="text-xs text-slate-400 truncate max-w-[150px]">
-                        {novel.author || "—"}
-                      </span>
-                      <span className="text-slate-600 text-xs">•</span>
-                      <span
-                        className={`text-[9px] px-2 py-0.5 rounded font-extrabold uppercase ${
-                          novel.status === "active"
-                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                            : novel.status === "draft"
-                            ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                            : "bg-slate-500/15 text-slate-400 border border-slate-500/30"
-                        }`}
-                      >
-                        {novel.status === "active"
-                          ? "Published"
-                          : novel.status === "draft"
-                          ? "Draft"
-                          : novel.status}
-                      </span>
-                      {(novel.genres || []).slice(0, 2).map((g) => (
-                        <span
-                          key={g}
-                          className="text-[9px] px-2 py-0.5 bg-white/[0.04] text-slate-400 border border-white/[0.06] rounded-md font-semibold"
-                        >
-                          {g}
+                    {/* Info */}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-xs sm:text-sm text-slate-100 truncate">
+                        {novel.title}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1">
+                        <span className="text-[11px] sm:text-xs text-slate-400 font-mono">
+                          {novel.total_chapters || 0} ch
                         </span>
-                      ))}
+                        <span className="text-slate-600 text-[10px]">•</span>
+                        <span className="text-[11px] sm:text-xs text-slate-400 truncate max-w-[110px] sm:max-w-[160px]">
+                          {novel.author || "—"}
+                        </span>
+                        <span className="text-slate-600 text-[10px]">•</span>
+                        <span
+                          className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase ${
+                            novel.status === "active"
+                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                              : novel.status === "draft"
+                              ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                              : "bg-slate-500/15 text-slate-400 border border-slate-500/30"
+                          }`}
+                        >
+                          {novel.status === "active"
+                            ? "Published"
+                            : novel.status === "draft"
+                            ? "Draft"
+                            : novel.status}
+                        </span>
+                        {(novel.genres || []).slice(0, 2).map((g) => (
+                          <span
+                            key={g}
+                            className="hidden sm:inline-block text-[9px] px-1.5 py-0.5 bg-white/[0.04] text-slate-400 border border-white/[0.06] rounded-md font-semibold"
+                          >
+                            {g}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Source Badge */}
-                  <span className="text-[9px] px-2.5 py-1 bg-white/[0.03] border border-white/[0.06] text-emerald-400 rounded-lg font-bold uppercase shrink-0">
-                    {novel.source || "general"}
-                  </span>
+                  {/* Right Side: Source Badge & Action Buttons */}
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    {/* Source Badge */}
+                    <span className="text-[9px] px-2 py-1 bg-white/[0.03] border border-white/[0.06] text-emerald-400 rounded-lg font-bold uppercase hidden md:inline-block">
+                      {novel.source || "general"}
+                    </span>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Link
-                      href={`/admin/novels/${novel.nu_slug}`}
-                      className="p-2.5 rounded-xl bg-violet-600/15 text-violet-300 hover:bg-violet-600 hover:text-white border border-violet-500/30 transition-all cursor-pointer shadow-sm"
-                      title="Edit Studio Novel"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </Link>
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <Link
+                        href={`/admin/novels/${novel.nu_slug}`}
+                        className="p-2 sm:p-2.5 rounded-xl bg-violet-600/15 text-violet-300 hover:bg-violet-600 hover:text-white border border-violet-500/30 transition-all cursor-pointer shadow-sm"
+                        title="Edit Studio Novel"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </Link>
 
-                    <button
-                      onClick={() =>
-                        setConfirmModal({
-                          type: "single",
-                          novelId: novel.id,
-                          novelTitle: novel.title,
-                        })
-                      }
-                      disabled={isDeleting}
-                      className="p-2.5 rounded-xl bg-rose-500/15 text-rose-300 hover:bg-rose-600 hover:text-white border border-rose-500/30 transition-all cursor-pointer shadow-sm disabled:opacity-40"
-                      title="Hapus Novel"
-                    >
-                      {isDeleting ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </button>
+                      <button
+                        onClick={() =>
+                          setConfirmModal({
+                            type: "single",
+                            novelId: novel.id,
+                            novelTitle: novel.title,
+                          })
+                        }
+                        disabled={isDeleting}
+                        className="p-2 sm:p-2.5 rounded-xl bg-rose-500/15 text-rose-300 hover:bg-rose-600 hover:text-white border border-rose-500/30 transition-all cursor-pointer shadow-sm disabled:opacity-40"
+                        title="Hapus Novel"
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
