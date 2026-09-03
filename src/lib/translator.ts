@@ -50,45 +50,56 @@ export async function translateText(
 
   const systemPrompt = type === "synopsis" ? SYNOPSIS_SYSTEM_PROMPT : CHAPTER_SYSTEM_PROMPT;
 
-  // Try Guts AI first (Gemini 3.7 Flash)
+  // Try Guts AI first (Gemini 3.7 Flash) with smart retry
   if (GUTSAI_API_KEY) {
-    try {
-      const endpoint = `${GUTSAI_BASE_URL.replace(/\/+$/, "")}/chat/completions`;
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${GUTSAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: GUTSAI_MODEL,
-          temperature: 0.35,
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content:
-                type === "synopsis"
-                  ? `Terjemahkan sinopsis berikut ke Bahasa Indonesia:\n\n${text.trim()}`
-                  : `Terjemahkan teks novel berikut ke Bahasa Indonesia:\n\n${text.trim()}`,
-            },
-          ],
-        }),
-        signal: AbortSignal.timeout(120_000),
-      });
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const endpoint = `${GUTSAI_BASE_URL.replace(/\/+$/, "")}/chat/completions`;
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${GUTSAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: GUTSAI_MODEL,
+            temperature: 0.35,
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content:
+                  type === "synopsis"
+                    ? `Terjemahkan sinopsis berikut ke Bahasa Indonesia:\n\n${text.trim()}`
+                    : `Terjemahkan teks novel berikut ke Bahasa Indonesia:\n\n${text.trim()}`,
+              },
+            ],
+          }),
+          signal: AbortSignal.timeout(120_000),
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content?.trim();
-        if (content && content.length > 0) {
-          return content;
+        if (response.ok) {
+          const data = await response.json();
+          const content = data.choices?.[0]?.message?.content?.trim();
+          if (content && content.length > 0) {
+            return content;
+          }
+        } else {
+          const errText = await response.text();
+          console.warn(`[GutsAI] Attempt ${attempt} returned HTTP ${response.status}:`, errText);
+          if (response.status === 429 && attempt === 1) {
+            // Wait 2.5s for GutsAI cooldown before 2nd attempt
+            await new Promise((r) => setTimeout(r, 2500));
+            continue;
+          }
         }
-      } else {
-        const errText = await response.text();
-        console.warn(`[GutsAI] Translation returned HTTP ${response.status}:`, errText);
+      } catch (err) {
+        console.warn(`[GutsAI] Attempt ${attempt} error:`, err);
+        if (attempt === 1) {
+          await new Promise((r) => setTimeout(r, 2000));
+          continue;
+        }
       }
-    } catch (err) {
-      console.warn("[GutsAI] Translation error, falling back to Groq:", err);
     }
   }
 

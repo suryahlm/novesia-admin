@@ -65,7 +65,12 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
 
   // Batch Translation State
   const [batchTranslating, setBatchTranslating] = useState(false);
-  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; chNum: number } | null>(null);
+  const [batchProgress, setBatchProgress] = useState<{
+    current: number;
+    total: number;
+    chNum: number;
+    statusText?: string;
+  } | null>(null);
   const abortBatchRef = useRef(false);
 
   const showMsg = (type: "ok" | "err", text: string) => {
@@ -406,6 +411,8 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
     setBatchTranslating(true);
     abortBatchRef.current = false;
     let completedCount = 0;
+    const failedList: number[] = [];
+    const MAX_RETRIES = 3;
 
     for (let i = 0; i < pendingList.length; i++) {
       if (abortBatchRef.current) {
@@ -414,62 +421,108 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
       }
 
       const ch = pendingList[i];
-      setBatchProgress({ current: i + 1, total: pendingList.length, chNum: ch.chapter_number });
+      let chapterSuccess = false;
 
-      try {
-        const res = await fetch("/api/translate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: ch.content_original,
-            type: "chapter",
-          }),
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        if (abortBatchRef.current) break;
+
+        setBatchProgress({
+          current: i + 1,
+          total: pendingList.length,
+          chNum: ch.chapter_number,
+          statusText: attempt > 1 ? `Retry ${attempt}/${MAX_RETRIES}...` : undefined,
         });
-        const data = await res.json();
 
-        if (res.ok && data.success && data.translatedText) {
-          const trans = data.translatedText;
-          // Save directly to DB
-          await fetch(`/api/chapters/${novel.id}/${ch.id}`, {
-            method: "PUT",
+        try {
+          const res = await fetch("/api/translate", {
+            method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              content_translated: trans,
+              text: ch.content_original,
+              type: "chapter",
             }),
           });
+          const data = await res.json();
 
-          // Update local state in chapter list
-          setChapters((prev) =>
-            prev.map((item) =>
-              item.id === ch.id
-                ? {
-                    ...item,
-                    content_translated: trans,
-                    word_count_translated: trans.split(/\s+/).filter(Boolean).length,
-                    translation_status: "done",
-                  }
-                : item
-            )
-          );
+          if (res.ok && data.success && data.translatedText) {
+            const trans = data.translatedText;
+            // Save directly to DB
+            await fetch(`/api/chapters/${novel.id}/${ch.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content_translated: trans,
+              }),
+            });
 
-          if (selectedChapter?.id === ch.id) {
-            setEditTranslated(trans);
+            // Update local state in chapter list
+            setChapters((prev) =>
+              prev.map((item) =>
+                item.id === ch.id
+                  ? {
+                      ...item,
+                      content_translated: trans,
+                      word_count_translated: trans.split(/\s+/).filter(Boolean).length,
+                      translation_status: "done",
+                    }
+                  : item
+              )
+            );
+
+            if (selectedChapter?.id === ch.id) {
+              setEditTranslated(trans);
+            }
+
+            completedCount++;
+            chapterSuccess = true;
+            break; // Success, exit retry loop
+          } else {
+            console.warn(`Chapter ${ch.chapter_number} attempt ${attempt} failed:`, data?.error || res.statusText);
+            if (attempt < MAX_RETRIES && !abortBatchRef.current) {
+              const waitSec = attempt * 3;
+              setBatchProgress({
+                current: i + 1,
+                total: pendingList.length,
+                chNum: ch.chapter_number,
+                statusText: `Cooldown ${waitSec}s (Retry ${attempt + 1})...`,
+              });
+              await new Promise((r) => setTimeout(r, waitSec * 1000));
+            }
           }
-
-          completedCount++;
+        } catch (err) {
+          console.error(`Error translating chapter ${ch.chapter_number} attempt ${attempt}:`, err);
+          if (attempt < MAX_RETRIES && !abortBatchRef.current) {
+            const waitSec = attempt * 3;
+            setBatchProgress({
+              current: i + 1,
+              total: pendingList.length,
+              chNum: ch.chapter_number,
+              statusText: `Cooldown ${waitSec}s (Retry ${attempt + 1})...`,
+            });
+            await new Promise((r) => setTimeout(r, waitSec * 1000));
+          }
         }
-      } catch (err) {
-        console.error(`Error translating chapter ${ch.chapter_number}:`, err);
       }
 
-      // 1.5s delay to stay comfortably below 40 RPM limit
-      await new Promise((r) => setTimeout(r, 1500));
+      if (!chapterSuccess && !abortBatchRef.current) {
+        failedList.push(ch.chapter_number);
+      }
+
+      // Safe 1.6s delay between chapters (comfortable for 40 RPM quota)
+      await new Promise((r) => setTimeout(r, 1600));
     }
 
     setBatchTranslating(false);
     setBatchProgress(null);
     if (!abortBatchRef.current) {
-      showMsg("ok", `🎉 Selesai menerjemahkan ${completedCount}/${pendingList.length} chapter!`);
+      if (failedList.length === 0) {
+        showMsg("ok", `🎉 Sukses! Semua ${completedCount} chapter berhasil diterjemahkan!`);
+      } else {
+        showMsg(
+          "err",
+          `Selesai: ${completedCount} berhasil, ${failedList.length} gagal (Ch: ${failedList.slice(0, 5).join(", ")}${failedList.length > 5 ? "..." : ""})`
+        );
+      }
     }
   };
 
@@ -906,6 +959,12 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                             Stop
                           </button>
                         </div>
+                        {batchProgress?.statusText && (
+                          <div className="text-[10px] text-amber-300 font-mono flex items-center gap-1">
+                            <span>⏳</span>
+                            <span>{batchProgress.statusText}</span>
+                          </div>
+                        )}
                         <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                           <div
                             className="bg-amber-400 h-1.5 rounded-full transition-all duration-300"
