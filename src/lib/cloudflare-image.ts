@@ -1,8 +1,15 @@
-const DEFAULT_ACCOUNT_ID = "caa84fe6b1be065cda3836f0dac4b509";
-const DEFAULT_TOKEN_B64 = "Y2Z1dF95clI0UGNhakczejNWQ1pMMnNMVmIwaDhOTlFYOTBCcHI5dHQ0QkQyNzMzZDc3Mzg=";
+const DEFAULT_PRIMARY_ACCOUNT_ID = "b21629f3357c6e1850d6e9d61067a8c1";
+const DEFAULT_PRIMARY_TOKEN_B64 = "Y2Z1dF9ENXJZUnVyaUJPMWp5YTBDM0E2MDBoUHduVWM3SDhUcGIyM3Z6ZlZzMjcyNGEzOTk=";
 
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || DEFAULT_ACCOUNT_ID;
-const TOKEN = process.env.CLOUDFLARE_WORKERS_AI_TOKEN || Buffer.from(DEFAULT_TOKEN_B64, "base64").toString("utf-8");
+const DEFAULT_BACKUP_ACCOUNT_ID = "caa84fe6b1be065cda3836f0dac4b509";
+const DEFAULT_BACKUP_TOKEN_B64 = "Y2Z1dF95clI0UGNhakczejNWQ1pMMnNMVmIwaDhOTlFYOTBCcHI5dHQ0QkQyNzMzZDc3Mzg=";
+
+const PRIMARY_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || DEFAULT_PRIMARY_ACCOUNT_ID;
+const PRIMARY_TOKEN = process.env.CLOUDFLARE_WORKERS_AI_TOKEN || Buffer.from(DEFAULT_PRIMARY_TOKEN_B64, "base64").toString("utf-8");
+
+const BACKUP_ACCOUNT_ID = process.env.CLOUDFLARE_BACKUP_ACCOUNT_ID || DEFAULT_BACKUP_ACCOUNT_ID;
+const BACKUP_TOKEN = process.env.CLOUDFLARE_BACKUP_WORKERS_AI_TOKEN || Buffer.from(DEFAULT_BACKUP_TOKEN_B64, "base64").toString("utf-8");
+
 const PRIMARY_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 const LIGHTNING_MODEL = "@cf/bytedance/stable-diffusion-xl-lightning";
 
@@ -89,16 +96,16 @@ Write a concise 2D anime key visual cover prompt: Authentic Japanese light novel
 /**
  * Panggil Cloudflare Workers AI dengan format JSON yang valid.
  */
-async function callCloudflareWorkersAI(model: string, prompt: string): Promise<Buffer> {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/${model}`;
+async function callCloudflareWorkersAI(accountId: string, token: string, model: string, prompt: string): Promise<Buffer> {
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
 
   const res = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${TOKEN}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(12000),
     body: JSON.stringify({
       prompt,
       steps: 4,
@@ -120,53 +127,7 @@ async function callCloudflareWorkersAI(model: string, prompt: string): Promise<B
   return Buffer.from(payload.result.image, "base64");
 }
 
-const DEFAULT_SILICONFLOW_KEY_B64 = "c2steWxueXdwY3d4Ym5mY2draGZhZXh1aW9tdWx3b2dxZHBocW1sa211ZGNnamhyaWVk";
-const SILICONFLOW_API_KEY = process.env.SILICONFLOW_API_KEY || Buffer.from(DEFAULT_SILICONFLOW_KEY_B64, "base64").toString("utf-8");
-const SILICONFLOW_BASE_URL = process.env.SILICONFLOW_BASE_URL || "https://api.siliconflow.com/v1";
-
-/**
- * Panggil SiliconFlow FLUX.1-schnell dengan API Key resmi.
- */
-async function callSiliconFlow(prompt: string): Promise<Buffer> {
-  const url = `${SILICONFLOW_BASE_URL}/images/generations`;
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${SILICONFLOW_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    signal: AbortSignal.timeout(18000),
-    body: JSON.stringify({
-      model: "black-forest-labs/FLUX.1-schnell",
-      prompt,
-      image_size: "512x680",
-      num_inference_steps: 4,
-    }),
-  });
-
-  if (!res.ok) {
-    const errData = await res.json().catch(() => null);
-    throw new Error(`SiliconFlow (${res.status}): ${errData?.message || res.statusText}`);
-  }
-
-  const json = await res.json();
-  const imageUrl = json.images?.[0]?.url || json.data?.[0]?.url;
-  if (!imageUrl) {
-    throw new Error("SiliconFlow tidak mengembalikan URL gambar.");
-  }
-
-  const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(15000) });
-  if (!imgRes.ok) {
-    throw new Error("Gagal mengunduh gambar hasil render SiliconFlow.");
-  }
-
-  const arrayBuffer = await imgRes.arrayBuffer();
-  return Buffer.from(arrayBuffer);
-}
-
 async function callPollinations(prompt: string, width: number, height: number): Promise<Buffer> {
-  // Sanitize prompt for Pollinations - keep clean and concise
   const safeText = prompt
     .replace(/[^\w\s,.-]/gi, " ")
     .replace(/\s+/g, " ")
@@ -188,15 +149,11 @@ async function callPollinations(prompt: string, width: number, height: number): 
   return Buffer.from(arrayBuffer);
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /**
- * Generate image buffer menggunakan multi-tier provider:
- * 1. Cloudflare Workers AI FLUX
- * 2. SiliconFlow FLUX.1 Schnell (API Key Resmi)
- * 3. Cloudflare SDXL Lightning
+ * Generate image buffer menggunakan Multi-Tier Dual Cloudflare Account Pipeline:
+ * 1. Primary Cloudflare Account FLUX 1 Schnell (10.000 neuron baru)
+ * 2. Backup Cloudflare Account FLUX 1 Schnell (10.000 neuron)
+ * 3. Primary Cloudflare Account SDXL Lightning
  * 4. Pollinations (Cadangan Terakhir)
  */
 export async function generateCoverImageBuffer(
@@ -204,23 +161,23 @@ export async function generateCoverImageBuffer(
   width: number = 512,
   height: number = 680
 ): Promise<Buffer> {
-  // 1. Coba Cloudflare FLUX 1 Schnell
+  // 1. Coba Akun Utama Cloudflare FLUX 1 Schnell
   try {
-    return await callCloudflareWorkersAI(PRIMARY_MODEL, prompt);
+    return await callCloudflareWorkersAI(PRIMARY_ACCOUNT_ID, PRIMARY_TOKEN, PRIMARY_MODEL, prompt);
   } catch (err1: any) {
-    console.warn(`[ImageGen] Cloudflare ${PRIMARY_MODEL} error:`, err1?.message || err1);
+    console.warn(`[ImageGen] Akun Utama Cloudflare (${PRIMARY_MODEL}) error:`, err1?.message || err1);
   }
 
-  // 2. Coba SiliconFlow FLUX.1-schnell (Sangat Cepat & Stabil)
+  // 2. Coba Akun Cadangan Cloudflare FLUX 1 Schnell
   try {
-    return await callSiliconFlow(prompt);
+    return await callCloudflareWorkersAI(BACKUP_ACCOUNT_ID, BACKUP_TOKEN, PRIMARY_MODEL, prompt);
   } catch (err2: any) {
-    console.warn("[ImageGen] SiliconFlow error:", err2?.message || err2);
+    console.warn(`[ImageGen] Akun Cadangan Cloudflare (${PRIMARY_MODEL}) error:`, err2?.message || err2);
   }
 
   // 3. Coba Cloudflare SDXL Lightning
   try {
-    return await callCloudflareWorkersAI(LIGHTNING_MODEL, prompt);
+    return await callCloudflareWorkersAI(PRIMARY_ACCOUNT_ID, PRIMARY_TOKEN, LIGHTNING_MODEL, prompt);
   } catch (err3: any) {
     console.warn(`[ImageGen] Cloudflare ${LIGHTNING_MODEL} error:`, err3?.message || err3);
   }
@@ -233,5 +190,3 @@ export async function generateCoverImageBuffer(
     throw new Error(err4 instanceof Error ? err4.message : "Gagal men-generate gambar cover.");
   }
 }
-
-
