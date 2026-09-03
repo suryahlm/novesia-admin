@@ -15,7 +15,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
-type SourceKey = "novelworld" | "talesinthevalley" | "98novels" | "tinytranslation";
+type SourceKey = "novelworld" | "talesinthevalley" | "98novels" | "tinytranslation" | "cuttlefishreads";
 
 export default function UpdateScrapingPage() {
   const [isHovered, setIsHovered] = useState<string | null>(null);
@@ -31,6 +31,15 @@ export default function UpdateScrapingPage() {
     border: string;
     desc: string;
   }[] = [
+    {
+      id: "cuttlefishreads",
+      name: "Cuttlefish Engine",
+      icon: Cpu,
+      color: "from-amber-500 via-orange-500 to-yellow-400",
+      shadow: "shadow-amber-500/20",
+      border: "hover:border-amber-500/40",
+      desc: "Menangani sumber CuttlefishReads. Ekstraksi Next.js RSC & HTML dengan Cloudflare R2 otomatis.",
+    },
     {
       id: "98novels",
       name: "98Novels Engine",
@@ -62,9 +71,9 @@ export default function UpdateScrapingPage() {
       id: "tinytranslation",
       name: "TinyTranslation Sync",
       icon: CheckCircle2,
-      color: "from-amber-500 via-orange-500 to-yellow-400",
-      shadow: "shadow-amber-500/20",
-      border: "hover:border-amber-500/40",
+      color: "from-fuchsia-500 via-purple-500 to-indigo-400",
+      shadow: "shadow-fuchsia-500/20",
+      border: "hover:border-fuchsia-500/40",
       desc: "Sinkronisasi delta update eksklusif untuk TinyTranslation dengan penghematan bandwidth tinggi.",
     },
   ];

@@ -5,6 +5,9 @@ import { BookOpen, ArrowLeft } from "lucide-react";
 const SOURCE_META: Record<string, { label: string; icon: string; color: string }> = {
   novelworld: { label: "NovelWorld", icon: "📚", color: "text-emerald-400" },
   talesinthevalley: { label: "TalesInTheValley", icon: "⚔️", color: "text-blue-400" },
+  "98novels": { label: "98Novels", icon: "💎", color: "text-rose-400" },
+  tinytranslation: { label: "TinyTranslation", icon: "🍄", color: "text-purple-400" },
+  cuttlefishreads: { label: "CuttlefishReads", icon: "🦑", color: "text-amber-400" },
   transcendentaltls: { label: "TranscendentalTLS", icon: "📖", color: "text-orange-400" },
   general: { label: "General", icon: "🌐", color: "text-gray-400" },
 };
