@@ -18,12 +18,18 @@ async function getNovels() {
   const { data } = await supabase
     .from("nu_novels")
     .select("*")
+    .eq("is_blacklisted", false)
+    .in("status", ["active", "completed", "ongoing", "published", "draft"])
     .order("created_at", { ascending: false });
   return data || [];
 }
 
 async function getSourceCounts() {
-  const { data } = await supabase.from("nu_novels").select("source");
+  const { data } = await supabase
+    .from("nu_novels")
+    .select("source")
+    .eq("is_blacklisted", false)
+    .in("status", ["active", "completed", "ongoing", "published", "draft"]);
   const counts: Record<string, number> = {};
   (data || []).forEach((n: any) => {
     const src = n.source;

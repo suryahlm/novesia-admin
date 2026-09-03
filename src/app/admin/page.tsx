@@ -21,6 +21,7 @@ interface NovelItem {
   total_chapters: number;
   status: string | null;
   genres: string[] | null;
+  is_blacklisted?: boolean;
   total_views?: number;
   created_at: string;
   updated_at?: string;
@@ -30,7 +31,7 @@ async function getStats() {
   const [novelsRes, translatedRes] = await Promise.all([
     supabase
       .from("nu_novels")
-      .select("id, nu_slug, total_chapters, title, cover_url, genres, rating, created_at, updated_at, status, total_views")
+      .select("id, nu_slug, total_chapters, title, cover_url, genres, rating, created_at, updated_at, status, total_views, is_blacklisted")
       .order("updated_at", { ascending: false }),
     supabase
       .from("nu_chapter_content")
@@ -39,14 +40,20 @@ async function getStats() {
   ]);
 
   const novels: NovelItem[] = novelsRes.data || [];
-  const totalNovels = novels.length;
-  const totalChapters = novels.reduce((sum, n) => sum + (n.total_chapters || 0), 0);
+  
+  // Pisahkan novel aktif dan novel blacklist/dropped
+  const activeNovels = novels.filter(
+    (n) => !n.is_blacklisted && n.status !== "dropped" && n.status !== "blacklisted"
+  );
+  const totalActiveNovels = activeNovels.length;
+  const blacklistedCount = novels.length - totalActiveNovels;
+  const totalChapters = activeNovels.reduce((sum, n) => sum + (n.total_chapters || 0), 0);
   const totalTranslated = translatedRes.count || 0;
-  const totalViews = novels.reduce((sum, n) => sum + (n.total_views || 0), 0);
+  const totalViews = activeNovels.reduce((sum, n) => sum + (n.total_views || 0), 0);
 
-  // Genre counts
+  // Genre counts (hanya dari novel aktif)
   const genreMap: Record<string, number> = {};
-  novels.forEach((n) => {
+  activeNovels.forEach((n) => {
     (n.genres || []).forEach((g) => {
       const trimmed = g.trim();
       if (trimmed && trimmed.toLowerCase() !== "general") {
@@ -64,7 +71,7 @@ async function getStats() {
     ONGOING: 0,
     COMPLETED: 0,
     HIATUS: 0,
-    DROPPED: 0,
+    "DROPPED (BLACKLIST)": 0,
   };
 
   novels.forEach((n) => {
@@ -73,8 +80,8 @@ async function getStats() {
       statusCounts.COMPLETED++;
     } else if (s.includes("HIATUS")) {
       statusCounts.HIATUS++;
-    } else if (s.includes("DROP")) {
-      statusCounts.DROPPED++;
+    } else if (s.includes("DROP") || n.is_blacklisted) {
+      statusCounts["DROPPED (BLACKLIST)"]++;
     } else {
       statusCounts.ONGOING++;
     }
@@ -83,7 +90,8 @@ async function getStats() {
   const pendingChapters = Math.max(0, totalChapters - totalTranslated);
 
   return {
-    totalNovels,
+    totalActiveNovels,
+    blacklistedCount,
     totalChapters,
     totalTranslated,
     totalGenres,
@@ -91,7 +99,7 @@ async function getStats() {
     pendingChapters,
     statusCounts,
     topGenres,
-    recentNovels: novels.slice(0, 10),
+    recentNovels: activeNovels.slice(0, 10),
   };
 }
 
@@ -128,7 +136,8 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 export default async function DashboardPage() {
   const {
-    totalNovels,
+    totalActiveNovels,
+    blacklistedCount,
     totalChapters,
     totalTranslated,
     totalGenres,
@@ -143,7 +152,12 @@ export default async function DashboardPage() {
     <div className="space-y-4 max-w-7xl mx-auto">
       {/* ═══ 8 StatCards Grid (Komiku Style) ═══ */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={BookOpen} label="Novel" value={totalNovels.toLocaleString()} />
+        <StatCard
+          icon={BookOpen}
+          label="Novel Aktif"
+          value={totalActiveNovels.toLocaleString()}
+          sub={`${blacklistedCount} di-blacklist`}
+        />
         <StatCard icon={Layers} label="Chapter" value={totalChapters.toLocaleString()} />
         <StatCard icon={Tags} label="Genre" value={totalGenres.toLocaleString()} />
         <StatCard
