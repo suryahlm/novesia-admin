@@ -34,7 +34,7 @@ function sanitizeText(text: string): string {
 }
 
 /**
- * Otomatis membuat prompt ilustrasi cover Light Novel berkualitas tinggi & aman (PG-13)
+ * Otomatis membuat prompt ilustrasi cover Light Novel berkualitas tinggi bergaya 2D Anime Animator Profesional
  * berbasis judul, genre, dan ringkasan cerita menggunakan Gemini 3.7 Flash.
  */
 export async function buildNovelCoverPrompt(
@@ -59,21 +59,25 @@ export async function buildNovelCoverPrompt(
           {
             role: "system",
             content:
-              "You are an expert anime art director and prompt engineer for Japanese light novel book covers. Output a single, safe, highly aesthetic English prompt for text-to-image AI.",
+              "You are a master Japanese light novel art director (Kadokawa, Dengeki Bunko, Kyoto Animation). Your mission is to craft image prompts for AUTHENTIC HAND-DRAWN 2D ANIME ILLUSTRATIONS that look 100% created by top professional Japanese animators and official light novel illustrators, NEVER generic plastic AI art.",
           },
           {
             role: "user",
-            content: `Create an ultra-detailed image prompt for a Japanese light novel cover:
+            content: `Create an authentic 2D anime cover illustration prompt for a Japanese light novel:
 Title: "${title}"
 Genres: ${safeGenres}
-Theme/Story: ${cleanSynopsis}
+Story: ${cleanSynopsis}
 
-REQUIREMENTS:
-- Character art: Beautiful aesthetic anime character (expressive face, detailed hair and eyes, noble fantasy outfit, dynamic elegant pose).
-- Setting: Gorgeous immersive fantasy environment, cinematic atmospheric lighting, vibrant rich color palette.
-- Style: Masterpiece Japanese light novel cover art, 8k resolution, Makoto Shinkai & CloverWorks style, crisp detailed anime illustration.
-- STRICT SAFETY & NEGATIVE RULES: MUST BE COMPLETELY SAFE (PG-13). Absolutely NO NSFW, NO nudity, NO text, NO typography, NO letters, NO title logos, NO watermarks, NO blurry artifacts, NO borders.
-- Return ONLY the prompt paragraph in English without quotes or markdown.`,
+MANDATORY ART DIRECTION (PROFESSIONAL 2D ANIME ILLUSTRATOR):
+- ART STYLE: Official Japanese light novel cover illustration, authentic 2D anime key visual by Kyoto Animation & CloverWorks.
+- LINEWORK: Crisp, delicate, fine ink lineart with clean hand-drawn anime contours.
+- SHADING & PALETTE: Subtle cel-shading, soft natural color fills, harmonious painterly watercolor depth, soft matte textures.
+- CHARACTERS: Expressive anime character design with detailed anime eyes, soft natural hair, and elegant aesthetic costume fitting the story.
+- SCENERY: Beautifully painted atmospheric anime background (gouache & watercolor landscape, warm ambient lighting).
+- ANTI-AI DIRECTIVES (CRITICAL): Absolutely NO 3D render, NO CGI, NO photorealism, NO plastic doll skin, NO greasy/oily textures, NO oversaturated neon bloom, NO hyper-glossy lighting. Pure authentic 2D hand-drawn anime look.
+- SAFETY & CLEANLINESS: Pure PG-13 safe aesthetic. NO NSFW, NO nudity, NO text, NO typography, NO letters, NO title logos, NO watermarks, NO borders.
+
+Return ONLY the single descriptive prompt paragraph in English without quotes, titles, or markdown.`,
           },
         ],
         temperature: 0.7,
@@ -92,9 +96,10 @@ REQUIREMENTS:
     console.warn("Guts AI prompt generation fallback:", err);
   }
 
-  // Fallback template
-  return `Masterpiece Japanese anime light novel cover illustration for novel "${title}". Genre: ${safeGenres}. Gorgeous anime characters with detailed eyes and hair, dynamic composition, cinematic atmospheric lighting, vibrant rich colors, intricate fantasy background, 8k resolution, Makoto Shinkai and Ufotable anime style, clean artwork, no text, no watermark, no logo, no blur.`;
+  // Fallback template: Professional 2D Anime Light Novel Key Visual
+  return `Official Japanese light novel front cover illustration, key visual by Kyoto Animation and CloverWorks. Clean authentic 2D anime art style with crisp fine ink lineart and beautiful subtle cel shading. Novel: "${title}". Genre: ${safeGenres}. Expressive anime characters in elegant detailed outfits with sparkling anime eyes and soft hair, posing gracefully in a beautifully painted atmospheric setting. Hand-drawn anime aesthetic, harmonious watercolor palette, soft natural lighting, clean 2D composition, no 3D, no plastic skin, no CGI, no text, no watermark, no logo.`;
 }
+
 
 /**
  * Panggil Cloudflare Workers AI dengan format JSON yang valid.
