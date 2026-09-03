@@ -23,10 +23,10 @@ export default async function NovelDetailPage({ params }: PageProps) {
   if (!novel) notFound();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Back */}
-      <Link href="/admin/novels" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-violet-400 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> Kembali ke Daftar
+      <Link href="/admin/novels" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-300 transition-colors">
+        <ArrowLeft className="w-3.5 h-3.5" /> Kembali ke Daftar
       </Link>
 
       {/* Novel Editor (Client Component) — includes metadata + chapter editor */}

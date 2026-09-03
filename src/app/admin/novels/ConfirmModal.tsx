@@ -43,43 +43,40 @@ export default function ConfirmModal({
       />
       
       {/* Modal Card */}
-      <div className="relative w-full max-w-md bg-gray-900 border border-gray-800 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* Top Accent */}
-        <div className={`h-2 w-full ${isDanger ? 'bg-gradient-to-r from-red-600 to-rose-600' : 'bg-gradient-to-r from-violet-600 to-indigo-600'}`} />
-        
-        <div className="p-6 pt-8 space-y-6">
+      <div className="relative w-full max-w-md bg-[#12151b] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="p-6 space-y-5">
           {/* Icon + Title */}
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${isDanger ? 'bg-red-500/10 text-red-500' : 'bg-violet-500/10 text-violet-500'}`}>
-              {isDanger ? <AlertTriangle className="w-8 h-8" /> : <X className="w-8 h-8" />}
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDanger ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-amber-400/10 text-amber-400 border border-amber-400/20'}`}>
+              {isDanger ? <AlertTriangle className="w-6 h-6" /> : <X className="w-6 h-6" />}
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-bold text-white">{title}</h3>
-              <p className="text-sm text-gray-400 leading-relaxed px-4">
+              <h3 className="text-lg font-bold text-slate-100">{title}</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
                 {description}
               </p>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-2.5 pt-1">
             <button
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-750 text-gray-300 rounded-2xl text-sm font-semibold transition-all border border-gray-700/50 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-[#0a0c10] hover:bg-white/5 text-slate-300 rounded-lg text-xs font-semibold transition-all border border-white/10 disabled:opacity-50"
             >
               {cancelText}
             </button>
             <button
               onClick={onConfirm}
               disabled={loading}
-              className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold shadow-lg transition-all disabled:opacity-50 ${
+              className={`flex-1 px-4 py-2 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 ${
                 isDanger 
-                  ? 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-500/10' 
-                  : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-violet-500/10'
+                  ? 'bg-red-950/60 hover:bg-red-900/60 text-red-300 border border-red-900/60' 
+                  : 'bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold'
               }`}
             >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {confirmText}
             </button>
           </div>

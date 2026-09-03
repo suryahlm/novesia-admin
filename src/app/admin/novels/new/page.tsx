@@ -129,45 +129,42 @@ export default function ManualNovelPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
       {/* Header */}
       <div className="space-y-1">
-        <h1
-          className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent"
-          style={{ fontFamily: "'Outfit', sans-serif" }}
-        >
-          ✍️ Studio Tambah Novel Manual
+        <h1 className="text-2xl font-bold text-slate-100">
+          Tambah Novel Manual
         </h1>
-        <p className="text-slate-400 text-xs sm:text-sm font-medium">
-          Tulis dan buat novel original / custom langsung ke dalam database (Source: General DB).
+        <p className="text-slate-400 text-xs">
+          Tulis dan daftarkan novel langsung ke dalam database (Source: General DB).
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Kolom Kiri: Cover & Status */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Cover Upload Card */}
-          <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-6 shadow-xl shadow-black/50 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="bg-[#12151b] border border-white/5 rounded-xl p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-slate-400">
               Cover Novel (R2 Storage)
             </h3>
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-white/[0.12] hover:border-amber-500/60 rounded-2xl h-72 flex flex-col items-center justify-center cursor-pointer hover:bg-white/[0.02] transition-all overflow-hidden relative group bg-slate-900 shadow-inner"
+              className="border-2 border-dashed border-white/10 hover:border-amber-400/50 rounded-xl h-64 flex flex-col items-center justify-center cursor-pointer hover:bg-white/[0.02] transition-all overflow-hidden relative group bg-[#0a0c10]"
             >
               {coverPreview ? (
                 <img
                   src={coverPreview}
                   alt="Cover Preview"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               ) : (
-                <div className="text-center p-6 space-y-2">
-                  <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-slate-500 mx-auto group-hover:text-amber-400 group-hover:scale-110 transition-all">
-                    <ImageIcon className="w-6 h-6" />
+                <div className="text-center p-4 space-y-2">
+                  <div className="w-10 h-10 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 mx-auto">
+                    <ImageIcon className="w-5 h-5" />
                   </div>
-                  <p className="text-xs font-bold text-slate-300">Klik untuk upload cover</p>
-                  <p className="text-[10px] text-slate-500">Format: JPG, PNG, WEBP (Max 5MB)</p>
+                  <p className="text-xs font-semibold text-slate-300">Upload Cover</p>
+                  <p className="text-[10px] text-slate-500 font-mono">JPG, PNG, WEBP (Max 5MB)</p>
                 </div>
               )}
             </div>
@@ -181,7 +178,7 @@ export default function ManualNovelPage() {
             {coverPreview && (
               <button
                 onClick={() => setCoverPreview(null)}
-                className="w-full py-2 bg-rose-500/15 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold hover:bg-rose-500/25 transition-colors cursor-pointer"
+                className="w-full py-1.5 bg-red-950/60 text-red-300 border border-red-900/60 rounded-lg text-xs font-medium hover:bg-red-900/60 transition-colors cursor-pointer"
               >
                 Hapus Cover
               </button>
@@ -189,82 +186,75 @@ export default function ManualNovelPage() {
           </div>
 
           {/* Visibility & Type Card */}
-          <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-6 shadow-xl shadow-black/50 space-y-4">
+          <div className="bg-[#12151b] border border-white/5 rounded-xl p-4 space-y-3">
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                 Status Visibilitas
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer shadow-inner"
+                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400/70 transition-colors cursor-pointer"
               >
-                <option value="active" className="bg-slate-900">
-                  ✅ Active (Publik)
+                <option value="active" className="bg-[#0a0c10]">
+                  Active (Publik)
                 </option>
-                <option value="draft" className="bg-slate-900">
-                  📝 Draft (Privat)
+                <option value="draft" className="bg-[#0a0c10]">
+                  Draft (Privat)
                 </option>
               </select>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                 Status Cerita (Story)
               </label>
               <select
                 value={formData.original_status}
                 onChange={(e) => setFormData({ ...formData, original_status: e.target.value })}
-                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer shadow-inner"
+                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400/70 transition-colors cursor-pointer"
               >
-                <option value="Ongoing" className="bg-slate-900">
+                <option value="Ongoing" className="bg-[#0a0c10]">
                   Ongoing
                 </option>
-                <option value="Completed" className="bg-slate-900">
+                <option value="Completed" className="bg-[#0a0c10]">
                   Completed (Tamat)
                 </option>
-                <option value="Hiatus" className="bg-slate-900">
+                <option value="Hiatus" className="bg-[#0a0c10]">
                   Hiatus
                 </option>
               </select>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                 Tipe Format
               </label>
               <select
                 value={formData.novel_type}
                 onChange={(e) => setFormData({ ...formData, novel_type: e.target.value })}
-                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer shadow-inner"
+                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400/70 transition-colors cursor-pointer"
               >
-                <option value="Web Novel" className="bg-slate-900">
+                <option value="Web Novel" className="bg-[#0a0c10]">
                   Web Novel
                 </option>
-                <option value="Light Novel" className="bg-slate-900">
+                <option value="Light Novel" className="bg-[#0a0c10]">
                   Light Novel
                 </option>
-                <option value="Original" className="bg-slate-900">
+                <option value="Original" className="bg-[#0a0c10]">
                   Original Story
                 </option>
               </select>
-            </div>
-
-            <div className="pt-3 border-t border-white/[0.06]">
-              <p className="text-xs text-slate-400 flex items-center justify-between font-mono">
-                <span>Folder R2:</span>
-                <span className="text-amber-400 font-bold">/novels/general/</span>
-              </p>
             </div>
           </div>
         </div>
 
         {/* Kolom Kanan: Metadata & Sinopsis */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-7 shadow-xl shadow-black/50 space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-[#12151b] border border-white/5 rounded-xl p-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                   Judul Novel *
                 </label>
                 <input
@@ -272,13 +262,13 @@ export default function ManualNovelPage() {
                   value={formData.title}
                   onChange={handleTitleChange}
                   placeholder="Contoh: Rebirth of System Sovereign"
-                  className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 transition-all shadow-inner"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-amber-400/70 focus:ring-1 focus:ring-amber-400/30 transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                   Slug URL (Auto) *
                 </label>
                 <input
@@ -286,12 +276,12 @@ export default function ManualNovelPage() {
                   value={formData.nu_slug}
                   onChange={(e) => setFormData({ ...formData, nu_slug: e.target.value })}
                   placeholder="rebirth-of-system-sovereign"
-                  className="w-full bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-2.5 text-xs font-mono text-slate-300 focus:outline-none"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-amber-400/70"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                   Penulis (Author)
                 </label>
                 <input
@@ -299,12 +289,12 @@ export default function ManualNovelPage() {
                   value={formData.author}
                   onChange={(e) => setFormData({ ...formData, author: e.target.value })}
                   placeholder="Nama Penulis"
-                  className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/60 shadow-inner"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400/70"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                   Rating Awal (0 - 5.0)
                 </label>
                 <input
@@ -314,59 +304,59 @@ export default function ManualNovelPage() {
                   max="5"
                   value={formData.rating}
                   onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
-                  className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/60 shadow-inner font-mono"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400/70 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                   Total Chapter
                 </label>
                 <input
                   type="number"
                   value={formData.total_chapters}
                   onChange={(e) => setFormData({ ...formData, total_chapters: e.target.value })}
-                  className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500/60 shadow-inner font-mono"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400/70 font-mono"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                 Sinopsis Cerita
               </label>
               <textarea
                 value={formData.synopsis}
                 onChange={(e) => setFormData({ ...formData, synopsis: e.target.value })}
-                rows={6}
+                rows={5}
                 placeholder="Tulis gambaran cerita lengkap novel ini..."
-                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 resize-none leading-relaxed shadow-inner"
+                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-amber-400/70 focus:ring-1 focus:ring-amber-400/30 resize-none leading-relaxed"
               />
             </div>
 
             {/* Genre Studio */}
-            <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/[0.06] space-y-3">
+            <div className="bg-[#0a0c10] rounded-xl p-4 border border-white/5 space-y-3">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-slate-300">Genre Tags</label>
+                <label className="text-xs font-semibold text-slate-300">Genre Tags</label>
                 <button
                   onClick={autoGenerateGenres}
                   disabled={generatingGenre}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 border border-amber-500/30 text-amber-300 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-300 rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-40"
                 >
                   {generatingGenre ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <Wand2 className="w-3.5 h-3.5" />
                   )}
-                  <span>✨ Auto Generate Genre</span>
+                  <span>Auto Generate Genre</span>
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+              <div className="flex flex-wrap gap-1.5 min-h-[28px]">
                 {genres.map((g) => (
                   <span
                     key={g}
-                    className="px-3 py-1 bg-violet-500/15 border border-violet-500/25 rounded-xl text-xs font-semibold text-violet-300 flex items-center gap-2 shadow-sm"
+                    className="px-2.5 py-0.5 bg-amber-400/10 border border-amber-400/20 rounded-md text-xs font-medium text-amber-200 flex items-center gap-1.5"
                   >
                     <span>{g}</span>
                     <button
@@ -392,14 +382,14 @@ export default function ManualNovelPage() {
                     }
                   }}
                   placeholder="Ketik genre lalu Enter..."
-                  className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500/60 shadow-inner"
+                  className="flex-1 bg-[#12151b] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-400/70"
                 />
                 <button
                   onClick={() => {
                     addGenre(tempGenre);
                     setTempGenre("");
                   }}
-                  className="px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] rounded-xl text-xs font-bold text-slate-200 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
                 >
                   Tambah
                 </button>
@@ -412,28 +402,28 @@ export default function ManualNovelPage() {
             <button
               onClick={handleSave}
               disabled={loading}
-              className="flex-1 flex justify-center items-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 hover:from-amber-500 hover:to-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-white font-extrabold shadow-xl shadow-amber-500/25 transition-all text-sm cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+              className="flex-1 flex justify-center items-center gap-2 px-6 py-3 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-slate-950 font-bold shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all text-sm cursor-pointer"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              <span>{loading ? "Menyimpan ke Database..." : "💾 Simpan Novel Manual"}</span>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              <span>{loading ? "Menyimpan ke Database..." : "Simpan Novel"}</span>
             </button>
           </div>
 
           {/* Result Alert */}
           {result && (
             <div
-              className={`p-4 rounded-2xl flex items-center gap-3 animate-in zoom-in-95 ${
+              className={`p-3.5 rounded-xl flex items-center gap-2.5 animate-in zoom-in-95 ${
                 result.success
-                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                  : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
+                  ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                  : "bg-red-500/10 text-red-300 border border-red-500/20"
               }`}
             >
               {result.success ? (
-                <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
               ) : (
-                <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
               )}
-              <p className="text-xs font-bold">{result.success ? result.msg : result.error}</p>
+              <p className="text-xs font-semibold">{result.success ? result.msg : result.error}</p>
             </div>
           )}
         </div>

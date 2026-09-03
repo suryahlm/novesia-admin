@@ -57,20 +57,24 @@ export default async function NovelsListPage() {
         </div>
       </div>
 
-      {/* Source Buttons */}
-      <div className="flex gap-3 flex-wrap">
+      {/* Source Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         {NOVEL_SOURCES.map((src) => {
           const count = sourceCounts[src.id] || 0;
           return (
             <Link
               key={src.id}
               href={`/admin/novels/source/${src.id}`}
-              className={`flex items-center gap-3 px-5 py-3.5 bg-gradient-to-r ${src.color} rounded-xl shadow-lg ${src.shadow} hover:scale-[1.02] transition-all duration-300`}
+              className="bg-[#12151b] border border-white/5 hover:border-amber-400/30 rounded-xl p-3 flex items-center gap-3 transition-colors group"
             >
-              <span className="text-xl">{src.icon}</span>
-              <div>
-                <p className="text-sm font-semibold text-white">{src.label}</p>
-                <p className="text-[10px] text-white/70 font-medium">{count} novel</p>
+              <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-base shrink-0">
+                {src.icon}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-200 group-hover:text-amber-300 transition-colors truncate">
+                  {src.label}
+                </p>
+                <p className="text-[10px] text-slate-400 font-mono mt-0.5">{count} novel</p>
               </div>
             </Link>
           );

@@ -498,30 +498,29 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
   ).length;
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-16">
+    <div className="space-y-4 max-w-7xl mx-auto pb-12">
       {/* ═══ Status Banner ═══ */}
       {isDraft && (
-        <div className="relative overflow-hidden rounded-3xl p-5 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border border-amber-500/30 shadow-xl shadow-amber-500/5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-bold text-lg shadow-inner">
+        <div className="rounded-xl p-4 bg-amber-400/10 border border-amber-400/25 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-300 font-bold text-sm">
               📝
             </div>
             <div>
-              <p className="font-extrabold text-amber-300 text-sm tracking-wide">
+              <p className="font-bold text-amber-300 text-xs">
                 Novel ini Berstatus DRAFT
               </p>
-              <p className="text-xs text-amber-200/60 font-medium mt-0.5">
-                Edit metadata dan sinopsis, lalu klik Publish untuk menampilkan novel di aplikasi
-                pembaca.
+              <p className="text-xs text-amber-200/70 mt-0.5">
+                Edit metadata dan sinopsis, lalu klik Publish untuk menampilkan novel di aplikasi pembaca.
               </p>
             </div>
           </div>
           <button
             onClick={() => handleSave("active")}
             disabled={saving}
-            className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl text-xs font-extrabold shadow-lg shadow-emerald-500/25 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer shrink-0"
+            className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 rounded-lg text-xs font-bold shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shrink-0"
           >
-            <Rocket className="w-4 h-4" />
+            <Rocket className="w-3.5 h-3.5" />
             <span>{saving ? "Publishing..." : "Publish Sekarang"}</span>
           </button>
         </div>
@@ -530,31 +529,28 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
       {/* Toast Notification */}
       {message && (
         <div
-          className={`fixed top-6 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-2xl text-xs font-bold animate-in slide-in-from-right-5 duration-300 border flex items-center gap-2.5 ${
+          className={`fixed top-6 right-6 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold animate-in slide-in-from-right-5 duration-300 border flex items-center gap-2 ${
             message.type === "ok"
-              ? "bg-[#0b1b17]/95 border-emerald-500/40 text-emerald-300 shadow-emerald-500/10"
-              : "bg-[#220d11]/95 border-rose-500/40 text-rose-300 shadow-rose-500/10"
+              ? "bg-[#0c1815] border-emerald-900/60 text-emerald-200"
+              : "bg-[#1f1013] border-red-900/60 text-red-200"
           }`}
         >
           {message.type === "ok" ? (
             <Check className="w-4 h-4 text-emerald-400" />
           ) : (
-            <X className="w-4 h-4 text-rose-400" />
+            <X className="w-4 h-4 text-red-400" />
           )}
           <span>{message.text}</span>
         </div>
       )}
 
       {/* ═══ Cover + Metadata Studio Section ═══ */}
-      <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-7 shadow-2xl shadow-black/70 relative overflow-hidden">
-        {/* Ambient Top Glow */}
-        <div className="absolute top-0 right-1/4 w-80 h-40 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col md:flex-row gap-7 relative z-10">
+      <div className="bg-[#12151b] border border-white/5 rounded-xl p-5 relative overflow-hidden">
+        <div className="flex flex-col md:flex-row gap-5 relative z-10">
           {/* Cover Studio Upload */}
-          <div className="shrink-0 space-y-3 mx-auto md:mx-0">
+          <div className="shrink-0 space-y-2.5 mx-auto md:mx-0">
             <div
-              className="relative w-44 h-64 rounded-2xl overflow-hidden cursor-pointer group border-2 border-dashed border-white/[0.12] hover:border-violet-500/60 transition-all duration-300 shadow-xl shadow-black/60 bg-slate-900"
+              className="relative w-40 h-56 rounded-xl overflow-hidden cursor-pointer group border-2 border-dashed border-white/10 hover:border-amber-400/50 transition-all duration-300 bg-[#0a0c10]"
               onClick={() => fileRef.current?.click()}
             >
               {novel.cover_url ? (
@@ -562,34 +558,29 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                   <img
                     src={novel.cover_url}
                     alt={novel.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                    <Upload className="w-7 h-7 text-violet-300" />
-                    <span className="text-[11px] font-bold text-slate-200">Ganti Cover</span>
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+                    <Upload className="w-5 h-5 text-amber-300" />
+                    <span className="text-[11px] font-semibold text-slate-200">Ganti Cover</span>
                   </div>
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-500 p-4 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-slate-400 group-hover:text-violet-300 group-hover:scale-110 transition-all">
-                    <Upload className="w-6 h-6" />
+                  <div className="w-10 h-10 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
+                    <Upload className="w-5 h-5" />
                   </div>
-                  <span className="text-xs font-bold text-slate-400">Upload Cover</span>
-                  <span className="text-[10px] text-slate-600">JPG, PNG, WEBP</span>
+                  <span className="text-xs font-semibold text-slate-300">Upload Cover</span>
+                  <span className="text-[10px] text-slate-500 font-mono">JPG, PNG, WEBP</span>
                 </div>
               )}
 
               {(uploading || generatingCover) && (
-                <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center gap-2 backdrop-blur-sm p-4 text-center z-20">
-                  <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+                <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center gap-2 backdrop-blur-sm p-3 text-center z-20">
+                  <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
                   <span className="text-xs font-bold text-amber-200">
                     {generatingCover ? "Membuat Cover AI..." : "Mengunggah Cover..."}
                   </span>
-                  {generatingCover && (
-                    <span className="text-[10px] text-slate-400 max-w-[130px]">
-                      Rendering FLUX model...
-                    </span>
-                  )}
                 </div>
               )}
             </div>
@@ -605,16 +596,16 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
             <button
               onClick={() => fileRef.current?.click()}
               disabled={uploading || generatingCover}
-              className="w-full py-2.5 px-3 bg-white/[0.04] hover:bg-violet-600/20 border border-white/[0.08] hover:border-violet-500/40 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+              className="w-full py-1.5 px-3 bg-[#0a0c10] hover:bg-white/5 border border-white/10 text-slate-300 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              <Upload className="w-3.5 h-3.5 text-violet-400" />
+              <Upload className="w-3.5 h-3.5 text-amber-400" />
               <span>Pilih File Cover</span>
             </button>
 
             <button
               onClick={handleGenerateCover}
               disabled={generatingCover || uploading}
-              className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500/20 via-violet-600/25 to-indigo-600/25 hover:from-amber-500/35 hover:via-violet-600/35 hover:to-indigo-600/35 border border-amber-500/30 hover:border-amber-400/60 text-amber-300 hover:text-amber-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50"
+              className="w-full py-1.5 px-3 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-300 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               {generatingCover ? (
                 <>
@@ -624,92 +615,91 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>✨ Generate Cover AI</span>
+                  <span>Generate Cover AI</span>
                 </>
               )}
             </button>
           </div>
 
-
           {/* Editable Metadata Fields */}
-          <div className="flex-1 space-y-5">
+          <div className="flex-1 space-y-4">
             {/* Title */}
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">
+              <label className="text-xs font-semibold text-slate-400 mb-1.5 block">
                 Judul Novel
               </label>
               <input
                 type="text"
                 value={novel.title || ""}
                 onChange={(e) => setNovel({ ...novel, title: e.target.value })}
-                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-lg font-bold text-white focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all shadow-inner"
+                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-base font-bold text-white focus:border-amber-400/70 focus:ring-1 focus:ring-amber-400/30 focus:outline-none transition-all"
                 placeholder="Judul lengkap novel..."
               />
             </div>
 
             {/* Author + Status Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">
+                <label className="text-xs font-semibold text-slate-400 mb-1.5 block">
                   Penulis (Author)
                 </label>
                 <input
                   type="text"
                   value={novel.author || ""}
                   onChange={(e) => setNovel({ ...novel, author: e.target.value })}
-                  className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-200 focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all shadow-inner"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs font-medium text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all"
                   placeholder="Nama penulis..."
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">
+                <label className="text-xs font-semibold text-slate-400 mb-1.5 block">
                   Status Publikasi
                 </label>
                 <select
                   value={novel.status || "draft"}
                   onChange={(e) => setNovel({ ...novel, status: e.target.value })}
-                  className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-200 focus:border-violet-500/60 focus:outline-none transition-all shadow-inner cursor-pointer"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs font-medium text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all cursor-pointer"
                 >
-                  <option value="draft" className="bg-slate-900">
-                    📝 Draft (Privat)
+                  <option value="draft" className="bg-[#0a0c10]">
+                    Draft (Privat)
                   </option>
-                  <option value="active" className="bg-slate-900">
-                    ✅ Active (Terbit di App)
+                  <option value="active" className="bg-[#0a0c10]">
+                    Active (Terbit di App)
                   </option>
-                  <option value="completed" className="bg-slate-900">
-                    ✓ Completed (Tamat)
+                  <option value="completed" className="bg-[#0a0c10]">
+                    Completed (Tamat)
                   </option>
                 </select>
               </div>
             </div>
 
             {/* Genre Tags Studio */}
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <label className="text-xs font-semibold text-slate-400">
                   Genre & Kategori
                 </label>
                 <button
                   type="button"
                   onClick={handleGenerateGenre}
                   disabled={generating}
-                  className="px-3 py-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 border border-amber-500/30 text-amber-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-40 cursor-pointer shadow-sm"
+                  className="px-2.5 py-1 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-300 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
                 >
                   {generating ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <Wand2 className="w-3.5 h-3.5 text-amber-300" />
                   )}
-                  <span>{generating ? "AI Generating..." : "✨ Auto Generate Genre"}</span>
+                  <span>{generating ? "AI Generating..." : "Auto Generate Genre"}</span>
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-1.5 min-h-[38px] p-2 bg-white/[0.02] border border-white/[0.05] rounded-2xl">
+              <div className="flex flex-wrap gap-1.5 min-h-[32px] p-2 bg-[#0a0c10] border border-white/5 rounded-lg">
                 {(novel.genres || []).map((genre: string) => (
                   <span
                     key={genre}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-violet-500/15 border border-violet-500/25 text-violet-300 rounded-xl text-xs font-semibold shadow-sm"
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-amber-400/10 border border-amber-400/20 text-amber-200 rounded-md text-xs font-medium"
                   >
                     <span>{genre}</span>
                     <button
@@ -730,12 +720,12 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                   onChange={(e) => setNewGenre(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addGenre()}
                   placeholder="Ketik genre lalu tekan Enter..."
-                  className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:border-violet-500/60 focus:outline-none transition-all shadow-inner"
+                  className="flex-1 bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={addGenre}
-                  className="px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  className="px-3 py-1.5 bg-[#0a0c10] hover:bg-white/5 border border-white/10 text-slate-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -745,13 +735,13 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
         </div>
 
         {/* ═══ Dual Pane Synopsis Studio ═══ */}
-        <div className="mt-8 pt-7 border-t border-white/[0.06] space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="mt-5 pt-4 border-t border-white/5 space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Original Synopsis */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-300 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-violet-400" />
+                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-slate-400" />
                   <span>Sinopsis (Original)</span>
                 </label>
                 <span className="text-[10px] text-slate-500 font-mono">
@@ -761,57 +751,57 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
               <textarea
                 value={novel.synopsis || ""}
                 onChange={(e) => setNovel({ ...novel, synopsis: e.target.value })}
-                rows={7}
-                className="w-full bg-white/[0.02] border border-white/[0.08] focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 rounded-2xl p-4 text-xs sm:text-sm text-slate-300 leading-relaxed focus:outline-none transition-all resize-y shadow-inner"
+                rows={6}
+                className="w-full bg-[#0a0c10] border border-white/10 focus:border-amber-400/70 focus:ring-1 focus:ring-amber-400/30 rounded-lg p-3 text-xs text-slate-300 leading-relaxed focus:outline-none transition-all resize-y"
                 placeholder="Tulis atau paste sinopsis original di sini..."
               />
             </div>
 
             {/* Translated Synopsis */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-emerald-400 flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-emerald-400" />
+                <label className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-amber-400" />
                   <span>Sinopsis (Terjemahan ID)</span>
                 </label>
 
-                {/* 🌟 Glowing Auto Translate Button */}
+                {/* Auto Translate Button */}
                 <button
                   type="button"
                   onClick={handleTranslateSynopsis}
                   disabled={translatingSynopsis || !novel.synopsis?.trim()}
-                  className="px-3.5 py-1.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-emerald-600 hover:from-violet-500 hover:to-emerald-500 text-white rounded-xl text-xs font-extrabold shadow-lg shadow-violet-500/25 transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-                  title="Terjemahkan sinopsis original ke Bahasa Indonesia via Gemini 3.7 Flash"
+                  className="px-2.5 py-1 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/20 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  title="Terjemahkan sinopsis original ke Bahasa Indonesia"
                 >
                   {translatingSynopsis ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
                   ) : (
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                   )}
-                  <span>{translatingSynopsis ? "Menerjemahkan..." : "✨ Auto Translate"}</span>
+                  <span>{translatingSynopsis ? "Menerjemahkan..." : "Auto Translate"}</span>
                 </button>
               </div>
 
               <textarea
                 value={novel.synopsis_translated || ""}
                 onChange={(e) => setNovel({ ...novel, synopsis_translated: e.target.value })}
-                rows={7}
-                className="w-full bg-[#061410]/40 border border-emerald-500/30 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl p-4 text-xs sm:text-sm text-emerald-100 leading-relaxed focus:outline-none transition-all resize-y shadow-inner"
-                placeholder="Tulis terjemahan Indonesia atau klik '✨ Auto Translate' untuk generate otomatis..."
+                rows={6}
+                className="w-full bg-[#0a0c10] border border-white/10 focus:border-amber-400/70 focus:ring-1 focus:ring-amber-400/30 rounded-lg p-3 text-xs text-slate-200 leading-relaxed focus:outline-none transition-all resize-y"
+                placeholder="Tulis terjemahan Indonesia atau klik 'Auto Translate' untuk generate otomatis..."
               />
             </div>
           </div>
         </div>
 
         {/* Studio Save Actions */}
-        <div className="mt-7 pt-5 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="mt-5 pt-4 border-t border-white/5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => handleSave()}
               disabled={saving}
-              className="px-6 py-3 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-bold shadow-xl shadow-violet-500/25 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2.5 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 rounded-lg text-xs font-bold shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-3.5 h-3.5" />
               <span>{saving ? "Menyimpan..." : "Simpan Perubahan"}</span>
             </button>
 
@@ -819,91 +809,91 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
               <button
                 onClick={() => handleSave("active")}
                 disabled={saving}
-                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl text-xs font-bold shadow-xl shadow-emerald-500/25 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2.5 bg-[#0a0c10] hover:bg-white/5 text-slate-300 border border-white/10 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
-                <Rocket className="w-4 h-4" />
+                <Rocket className="w-3.5 h-3.5 text-amber-400" />
                 <span>Publish ke App</span>
               </button>
             )}
           </div>
 
-          <span className="text-xs text-slate-400 font-medium font-mono">
+          <span className="text-xs text-slate-400 font-mono">
             Source: <span className="text-slate-200 font-semibold">{novel.source || "general"}</span> •{" "}
             <span className="text-slate-200 font-semibold">{novel.total_chapters || 0}</span> chapter
           </span>
         </div>
       </div>
 
-      {/* ═══ Luxury Chapter Studio Section ═══ */}
-      <div className="bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl shadow-black/70">
+      {/* ═══ Chapter Studio Section ═══ */}
+      <div className="bg-[#12151b] border border-white/5 rounded-xl overflow-hidden">
         {/* Header - Collapsible */}
         <button
           onClick={toggleChapters}
-          className="w-full flex items-center justify-between p-6 hover:bg-white/[0.02] transition-colors cursor-pointer"
+          className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors cursor-pointer"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-violet-500/25">
-              <BookOpen className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
+              <BookOpen className="w-4 h-4" />
             </div>
             <div className="text-left">
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-base font-extrabold text-white">Chapter Studio & Translator</h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-slate-100">Chapter Studio & Translator</h2>
+                <span className="px-2 py-0.2 rounded text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/20 text-emerald-300">
                   {translatedCount} Selesai
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5 font-medium">
+              <p className="text-xs text-slate-400 mt-0.5">
                 {chapters.length > 0
-                  ? `${chapters.length} chapter total terarsip • Gemini 3.7 Flash Enabled`
+                  ? `${chapters.length} chapter total terarsip`
                   : `${novel.total_chapters || 0} chapter total`}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-slate-400 font-semibold text-xs">
+          <div className="flex items-center gap-1.5 text-slate-400 font-medium text-xs">
             <span>{chaptersExpanded ? "Tutup Editor" : "Buka Studio"}</span>
             {chaptersExpanded ? (
-              <ChevronDown className="w-5 h-5 text-violet-400" />
+              <ChevronDown className="w-4 h-4 text-amber-400" />
             ) : (
-              <ChevronRight className="w-5 h-5 text-slate-400" />
+              <ChevronRight className="w-4 h-4 text-slate-400" />
             )}
           </div>
         </button>
 
         {chaptersExpanded && (
-          <div className="border-t border-white/[0.06]">
+          <div className="border-t border-white/5">
             {chaptersLoading ? (
               <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-400">
-                <Loader2 className="w-7 h-7 animate-spin text-violet-400" />
-                <span className="text-xs font-bold">Memuat daftar chapter dari database...</span>
+                <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
+                <span className="text-xs">Memuat daftar chapter dari database...</span>
               </div>
             ) : chapters.length === 0 ? (
-              <div className="p-16 text-center text-slate-400 text-sm">
+              <div className="p-16 text-center text-slate-400 text-xs">
                 Belum ada data chapter untuk novel ini di database.
               </div>
             ) : (
-              <div className="flex flex-col lg:flex-row" style={{ minHeight: "650px", maxHeight: "780px" }}>
+              <div className="flex flex-col lg:flex-row" style={{ minHeight: "600px", maxHeight: "750px" }}>
                 {/* Left: Chapter List Sidebar */}
-                <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-white/[0.06] flex flex-col shrink-0 bg-slate-950/40">
+                <div className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-white/5 flex flex-col shrink-0 bg-[#0a0c10]">
                   {/* Chapter Search & Batch Action */}
-                  <div className="p-4 border-b border-white/[0.06] space-y-3">
+                  <div className="p-3 border-b border-white/5 space-y-2">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                       <input
                         type="text"
-                        placeholder="Cari nomor/judul chapter..."
+                        placeholder="Cari chapter..."
                         value={chapterSearch}
                         onChange={(e) => setChapterSearch(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/60 transition-all shadow-inner"
+                        className="w-full pl-8 pr-2.5 py-1.5 bg-[#12151b] border border-white/10 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/70 transition-all"
                       />
                     </div>
 
                     {/* Batch Translate Button / Progress */}
                     {batchTranslating ? (
-                      <div className="bg-violet-950/60 border border-violet-500/40 rounded-2xl p-3 space-y-2 animate-in fade-in shadow-lg">
+                      <div className="bg-amber-400/10 border border-amber-400/25 rounded-lg p-2.5 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-violet-200 flex items-center gap-1.5 font-bold">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
+                          <span className="text-amber-200 flex items-center gap-1.5 font-semibold">
+                            <Loader2 className="w-3 h-3 animate-spin text-amber-300" />
                             <span>
                               Ch {batchProgress?.chNum} ({batchProgress?.current}/{batchProgress?.total})
                             </span>
@@ -911,14 +901,14 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                           <button
                             type="button"
                             onClick={handleStopBatch}
-                            className="text-[10px] font-extrabold bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                            className="text-[10px] font-bold bg-red-950/60 hover:bg-red-900/60 text-red-300 px-2 py-0.5 rounded transition-colors cursor-pointer"
                           >
                             Stop
                           </button>
                         </div>
-                        <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden shadow-inner">
+                        <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                           <div
-                            className="bg-gradient-to-r from-violet-500 via-indigo-500 to-emerald-400 h-2 rounded-full transition-all duration-300 shadow-sm"
+                            className="bg-amber-400 h-1.5 rounded-full transition-all duration-300"
                             style={{
                               width: `${((batchProgress?.current || 0) / (batchProgress?.total || 1)) * 100}%`,
                             }}
@@ -929,17 +919,17 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                       <button
                         type="button"
                         onClick={handleBatchTranslate}
-                        className="w-full px-3 py-2 bg-gradient-to-r from-violet-600/30 to-indigo-600/30 hover:from-violet-600 hover:to-indigo-600 border border-violet-500/40 text-violet-200 hover:text-white rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                        className="w-full px-2.5 py-1.5 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-300 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                         title="Translate semua chapter yang belum diterjemahkan secara otomatis"
                       >
-                        <Zap className="w-3.5 h-3.5 text-amber-300" />
+                        <Zap className="w-3.5 h-3.5 text-amber-400" />
                         <span>Translate Semua ({pendingWithContent} pending)</span>
                       </button>
                     ) : null}
                   </div>
 
                   {/* Chapter Items Scrollable */}
-                  <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
+                  <div className="flex-1 overflow-y-auto divide-y divide-white/5">
                     {filteredChapters.map((ch) => {
                       const isActive = selectedChapter?.id === ch.id;
                       const hasTranslated =
@@ -952,49 +942,49 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                         <div
                           key={ch.id}
                           onClick={() => selectChapter(ch)}
-                          className={`w-full text-left px-4 py-3 transition-all cursor-pointer flex items-center justify-between gap-2.5 group ${
+                          className={`w-full text-left px-3 py-2.5 transition-colors cursor-pointer flex items-center justify-between gap-2 group ${
                             isActive
-                              ? "bg-violet-600/20 border-l-4 border-l-violet-400"
-                              : "hover:bg-white/[0.03] border-l-4 border-l-transparent"
+                              ? "bg-amber-400/10 border-l-2 border-l-amber-400"
+                              : "hover:bg-white/5 border-l-2 border-l-transparent"
                           }`}
                         >
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5">
                               <span
-                                className={`text-xs font-bold ${
-                                  isActive ? "text-violet-300" : "text-slate-200"
+                                className={`text-xs font-semibold ${
+                                  isActive ? "text-amber-300" : "text-slate-200"
                                 }`}
                               >
                                 Ch. {ch.chapter_number}
                               </span>
-                              <span className="text-[10px] text-slate-400 font-mono">
+                              <span className="text-[10px] text-slate-500 font-mono">
                                 {ch.word_count_original ? `${ch.word_count_original}w` : "0w"}
                               </span>
                             </div>
                             {ch.chapter_title && (
-                              <p className="text-[11px] text-slate-400 truncate mt-0.5 font-medium">
+                              <p className="text-[10px] text-slate-400 truncate mt-0.5">
                                 {ch.chapter_title}
                               </p>
                             )}
                           </div>
 
                           {/* Quick Action Button */}
-                          <div className="shrink-0 flex items-center gap-1.5">
+                          <div className="shrink-0 flex items-center gap-1">
                             {isThisTranslating ? (
-                              <div className="flex items-center gap-1 px-2 py-1 bg-violet-900/60 border border-violet-500/40 rounded-lg text-[10px] text-violet-200 font-bold">
-                                <Loader2 className="w-3 h-3 animate-spin text-amber-300" />
+                              <div className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-400/10 border border-amber-400/20 rounded text-[10px] text-amber-300 font-semibold">
+                                <Loader2 className="w-3 h-3 animate-spin" />
                                 <span>AI...</span>
                               </div>
                             ) : hasTranslated ? (
                               <div className="flex items-center gap-1">
-                                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
                                   <Check className="w-2.5 h-2.5" /> ID
                                 </span>
                                 <button
                                   type="button"
                                   onClick={(e) => handleTranslateSingleChapter(ch, e)}
                                   disabled={batchTranslating || !!translatingChapterId}
-                                  className="p-1 hover:bg-violet-500/20 text-slate-400 hover:text-violet-300 rounded-md transition-colors cursor-pointer"
+                                  className="p-1 hover:bg-white/5 text-slate-400 hover:text-amber-300 rounded transition-colors cursor-pointer"
                                   title={`Re-translate Ch. ${ch.chapter_number}`}
                                 >
                                   <RotateCcw className="w-3 h-3" />
@@ -1005,14 +995,14 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                                 type="button"
                                 onClick={(e) => handleTranslateSingleChapter(ch, e)}
                                 disabled={batchTranslating || !!translatingChapterId || !hasOriginal}
-                                className="px-2.5 py-1 bg-gradient-to-r from-violet-600/30 to-indigo-600/30 hover:from-violet-600 hover:to-indigo-600 border border-violet-500/30 hover:border-violet-400 text-violet-200 hover:text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-sm disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                className="px-2 py-0.5 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-300 rounded text-[10px] font-semibold transition-all flex items-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                                 title={
                                   hasOriginal
-                                    ? `Translate Ch. ${ch.chapter_number} via Gemini 3.7 Flash`
+                                    ? `Translate Ch. ${ch.chapter_number}`
                                     : "Konten original kosong"
                                 }
                               >
-                                <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+                                <Sparkles className="w-2.5 h-2.5" />
                                 <span>Translate</span>
                               </button>
                             )}
@@ -1024,39 +1014,39 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                 </div>
 
                 {/* Right: Studio Chapter Editor */}
-                <div className="flex-1 flex flex-col min-w-0 bg-[#080b13]">
+                <div className="flex-1 flex flex-col min-w-0 bg-[#0c0e14]">
                   {selectedChapter ? (
                     <>
                       {/* Chapter Toolbar */}
-                      <div className="p-4 px-6 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 bg-slate-900/40">
+                      <div className="p-3 px-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 bg-[#12151b]">
                         <div className="flex-1 min-w-0">
-                          <label className="text-[10px] text-slate-400 block mb-1 font-bold uppercase tracking-wider">
+                          <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">
                             Judul Chapter ({selectedChapter.chapter_number})
                           </label>
                           <input
                             type="text"
                             value={editTitle}
                             onChange={(e) => setEditTitle(e.target.value)}
-                            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs font-semibold text-white focus:border-violet-500/60 focus:outline-none transition-colors shadow-inner"
+                            className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-colors"
                             placeholder="Judul chapter..."
                           />
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0 sm:pt-4">
+                        <div className="flex items-center gap-2 shrink-0 sm:pt-3">
                           {/* Translate Button */}
                           <button
                             type="button"
                             onClick={handleTranslateCurrentChapter}
                             disabled={translatingChapter || !editOriginal.trim()}
-                            className="px-4 py-2 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl text-xs font-extrabold shadow-lg shadow-violet-500/25 transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                            title="Terjemahkan chapter ini via Gemini 3.7 Flash"
+                            className="px-3.5 py-1.5 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            title="Terjemahkan chapter ini via AI"
                           >
                             {translatingChapter ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
-                              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                             )}
-                            <span>{translatingChapter ? "Translating..." : "✨ Translate Chapter"}</span>
+                            <span>{translatingChapter ? "Translating..." : "Translate Chapter"}</span>
                           </button>
 
                           {/* Save Button */}
@@ -1064,7 +1054,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                             type="button"
                             onClick={handleSaveChapter}
                             disabled={savingChapter}
-                            className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-extrabold shadow-lg shadow-emerald-500/25 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                            className="px-3.5 py-1.5 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 rounded-lg text-xs font-bold shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                           >
                             {savingChapter ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1077,43 +1067,43 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                       </div>
 
                       {/* Dual Content Panes */}
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/[0.06] min-h-0">
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/5 min-h-0">
                         {/* Original (EN) */}
-                        <div className="flex flex-col min-h-0 bg-black/20">
-                          <div className="px-5 py-2.5 border-b border-white/[0.05] flex items-center justify-between shrink-0 bg-white/[0.01]">
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-3.5 h-3.5 text-blue-400" />
-                              <span className="text-xs font-bold text-blue-400">Original (EN)</span>
+                        <div className="flex flex-col min-h-0 bg-[#0a0c10]/40">
+                          <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-1.5">
+                              <FileText className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="text-xs font-semibold text-slate-300">Original</span>
                             </div>
-                            <span className="text-[10px] text-slate-400 font-mono font-semibold">
+                            <span className="text-[10px] text-slate-500 font-mono">
                               {editOriginal.split(/\s+/).filter(Boolean).length} kata
                             </span>
                           </div>
                           <textarea
                             value={editOriginal}
                             onChange={(e) => setEditOriginal(e.target.value)}
-                            className="flex-1 w-full bg-transparent p-5 text-xs sm:text-sm leading-relaxed text-slate-300 resize-none focus:outline-none placeholder-slate-600 font-sans selection:bg-blue-500/30"
+                            className="flex-1 w-full bg-transparent p-4 text-xs leading-relaxed text-slate-300 resize-none focus:outline-none placeholder:text-slate-600 font-sans"
                             placeholder="Isi teks original chapter..."
                           />
                         </div>
 
                         {/* Translated (ID) */}
-                        <div className="flex flex-col min-h-0 bg-[#05110d]/30">
-                          <div className="px-5 py-2.5 border-b border-emerald-500/20 flex items-center justify-between shrink-0 bg-emerald-950/20">
-                            <div className="flex items-center gap-2">
-                              <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="text-xs font-bold text-emerald-400">
+                        <div className="flex flex-col min-h-0 bg-[#0a0c10]">
+                          <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between shrink-0 bg-amber-400/5">
+                            <div className="flex items-center gap-1.5">
+                              <Globe className="w-3.5 h-3.5 text-amber-400" />
+                              <span className="text-xs font-semibold text-amber-300">
                                 Terjemahan (ID)
                               </span>
                             </div>
-                            <span className="text-[10px] text-emerald-400/80 font-mono font-semibold">
+                            <span className="text-[10px] text-amber-400/80 font-mono">
                               {editTranslated.split(/\s+/).filter(Boolean).length} kata
                             </span>
                           </div>
                           <textarea
                             value={editTranslated}
                             onChange={(e) => setEditTranslated(e.target.value)}
-                            className="flex-1 w-full bg-transparent p-5 text-xs sm:text-sm leading-relaxed text-emerald-100 resize-none focus:outline-none placeholder-slate-600 font-sans selection:bg-emerald-500/30"
+                            className="flex-1 w-full bg-transparent p-4 text-xs leading-relaxed text-slate-100 resize-none focus:outline-none placeholder:text-slate-600 font-sans"
                             placeholder="Terjemahan Indonesia..."
                           />
                         </div>
@@ -1121,12 +1111,12 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                     </>
                   ) : (
                     <div className="flex-1 flex items-center justify-center text-slate-500 p-8">
-                      <div className="text-center space-y-3">
-                        <div className="w-16 h-16 rounded-3xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto text-slate-600">
-                          <BookOpen className="w-8 h-8" />
+                      <div className="text-center space-y-2">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center mx-auto text-slate-500">
+                          <BookOpen className="w-6 h-6" />
                         </div>
-                        <p className="text-sm font-bold text-slate-300">Pilih Chapter di Daftar Kiri</p>
-                        <p className="text-xs text-slate-400 max-w-xs mx-auto font-medium">
+                        <p className="text-xs font-bold text-slate-300">Pilih Chapter di Daftar Kiri</p>
+                        <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
                           Pilih nomor chapter untuk membaca, menerjemahkan, atau mengedit teks secara langsung.
                         </p>
                       </div>

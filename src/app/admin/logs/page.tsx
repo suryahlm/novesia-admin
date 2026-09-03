@@ -105,50 +105,37 @@ export default function UpdateScrapingPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-16 animate-in fade-in duration-500 relative">
+    <div className="space-y-4 max-w-7xl mx-auto pb-12">
       {/* Toast Notification */}
       {toastMsg && (
         <div
-          className={`fixed bottom-8 right-8 z-50 p-5 rounded-2xl shadow-2xl border flex items-start gap-4 max-w-md transition-all duration-300 animate-in slide-in-from-bottom-5 backdrop-blur-2xl ${
+          className={`fixed bottom-6 right-6 z-50 p-4 rounded-xl shadow-2xl border flex items-start gap-3 max-w-md animate-in slide-in-from-bottom-5 backdrop-blur-md ${
             toastMsg.isError
-              ? "bg-[#220d11]/95 border-rose-500/40 text-rose-200"
-              : "bg-[#0b1b17]/95 border-emerald-500/40 text-emerald-100"
+              ? "bg-[#1f1013] border-red-900/60 text-red-200"
+              : "bg-[#0c1815] border-emerald-900/60 text-emerald-200"
           }`}
         >
           {toastMsg.isError ? (
-            <Server className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+            <Server className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
           ) : (
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
           )}
-          <div className="text-xs font-semibold leading-relaxed">{toastMsg.text}</div>
+          <div className="text-xs leading-relaxed">{toastMsg.text}</div>
         </div>
       )}
 
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl p-7 bg-[#0c101c]/80 backdrop-blur-2xl border border-white/[0.08] shadow-2xl">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex items-center gap-3.5 mb-2">
-          <div className="w-10 h-10 rounded-2xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-400 shadow-md">
-            <Cpu className="w-5 h-5" />
-          </div>
-          <div>
-            <h1
-              className="text-2xl lg:text-3xl font-extrabold tracking-tight text-white"
-              style={{ fontFamily: "'Outfit', sans-serif" }}
-            >
-              Pusat Kendali Eksekusi Scraping
-            </h1>
-            <p className="text-slate-400 text-xs mt-0.5 font-medium">
-              Jalankan scraper secara instan di background server tanpa harus menunggu jadwal cron
-              otomatis.
-            </p>
-          </div>
-        </div>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-100">
+          Pusat Kendali Scraping
+        </h1>
+        <p className="text-slate-400 text-xs mt-1">
+          Jalankan scraper secara instan di background server tanpa harus menunggu jadwal cron otomatis.
+        </p>
       </div>
 
       {/* Grid of Sources */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {scrapers.map((sc) => {
           const Icon = sc.icon;
           const isBusy = triggering === sc.id;
@@ -156,49 +143,42 @@ export default function UpdateScrapingPage() {
           return (
             <div
               key={sc.id}
-              className={`p-7 rounded-3xl border border-white/[0.08] ${sc.border} transition-all duration-300 backdrop-blur-2xl bg-[#0c101c]/70 relative overflow-hidden group shadow-xl shadow-black/40 flex flex-col justify-between`}
-              onMouseEnter={() => setIsHovered(sc.id)}
-              onMouseLeave={() => setIsHovered(null)}
+              className="p-5 rounded-xl border border-white/5 bg-[#12151b] flex flex-col justify-between hover:border-amber-400/30 transition-colors"
             >
-              {/* Glow overlay */}
-              <div
-                className={`absolute -right-20 -top-20 w-48 h-48 bg-gradient-to-br ${sc.color} rounded-full blur-[90px] opacity-15 group-hover:opacity-30 transition-opacity`}
-              />
-
-              <div className="relative z-10 space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-13 h-13 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/[0.08] shadow-inner">
-                    <Icon className="w-6 h-6 text-white" />
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-amber-400/10 border border-amber-400/20 text-amber-400">
+                    <Icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">{sc.name}</h3>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <h3 className="text-sm font-bold text-slate-100">{sc.name}</h3>
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">
                       Daemon Service
                     </span>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-400 leading-relaxed font-medium">{sc.desc}</p>
+                <p className="text-xs text-slate-400 leading-relaxed">{sc.desc}</p>
               </div>
 
-              <div className="relative z-10 pt-6 mt-4 border-t border-white/[0.06]">
+              <div className="pt-4 mt-3 border-t border-white/5">
                 <button
                   onClick={() => handleTrigger(sc.id)}
                   disabled={triggering !== null}
-                  className={`w-full py-3 px-4 rounded-2xl flex items-center justify-center gap-2 text-xs font-extrabold transition-all duration-300 cursor-pointer shadow-lg ${
+                  className={`w-full py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
                     isBusy
-                      ? "bg-slate-800 text-slate-400 cursor-not-allowed"
-                      : `bg-gradient-to-r ${sc.color} text-white hover:scale-[1.02] active:scale-[0.98] ${sc.shadow}`
+                      ? "bg-[#0a0c10] text-slate-400 cursor-not-allowed"
+                      : "bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)]"
                   } disabled:opacity-50`}
                 >
                   {isBusy ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
                       <span>Menjalankan Background Process...</span>
                     </>
                   ) : (
                     <>
-                      <PlayCircle className="w-4 h-4" />
+                      <PlayCircle className="w-3.5 h-3.5" />
                       <span>Jalankan Manual Sekarang</span>
                     </>
                   )}
@@ -209,19 +189,17 @@ export default function UpdateScrapingPage() {
         })}
       </div>
 
-      {/* Decorative Architecture Note */}
-      <div className="p-5 rounded-3xl bg-[#0c101c]/80 border border-white/[0.08] flex items-start gap-4 shadow-xl">
-        <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-400 shrink-0">
+      {/* Architecture Note */}
+      <div className="p-4 rounded-xl bg-[#12151b] border border-white/5 flex items-start gap-3">
+        <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0">
           <Server className="w-4 h-4" />
         </div>
-        <div className="text-xs text-slate-400 leading-relaxed font-medium">
-          <strong className="text-slate-200 font-bold">Catatan Arsitektur:</strong> Tombol di atas
-          mengeksekusi background daemon process terpisah (
-          <code className="font-mono text-violet-300 bg-white/[0.04] px-1.5 py-0.5 rounded text-[11px]">
+        <div className="text-xs text-slate-400 leading-relaxed">
+          <strong className="text-slate-200">Catatan:</strong> Tombol di atas mengeksekusi background daemon process terpisah (
+          <code className="font-mono text-amber-300 bg-white/5 px-1 py-0.5 rounded text-[11px]">
             detached: true
           </code>
-          ). Anda dapat menutup halaman ini kapan saja tanpa mengganggu scraping yang sedang
-          berjalan.
+          ). Anda dapat menutup halaman ini kapan saja tanpa mengganggu scraping yang sedang berjalan.
         </div>
       </div>
     </div>
