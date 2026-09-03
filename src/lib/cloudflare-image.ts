@@ -3,16 +3,14 @@ const DEFAULT_TOKEN_B64 = "Y2Z1dF95clI0UGNhakczejNWQ1pMMnNMVmIwaDhOTlFYOTBCcHI5d
 
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || DEFAULT_ACCOUNT_ID;
 const TOKEN = process.env.CLOUDFLARE_WORKERS_AI_TOKEN || Buffer.from(DEFAULT_TOKEN_B64, "base64").toString("utf-8");
-const PRIMARY_MODEL = process.env.CLOUDFLARE_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
+const PRIMARY_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 const LIGHTNING_MODEL = "@cf/bytedance/stable-diffusion-xl-lightning";
 
 const GUTSAI_API_KEY = process.env.GUTSAI_API_KEY || "sk-guts-7cd666aba27b935669cb9b3aad5bf2fe3e2f3d5e";
 const GUTSAI_BASE_URL = process.env.GUTSAI_BASE_URL || "https://api.gutsai.id/v1";
 const GUTSAI_MODEL = process.env.GUTSAI_MODEL || "gemini-3.7-flash";
 
-
-
-const SENSITIVE_GENRES = ["adult", "smut", "mature", "ecchi", "erotica", "nsfw", "harem", "r-18", "r18", "hentai"];
+const SENSITIVE_GENRES = ["adult", "smut", "mature", "ecchi", "erotica", "nsfw", "harem", "r-18", "r18", "hentai", "ntr", "ntr-adjacent", "hypnosis", "hypnosis powers", "cheat gun"];
 
 function sanitizeGenres(genres: string[]): string[] {
   const safe = (genres || [])
@@ -28,8 +26,8 @@ function sanitizeGenres(genres: string[]): string[] {
 function sanitizeText(text: string): string {
   return (text || "")
     .replace(/<[^>]*>?/gm, "")
-    .replace(/\b(smut|nsfw|adult|erotic|sex|explicit|naked|nude|rape|torture|blood|gore)\b/gi, "")
-    .slice(0, 300)
+    .replace(/\b(smut|nsfw|adult|erotic|erotica|sex|explicit|naked|nude|rape|torture|blood|gore|harem|ecchi|ntr|gun|weapon|kill|die|death|dead|trauma|hypnosis|drone|nitro|tractor)\b/gi, "")
+    .slice(0, 200)
     .trim();
 }
 
@@ -44,6 +42,7 @@ export async function buildNovelCoverPrompt(
 ): Promise<string> {
   const safeGenres = sanitizeGenres(genres).join(", ");
   const cleanSynopsis = sanitizeText(synopsis);
+  const cleanTitle = title.replace(/~/g, "-").replace(/cheat gun|harem/gi, "Fantasy").slice(0, 60);
 
   try {
     const res = await fetch(`${GUTSAI_BASE_URL}/chat/completions`, {
@@ -59,47 +58,33 @@ export async function buildNovelCoverPrompt(
           {
             role: "system",
             content:
-              "You are a master Japanese light novel art director (Kadokawa, Dengeki Bunko, Kyoto Animation). Your mission is to craft image prompts for AUTHENTIC HAND-DRAWN 2D ANIME ILLUSTRATIONS that look 100% created by top professional Japanese animators and official light novel illustrators, NEVER generic plastic AI art.",
+              "You are an expert Japanese light novel cover art director. Output a concise (under 40 words), safe, 2D anime illustration prompt in English. NEVER use generic AI words like photorealistic, 8k, 3D, CGI.",
           },
           {
             role: "user",
-            content: `Create an authentic 2D anime cover illustration prompt for a Japanese light novel:
-Title: "${title}"
-Genres: ${safeGenres}
-Story: ${cleanSynopsis}
-
-MANDATORY ART DIRECTION (PROFESSIONAL 2D ANIME ILLUSTRATOR):
-- ART STYLE: Official Japanese light novel cover illustration, authentic 2D anime key visual by Kyoto Animation & CloverWorks.
-- LINEWORK: Crisp, delicate, fine ink lineart with clean hand-drawn anime contours.
-- SHADING & PALETTE: Subtle cel-shading, soft natural color fills, harmonious painterly watercolor depth, soft matte textures.
-- CHARACTERS: Expressive anime character design with detailed anime eyes, soft natural hair, and elegant aesthetic costume fitting the story.
-- SCENERY: Beautifully painted atmospheric anime background (gouache & watercolor landscape, warm ambient lighting).
-- ANTI-AI DIRECTIVES (CRITICAL): Absolutely NO 3D render, NO CGI, NO photorealism, NO plastic doll skin, NO greasy/oily textures, NO oversaturated neon bloom, NO hyper-glossy lighting. Pure authentic 2D hand-drawn anime look.
-- SAFETY & CLEANLINESS: Pure PG-13 safe aesthetic. NO NSFW, NO nudity, NO text, NO typography, NO letters, NO title logos, NO watermarks, NO borders.
-
-Return ONLY the single descriptive prompt paragraph in English without quotes, titles, or markdown.`,
+            content: `Novel: "${cleanTitle}". Genres: ${safeGenres}. Story: ${cleanSynopsis}.
+Write a concise 2D anime key visual cover prompt: Authentic Japanese light novel cover illustration, Kyoto Animation & CloverWorks 2D style, charming anime characters in fantasy outfit, crisp lineart, subtle cel shading, soft pastel colors, no text, no watermark.`,
           },
         ],
         temperature: 0.7,
-        max_tokens: 250,
+        max_tokens: 120,
       }),
     });
 
     if (res.ok) {
       const json = await res.json();
       const generated = json.choices?.[0]?.message?.content?.trim();
-      if (generated && generated.length > 40) {
-        return generated;
+      if (generated && generated.length > 30) {
+        return generated.replace(/["']/g, "").slice(0, 250);
       }
     }
   } catch (err) {
     console.warn("Guts AI prompt generation fallback:", err);
   }
 
-  // Fallback template: Professional 2D Anime Light Novel Key Visual
-  return `Official Japanese light novel front cover illustration, key visual by Kyoto Animation and CloverWorks. Clean authentic 2D anime art style with crisp fine ink lineart and beautiful subtle cel shading. Novel: "${title}". Genre: ${safeGenres}. Expressive anime characters in elegant detailed outfits with sparkling anime eyes and soft hair, posing gracefully in a beautifully painted atmospheric setting. Hand-drawn anime aesthetic, harmonious watercolor palette, soft natural lighting, clean 2D composition, no 3D, no plastic skin, no CGI, no text, no watermark, no logo.`;
+  // Fallback template: Concise 2D Anime Light Novel Key Visual
+  return `Official Japanese light novel cover illustration. 2D anime key visual by Kyoto Animation and CloverWorks. Charming anime protagonist and graceful heroine in fantasy costume, crisp fine ink lineart, subtle cel shading, soft pastel colors, clean 2D composition, no 3D, no CGI, no text, no watermark.`;
 }
-
 
 /**
  * Panggil Cloudflare Workers AI dengan format JSON yang valid.
@@ -135,16 +120,66 @@ async function callCloudflareWorkersAI(model: string, prompt: string): Promise<B
   return Buffer.from(payload.result.image, "base64");
 }
 
+const DEFAULT_SILICONFLOW_KEY_B64 = "c2steWxueXdwY3d4Ym5mY2draGZhZXh1aW9tdWx3b2dxZHBocW1sa211ZGNnamhyaWVk";
+const SILICONFLOW_API_KEY = process.env.SILICONFLOW_API_KEY || Buffer.from(DEFAULT_SILICONFLOW_KEY_B64, "base64").toString("utf-8");
+const SILICONFLOW_BASE_URL = process.env.SILICONFLOW_BASE_URL || "https://api.siliconflow.com/v1";
+
+/**
+ * Panggil SiliconFlow FLUX.1-schnell dengan API Key resmi.
+ */
+async function callSiliconFlow(prompt: string): Promise<Buffer> {
+  const url = `${SILICONFLOW_BASE_URL}/images/generations`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SILICONFLOW_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    signal: AbortSignal.timeout(18000),
+    body: JSON.stringify({
+      model: "black-forest-labs/FLUX.1-schnell",
+      prompt,
+      image_size: "512x680",
+      num_inference_steps: 4,
+    }),
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => null);
+    throw new Error(`SiliconFlow (${res.status}): ${errData?.message || res.statusText}`);
+  }
+
+  const json = await res.json();
+  const imageUrl = json.images?.[0]?.url || json.data?.[0]?.url;
+  if (!imageUrl) {
+    throw new Error("SiliconFlow tidak mengembalikan URL gambar.");
+  }
+
+  const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(15000) });
+  if (!imgRes.ok) {
+    throw new Error("Gagal mengunduh gambar hasil render SiliconFlow.");
+  }
+
+  const arrayBuffer = await imgRes.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
 async function callPollinations(prompt: string, width: number, height: number): Promise<Buffer> {
-  // Sanitize prompt for Pollinations
-  const safePrompt = encodeURIComponent(prompt.slice(0, 400));
-  const url = `https://image.pollinations.ai/prompt/${safePrompt}?width=${width}&height=${height}&model=flux&nologo=true&seed=${Date.now()}`;
+  // Sanitize prompt for Pollinations - keep clean and concise
+  const safeText = prompt
+    .replace(/[^\w\s,.-]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 220);
+
+  const safePrompt = encodeURIComponent(safeText || "2D anime light novel cover illustration, Kyoto Animation style");
+  const url = `https://image.pollinations.ai/prompt/${safePrompt}?width=${width}&height=${height}&nologo=true&seed=${Date.now()}`;
   
   const res = await fetch(url, {
     headers: { "User-Agent": "NovesiaAdmin/2.0" },
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(12000),
   });
-
 
   if (!res.ok) {
     throw new Error(`Pollinations gagal: HTTP ${res.status}`);
@@ -158,8 +193,11 @@ function sleep(ms: number) {
 }
 
 /**
- * Generate image buffer menggunakan FLUX (Cloudflare Workers AI -> Lightning -> Pollinations).
- * Aspect ratio: 512x680 (3:4 portrait).
+ * Generate image buffer menggunakan multi-tier provider:
+ * 1. Cloudflare Workers AI FLUX
+ * 2. SiliconFlow FLUX.1 Schnell (API Key Resmi)
+ * 3. Cloudflare SDXL Lightning
+ * 4. Pollinations (Cadangan Terakhir)
  */
 export async function generateCoverImageBuffer(
   prompt: string,
@@ -173,20 +211,27 @@ export async function generateCoverImageBuffer(
     console.warn(`[ImageGen] Cloudflare ${PRIMARY_MODEL} error:`, err1?.message || err1);
   }
 
-  await sleep(1000);
+  // 2. Coba SiliconFlow FLUX.1-schnell (Sangat Cepat & Stabil)
+  try {
+    return await callSiliconFlow(prompt);
+  } catch (err2: any) {
+    console.warn("[ImageGen] SiliconFlow error:", err2?.message || err2);
+  }
 
-  // 2. Coba Cloudflare SDXL Lightning
+  // 3. Coba Cloudflare SDXL Lightning
   try {
     return await callCloudflareWorkersAI(LIGHTNING_MODEL, prompt);
-  } catch (err2: any) {
-    console.warn(`[ImageGen] Cloudflare ${LIGHTNING_MODEL} error:`, err2?.message || err2);
+  } catch (err3: any) {
+    console.warn(`[ImageGen] Cloudflare ${LIGHTNING_MODEL} error:`, err3?.message || err3);
   }
 
-  // 3. Fallback Pollinations
+  // 4. Fallback Pollinations
   try {
     return await callPollinations(prompt, width, height);
-  } catch (err3: any) {
-    console.error("[ImageGen] Semua provider AI image gagal:", err3);
-    throw new Error(err3 instanceof Error ? err3.message : "Gagal men-generate gambar cover.");
+  } catch (err4: any) {
+    console.error("[ImageGen] Semua provider AI image gagal:", err4);
+    throw new Error(err4 instanceof Error ? err4.message : "Gagal men-generate gambar cover.");
   }
 }
+
+
