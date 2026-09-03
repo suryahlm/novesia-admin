@@ -4,7 +4,7 @@ import {
   Layers,
   Tags,
   Languages,
-  AlertTriangle,
+  Clock,
   PlayCircle,
   CheckCircle2,
   TrendingUp,
@@ -80,7 +80,7 @@ async function getStats() {
     }
   });
 
-  const brokenChapters = Math.max(0, totalChapters - totalTranslated);
+  const pendingChapters = Math.max(0, totalChapters - totalTranslated);
 
   return {
     totalNovels,
@@ -88,7 +88,7 @@ async function getStats() {
     totalTranslated,
     totalGenres,
     totalViews,
-    brokenChapters,
+    pendingChapters,
     statusCounts,
     topGenres,
     recentNovels: novels.slice(0, 10),
@@ -133,7 +133,7 @@ export default async function DashboardPage() {
     totalTranslated,
     totalGenres,
     totalViews,
-    brokenChapters,
+    pendingChapters,
     statusCounts,
     topGenres,
     recentNovels,
@@ -150,13 +150,13 @@ export default async function DashboardPage() {
           icon={Languages}
           label="Chapter Diterjemahkan"
           value={totalTranslated.toLocaleString()}
-          sub={`${totalChapters.toLocaleString()} total, ${brokenChapters.toLocaleString()} pending`}
+          sub={`${totalChapters.toLocaleString()} total, ${pendingChapters.toLocaleString()} pending`}
         />
         <StatCard
-          icon={AlertTriangle}
-          label="Chapter Bermasalah"
-          value={brokenChapters.toLocaleString()}
-          sub="error/belum lengkap"
+          icon={Clock}
+          label="Belum Diterjemahkan"
+          value={pendingChapters.toLocaleString()}
+          sub="pending terjemahan AI"
         />
         <StatCard icon={PlayCircle} label="Novel Ongoing" value={statusCounts.ONGOING.toLocaleString()} />
         <StatCard icon={CheckCircle2} label="Novel Completed" value={statusCounts.COMPLETED.toLocaleString()} />
