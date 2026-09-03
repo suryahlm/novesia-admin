@@ -2,9 +2,9 @@ FROM node:20-alpine AS base
 
 # --- Dependencies ---
 FROM base AS deps
-RUN echo "nameserver 8.8.8.8" >> /etc/resolv.conf && \
-    apk add --no-cache libc6-compat || apk add --no-cache libc6-compat || true
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
+
 COPY package.json package-lock.json* ./
 RUN npm ci --legacy-peer-deps
 
@@ -18,7 +18,12 @@ COPY . .
 ARG NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 
-RUN npm run build
+# Limit workers to 2 to prevent OOM killer on high-core VPS servers (e.g. 72-core server spawning 71 workers)
+ENV NEXT_CPU_COUNT=2
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+RUN NEXT_CPU_COUNT=2 npm run build
+
 
 # --- Runner ---
 FROM base AS runner
