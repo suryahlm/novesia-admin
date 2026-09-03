@@ -1,4 +1,10 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
+} from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
   region: "auto",
@@ -41,7 +47,7 @@ export async function uploadCoverToR2(
 }
 
 /**
- * Hapus objek dari Cloudflare R2.
+ * Hapus single file dari Cloudflare R2.
  */
 export async function deleteFileFromR2(r2Key: string): Promise<boolean> {
   try {
@@ -57,3 +63,35 @@ export async function deleteFileFromR2(r2Key: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Hapus semua objek di bawah prefix tertentu dari Cloudflare R2.
+ */
+export async function deletePrefixFromR2(prefix: string): Promise<{ deleted: number }> {
+  try {
+    const listRes = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: BUCKET,
+        Prefix: prefix,
+      })
+    );
+
+    if (!listRes.Contents || listRes.Contents.length === 0) {
+      return { deleted: 0 };
+    }
+
+    const objectsToDelete = listRes.Contents.map((obj) => ({ Key: obj.Key }));
+    await s3.send(
+      new DeleteObjectsCommand({
+        Bucket: BUCKET,
+        Delete: { Objects: objectsToDelete },
+      })
+    );
+
+    return { deleted: objectsToDelete.length };
+  } catch (err) {
+    console.error("R2 delete prefix error:", err);
+    return { deleted: 0 };
+  }
+}
+

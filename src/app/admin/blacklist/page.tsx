@@ -77,6 +77,10 @@ export default function BlacklistPage() {
   const [blacklistReason, setBlacklistReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Hapus Raw R2 Modal State (Komiku Style)
+  const [deletingRaw, setDeletingRaw] = useState<BlacklistItem | null>(null);
+  const [deletingRawBusy, setDeletingRawBusy] = useState(false);
+
   // Rekomendasi Novel Mati State
   const [dormantNovels, setDormantNovels] = useState<NovelSearchResult[]>([]);
   const [loadingDormant, setLoadingDormant] = useState(false);
@@ -204,7 +208,7 @@ export default function BlacklistPage() {
 
   // 5. Hapus dari Blacklist (Un-blacklist)
   const handleRemoveFromBlacklist = async (item: BlacklistItem) => {
-    if (!confirm(`Keluarkan "${item.title}" dari blacklist? Scraper & translator akan dapat memproses novel ini kembali.`)) {
+    if (!confirm(`Keluarkan "${item.title}" dari blacklist? Scraper & translator bakal nyoba lagi update/proses novel ini.`)) {
       return;
     }
 
@@ -221,6 +225,28 @@ export default function BlacklistPage() {
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Gagal mengeluarkan dari blacklist";
       showToast(message, "error");
+    }
+  };
+
+  // 5b. Hapus Raw R2 (Komiku Style)
+  const confirmDeleteRaw = async () => {
+    if (!deletingRaw) return;
+    setDeletingRawBusy(true);
+    try {
+      const res = await fetch(`/api/blacklist/raw?slug=${encodeURIComponent(deletingRaw.nu_slug)}&id=${deletingRaw.novel_id || ""}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus file raw R2");
+
+      showToast(`Selesai! ${data.deleted} file raw R2 "${deletingRaw.title}" telah dihapus. Data novel tetap aman di Blacklist.`);
+      setDeletingRaw(null);
+      fetchBlacklist();
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Gagal menghapus raw R2";
+      showToast(message, "error");
+    } finally {
+      setDeletingRawBusy(false);
     }
   };
 
@@ -486,14 +512,22 @@ export default function BlacklistPage() {
 
                           {/* Actions */}
                           <td className="py-3 px-4 text-right whitespace-nowrap">
-                            <button
-                              onClick={() => handleRemoveFromBlacklist(item)}
-                              title="Keluarkan dari Blacklist (Un-blacklist)"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-medium transition-colors cursor-pointer"
-                            >
-                              <RotateCcw size={13} />
-                              <span>Batal Blacklist</span>
-                            </button>
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => setDeletingRaw(item)}
+                                title="Hapus raw R2 (cover + semua asset novel ini doang)"
+                                className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 border border-transparent hover:border-red-500/20 transition-colors cursor-pointer"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                              <button
+                                onClick={() => handleRemoveFromBlacklist(item)}
+                                title="Keluarin dari blacklist"
+                                className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 border border-transparent hover:border-red-500/20 transition-colors cursor-pointer"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -854,6 +888,63 @@ export default function BlacklistPage() {
                 >
                   <Ban size={15} />
                   {submitting ? "Memproses..." : "Blacklist Sekarang"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODAL 3: Konfirmasi Hapus Raw R2 (Komiku Style) ═══ */}
+      {deletingRaw && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#12151b] border border-red-500/30 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="p-4 border-b border-white/5 bg-[#0e1117] flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-400">
+                <Trash2 size={18} />
+                <h3 className="font-bold text-slate-100 text-base">
+                  Hapus raw R2 "{deletingRaw.title}"?
+                </h3>
+              </div>
+              <button
+                onClick={() => !deletingRawBusy && setDeletingRaw(null)}
+                className="text-slate-400 hover:text-slate-200 p-1 rounded-lg"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/30 text-red-200 text-xs leading-relaxed space-y-2">
+                <p className="font-semibold flex items-center gap-1.5 text-red-300">
+                  <AlertTriangle size={15} className="shrink-0" />
+                  PERINGATAN: Tindakan ini bersifat IRREVERSIBLE
+                </p>
+                <p>
+                  Semua file cover dan asset mentah novel ini akan dihapus permanen dari Cloudflare R2 untuk menghemat kuota storage agar tidak menjadi sampah.
+                </p>
+                <p className="text-slate-300">
+                  🛡️ <strong>Catatan Penting:</strong> Baris data novel <strong>TETAP ADA</strong> di dalam database dan di daftar Blacklist untuk menjaga riwayat serta memastikan Scraper tidak akan pernah mengambilnya kembali.
+                </p>
+              </div>
+
+              <div className="flex gap-2.5 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeletingRaw(null)}
+                  disabled={deletingRawBusy}
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-sm font-medium transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteRaw}
+                  disabled={deletingRawBusy}
+                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-semibold shadow-lg shadow-red-600/20 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <Trash2 size={15} />
+                  {deletingRawBusy ? "Menghapus dari R2..." : "Hapus Permanen"}
                 </button>
               </div>
             </div>
