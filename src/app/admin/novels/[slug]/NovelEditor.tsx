@@ -508,8 +508,8 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
         failedList.push(ch.chapter_number);
       }
 
-      // Safe 1.6s delay between chapters (comfortable for 40 RPM quota)
-      await new Promise((r) => setTimeout(r, 1600));
+      // Safe 1.85s delay between chapters (strictly under 35 RPM limit)
+      await new Promise((r) => setTimeout(r, 1850));
     }
 
     setBatchTranslating(false);
