@@ -65,23 +65,37 @@ export async function DELETE(req: NextRequest) {
       deletedCount += res.deleted;
     }
 
-    // 4. Update row DB: set cover_r2_key = null (namun row DB & blacklist TETAP ADA sebagai riwayat/penangkal scraper)
+    // 4. Hapus seluruh isi chapter di nu_chapter_content untuk menghemat kapasitas database
+    const { data: deletedChapters } = await supabase
+      .from("nu_chapter_content")
+      .delete()
+      .eq("novel_id", novel.id)
+      .select("id");
+
+    const chapterCountDeleted = deletedChapters?.length || 0;
+
+    // 5. Update row DB nu_novels: kosongkan cover dan total_chapters=0
+    // Baris data novel TETAP ADA di nu_novels & nu_blacklist sebagai penangkal agar scraper TIDAK mengambilnya lagi!
     await supabase
       .from("nu_novels")
       .update({
         cover_r2_key: null,
+        total_chapters: 0,
+        is_blacklisted: true,
+        status: "dropped",
       })
       .eq("id", novel.id);
 
     return NextResponse.json({
       success: true,
-      deleted: deletedCount,
+      deletedR2: deletedCount,
+      deletedChapters: chapterCountDeleted,
       title: novel.title,
       slug: novel.nu_slug,
-      message: `Berhasil menghapus file RAW R2 untuk "${novel.title}". Data novel tetap aman di Blacklist untuk mencegah scraper mengambil ulang.`,
+      message: `Berhasil menghapus ${deletedCount} file R2 dan ${chapterCountDeleted} chapter DB untuk "${novel.title}". Judul novel tetap aman di Blacklist untuk mencegah scraper mengambil ulang.`,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Gagal menghapus file RAW dari R2";
+    const message = err instanceof Error ? err.message : "Gagal menghapus file RAW & Chapter";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

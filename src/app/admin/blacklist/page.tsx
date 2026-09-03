@@ -214,7 +214,7 @@ export default function BlacklistPage() {
     }
   };
 
-  // 6. Hapus Raw R2 (Komiku Style)
+  // 6. Hapus Raw R2 & Chapter DB (Komiku Style)
   const confirmDeleteRaw = async () => {
     if (!deletingRaw) return;
     setDeletingRawBusy(true);
@@ -223,13 +223,13 @@ export default function BlacklistPage() {
         method: "DELETE",
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Gagal menghapus file raw R2");
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus file raw & chapter");
 
-      showToast(`Selesai. ${data.deleted} file raw R2 "${deletingRaw.title}" dihapus. Data tetap aman di Blacklist.`);
+      showToast(`Selesai. ${data.deletedChapters || 0} chapter DB & cover R2 "${deletingRaw.title}" telah dibersihkan. Judul tetap aman di Blacklist.`);
       setDeletingRaw(null);
       await fetchBlacklist();
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Gagal menghapus raw R2";
+      const message = e instanceof Error ? e.message : "Gagal menghapus raw R2 & chapter";
       showToast(message, "error");
     } finally {
       setDeletingRawBusy(false);
@@ -409,7 +409,7 @@ export default function BlacklistPage() {
                           <div className="inline-flex items-center gap-1">
                             <button
                               onClick={() => setDeletingRaw(c)}
-                              title="Hapus raw R2 (cover novel ini doang)"
+                              title="Hapus raw R2 & chapter DB (novel ini doang)"
                               className="p-1.5 rounded hover:bg-white/5 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
                             >
                               <Trash2 size={14} className="text-red-400" />
@@ -690,13 +690,13 @@ export default function BlacklistPage() {
         </div>
       )}
 
-      {/* ═══ MODAL: Hapus Raw R2 (Komiku 1:1) ═══ */}
+      {/* ═══ MODAL: Hapus Raw R2 & Chapter DB (Komiku 1:1) ═══ */}
       {deletingRaw && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#12151b] border border-red-500/20 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="px-4 py-3 border-b border-white/5 bg-[#0e1117] flex items-center justify-between">
               <h3 className="font-semibold text-slate-100 text-sm truncate max-w-md">
-                Hapus raw R2 "{deletingRaw.title}"?
+                Hapus raw R2 & chapter DB "{deletingRaw.title}"?
               </h3>
               <button
                 onClick={() => !deletingRawBusy && setDeletingRaw(null)}
@@ -707,8 +707,13 @@ export default function BlacklistPage() {
             </div>
 
             <div className="p-4 space-y-3">
-              <div className="p-3 rounded-lg bg-red-950/30 border border-red-500/20 text-red-300 text-xs leading-relaxed">
-                Ini IRREVERSIBLE - semua cover dan file raw novel ini bakal kehapus permanen dari R2. Row DB novel/chapter TETAP ADA di daftar Blacklist buat jaga riwayat & cegah scraper ambil ulang.
+              <div className="p-3 rounded-lg bg-red-950/30 border border-red-500/20 text-red-300 text-xs leading-relaxed space-y-1.5">
+                <p>
+                  Ini IRREVERSIBLE - cover di R2 dan <strong>seluruh isi teks chapter di database Postgres</strong> akan dihapus permanen untuk menghemat kapasitas storage.
+                </p>
+                <p className="text-slate-300">
+                  🛡️ Judul novel <strong>TETAP ADA</strong> di daftar Blacklist untuk menjaga riwayat dan memastikan scraper TIDAK AKAN PERNAH mengambilnya ulang.
+                </p>
               </div>
 
               <div className="flex gap-2 justify-end">
@@ -724,7 +729,7 @@ export default function BlacklistPage() {
                   disabled={deletingRawBusy}
                   className="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-md transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {deletingRawBusy ? "Menghapus..." : "Hapus Permanen"}
+                  {deletingRawBusy ? "Membersihkan..." : "Hapus Permanen"}
                 </button>
               </div>
             </div>
