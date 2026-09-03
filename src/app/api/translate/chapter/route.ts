@@ -134,6 +134,14 @@ export async function POST(req: NextRequest) {
       .eq("novel_id", novelId)
       .eq("chapter_number", chapterNumber);
 
+    // Tandai novel bahwa sudah memiliki terjemahan bahasa Indonesia (bahkan sejak 1 chapter)
+    await supabase.from("nu_novels")
+      .update({
+        translation_status: "id_translated",
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", novelId);
+
     return NextResponse.json({
       success: true,
       chapterNumber,
