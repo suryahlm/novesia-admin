@@ -42,15 +42,15 @@ export default async function NovelsListPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold text-slate-100">
             Daftar Novel
           </h1>
-          <p className="text-gray-500 mt-1">{novels.length} novel tersimpan</p>
+          <p className="text-slate-400 text-xs mt-1">{novels.length} novel tersimpan</p>
         </div>
         <div className="flex gap-3">
           <Link
             href="/admin/novels/new"
-            className="px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 rounded-xl text-sm font-semibold shadow-lg shadow-violet-500/20 transition-all"
+            className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 text-sm font-semibold rounded-lg shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all"
           >
             + Tambah Novel
           </Link>
