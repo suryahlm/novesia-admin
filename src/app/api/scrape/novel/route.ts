@@ -34,6 +34,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Halaman tidak bisa di-parse" }, { status: 422 });
     }
 
+    // 2b. Cek apakah novel ini di-blacklist
+    const { data: blacklisted } = await supabase
+      .from("nu_blacklist")
+      .select("id, reason")
+      .eq("nu_slug", info.slug)
+      .eq("type", "novel")
+      .maybeSingle();
+
+    if (blacklisted) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Novel "${info.title}" berada di dalam daftar Blacklist (${blacklisted.reason || "Di-blacklist"}). Scraper melewatinya.`,
+        },
+        { status: 403 }
+      );
+    }
+
     // 3. Cover: gunakan URL CDN NU langsung (tidak dilindungi CF)
     // R2 upload dilakukan sebagai backup saja
     let coverUrl = info.coverSrc || "";

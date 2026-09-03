@@ -12,6 +12,7 @@ import {
   Settings,
   Sparkles,
   ShieldCheck,
+  Ban,
   LogOut,
 } from "lucide-react";
 
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/admin/novels", label: "Novel", icon: BookOpen },
   { href: "/admin/novels/new", label: "Tambah Novel", icon: BookPlus },
   { href: "/admin/update", label: "Edit Novel", icon: FileEdit },
+  { href: "/admin/blacklist", label: "Blacklist", icon: Ban },
   { href: "/admin/logs", label: "Scraping & Logs", icon: ScrollText },
   { href: "/admin/notifications", label: "Notifikasi", icon: Bell },
   { href: "/admin/config", label: "Pengaturan", icon: Settings },
