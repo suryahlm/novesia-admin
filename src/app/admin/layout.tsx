@@ -14,6 +14,11 @@ import {
   ShieldCheck,
   Ban,
   LogOut,
+  Database,
+  Users,
+  MessageSquare,
+  MessagesSquare,
+  Rocket,
 } from "lucide-react";
 
 const navItems = [
@@ -21,9 +26,14 @@ const navItems = [
   { href: "/admin/novels", label: "Novel", icon: BookOpen },
   { href: "/admin/novels/new", label: "Tambah Novel", icon: BookPlus },
   { href: "/admin/update", label: "Edit Novel", icon: FileEdit },
+  { href: "/admin/storage", label: "Storage R2", icon: Database },
+  { href: "/admin/users", label: "Pengguna", icon: Users },
+  { href: "/admin/comments", label: "Komentar", icon: MessageSquare },
+  { href: "/admin/forum", label: "Forum", icon: MessagesSquare },
+  { href: "/admin/notifications", label: "Notifikasi", icon: Bell },
+  { href: "/admin/banners", label: "Banner Beranda", icon: Rocket },
   { href: "/admin/blacklist", label: "Blacklist", icon: Ban },
   { href: "/admin/logs", label: "Scraping & Logs", icon: ScrollText },
-  { href: "/admin/notifications", label: "Notifikasi", icon: Bell },
   { href: "/admin/config", label: "Pengaturan", icon: Settings },
 ];
 
