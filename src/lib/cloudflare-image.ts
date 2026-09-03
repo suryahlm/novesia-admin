@@ -17,24 +17,32 @@ const GUTSAI_API_KEY = process.env.GUTSAI_API_KEY || "sk-guts-7cd666aba27b935669
 const GUTSAI_BASE_URL = process.env.GUTSAI_BASE_URL || "https://api.gutsai.id/v1";
 const GUTSAI_MODEL = process.env.GUTSAI_MODEL || "gemini-3.7-flash";
 
-const SENSITIVE_GENRES = ["adult", "smut", "mature", "ecchi", "erotica", "nsfw", "harem", "r-18", "r18", "hentai", "ntr", "ntr-adjacent", "hypnosis", "hypnosis powers", "cheat gun"];
+const SAFE_GENRES_WHITELIST = new Set([
+  "action", "adventure", "comedy", "drama", "fantasy", "isekai",
+  "magic", "mystery", "romance", "sci-fi", "slice of life",
+  "supernatural", "historical", "school life", "martial arts",
+  "reincarnation", "game", "dungeons", "monsters", "demons",
+  "adventurers", "shounen", "shoujo", "seinen", "josei"
+]);
 
 function sanitizeGenres(genres: string[]): string[] {
   const safe = (genres || [])
     .map((g) => g.trim())
-    .filter((g) => !SENSITIVE_GENRES.includes(g.toLowerCase()));
+    .filter((g) => SAFE_GENRES_WHITELIST.has(g.toLowerCase()));
 
   if (safe.length === 0) {
-    safe.push("Romance", "Fantasy", "Drama");
+    return ["Fantasy", "Adventure", "Magic"];
   }
-  return safe;
+  return safe.slice(0, 5);
 }
 
 function sanitizeText(text: string): string {
   return (text || "")
     .replace(/<[^>]*>?/gm, "")
-    .replace(/\b(smut|nsfw|adult|erotic|erotica|sex|explicit|naked|nude|rape|torture|blood|gore|harem|ecchi|ntr|gun|weapon|kill|die|death|dead|trauma|hypnosis|drone|nitro|tractor)\b/gi, "")
-    .slice(0, 200)
+    .replace(/\b(slave|slaves|intercourse|seduction|succubus|pervert|perverted|polygamy|pregnancy|eroge|galgame|harem|smut|nsfw|adult|erotic|erotica|sex|sexy|explicit|naked|nude|rape|torture|blood|gore|ecchi|ntr|gun|weapon|kill|die|death|dead|trauma|hypnosis|drone|nitro|tractor|r-18|r18|hentai)\b/gi, "")
+    .replace(/[^\w\s,.-]/gi, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 160)
     .trim();
 }
 
@@ -49,7 +57,12 @@ export async function buildNovelCoverPrompt(
 ): Promise<string> {
   const safeGenres = sanitizeGenres(genres).join(", ");
   const cleanSynopsis = sanitizeText(synopsis);
-  const cleanTitle = title.replace(/~/g, "-").replace(/cheat gun|harem/gi, "Fantasy").slice(0, 60);
+  const cleanTitle = title
+    .replace(/~/g, "-")
+    .replace(/\b(slave|slaves|intercourse|seduction|succubus|pervert|perverted|polygamy|pregnancy|eroge|galgame|cheat gun|harem|smut|nsfw|adult|erotic|erotica|sex|naked|nude|rape|torture|ecchi|ntr|r-18|r18)\b/gi, "")
+    .replace(/[^\w\s,.-]/gi, " ")
+    .trim()
+    .slice(0, 50);
 
   try {
     const res = await fetch(`${GUTSAI_BASE_URL}/chat/completions`, {
@@ -65,33 +78,43 @@ export async function buildNovelCoverPrompt(
           {
             role: "system",
             content:
-              "You are an expert Japanese light novel cover art director. Output a concise (under 40 words), safe, 2D anime illustration prompt in English. NEVER use generic AI words like photorealistic, 8k, 3D, CGI.",
+              "You are a prompt engine for 2D anime illustration. Output ONLY a single line of raw image prompt text (under 30 words). NEVER output explanations, markdown headers, quotes, or greetings.",
           },
           {
             role: "user",
-            content: `Novel: "${cleanTitle}". Genres: ${safeGenres}. Story: ${cleanSynopsis}.
-Write a concise 2D anime key visual cover prompt: Authentic Japanese light novel cover illustration, Kyoto Animation & CloverWorks 2D style, charming anime characters in fantasy outfit, crisp lineart, subtle cel shading, soft pastel colors, no text, no watermark.`,
+            content: `Novel Title: "${cleanTitle}". Genres: ${safeGenres}. Theme: ${cleanSynopsis}.
+Output a single-line 2D Japanese light novel anime cover illustration prompt in Kyoto Animation / CloverWorks style, clean lineart, soft pastel colors, no text, no watermark.`,
           },
         ],
-        temperature: 0.7,
-        max_tokens: 120,
+        temperature: 0.5,
+        max_tokens: 50,
       }),
     });
 
     if (res.ok) {
       const json = await res.json();
-      const generated = json.choices?.[0]?.message?.content?.trim();
-      if (generated && generated.length > 30) {
-        return generated.replace(/["']/g, "").slice(0, 250);
+      let generated = json.choices?.[0]?.message?.content?.trim() || "";
+      // Strip any markdown or extra lines if AI spoke too much
+      generated = generated
+        .replace(/[#*`_>\[\]]/g, "")
+        .replace(/Prompt:/gi, "")
+        .split("\n")[0]
+        .trim();
+
+      if (generated && generated.length > 20) {
+        const cleanPrompt = sanitizeText(generated);
+        return `${cleanPrompt}, 2D anime key visual, Kyoto Animation style, clean lineart, soft pastel colors, no text, no watermark`;
       }
     }
   } catch (err) {
     console.warn("Guts AI prompt generation fallback:", err);
   }
 
-  // Fallback template: Concise 2D Anime Light Novel Key Visual
-  return `Official Japanese light novel cover illustration. 2D anime key visual by Kyoto Animation and CloverWorks. Charming anime protagonist and graceful heroine in fantasy costume, crisp fine ink lineart, subtle cel shading, soft pastel colors, clean 2D composition, no 3D, no CGI, no text, no watermark.`;
+  // Fallback template: Wholesome 2D Anime Light Novel Key Visual
+  return `Official Japanese light novel cover illustration. 2D anime key visual by Kyoto Animation and CloverWorks. Charming young anime protagonist and noble heroine in fantasy costume, sparkling fantasy kingdom capital background, crisp fine ink lineart, subtle cel shading, soft pastel colors, clean 2D composition, no 3D, no CGI, no text, no watermark.`;
 }
+
+
 
 /**
  * Panggil Cloudflare Workers AI dengan format JSON yang valid.

@@ -13,16 +13,18 @@ export async function POST(
     const body = await req.json().catch(() => ({}));
     const customPrompt = body?.prompt;
 
-    // 1. Fetch novel data from DB
+    // 1. Fetch novel data from DB (by UUID or slug)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     const { data: novel, error: fetchError } = await supabase
       .from("nu_novels")
       .select("id, title, nu_slug, source, genres, synopsis, author")
-      .eq("id", id)
+      .eq(isUuid ? "id" : "nu_slug", id)
       .single();
 
     if (fetchError || !novel) {
       return NextResponse.json({ error: "Novel tidak ditemukan." }, { status: 404 });
     }
+
 
     // 2. Build Light Novel Aesthetic Prompt (Custom or AI-generated via Gemini 3.7 Flash)
     let finalPrompt = customPrompt;
@@ -56,7 +58,8 @@ export async function POST(
         cover_r2_key: result.r2Key,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", id);
+      .eq("id", novel.id);
+
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 400 });
