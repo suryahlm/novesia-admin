@@ -15,7 +15,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
-type SourceKey = "novelworld" | "talesinthevalley" | "98novels" | "tinytranslation" | "cuttlefishreads";
+type SourceKey = "talesinthevalley" | "98novels" | "tinytranslation" | "cuttlefishreads";
 
 export default function UpdateScrapingPage() {
   const [isHovered, setIsHovered] = useState<string | null>(null);
@@ -57,15 +57,6 @@ export default function UpdateScrapingPage() {
       shadow: "shadow-emerald-500/20",
       border: "hover:border-emerald-500/40",
       desc: "Menangani sumber TalesInTheValley. Ekstraksi mulus bypass proteksi batas koneksi Cloudflare.",
-    },
-    {
-      id: "novelworld",
-      name: "NovelWorld Scraper",
-      icon: BookOpen,
-      color: "from-violet-500 via-purple-500 to-pink-400",
-      shadow: "shadow-violet-500/20",
-      border: "hover:border-violet-500/40",
-      desc: "Pemrosesan masif untuk direktori Novelworld dengan multi-thread parser terorganisir.",
     },
     {
       id: "tinytranslation",

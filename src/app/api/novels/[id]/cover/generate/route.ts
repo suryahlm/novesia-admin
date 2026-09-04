@@ -40,7 +40,7 @@ export async function POST(
     const imageBuffer = await generateCoverImageBuffer(finalPrompt, 512, 680);
 
     // 4. Upload to Cloudflare R2
-    const sourcePrefix = novel.source || "novelworld";
+    const sourcePrefix = novel.source || "general";
     const filename = `${sourcePrefix}/${novel.nu_slug}/cover.jpg`;
     const result = await uploadCoverToR2(imageBuffer, filename);
 

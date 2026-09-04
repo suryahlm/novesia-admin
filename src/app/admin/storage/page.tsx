@@ -213,7 +213,7 @@ export default function StoragePage() {
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
-              placeholder="Prefix (mis. general/ atau novelworld/)"
+              placeholder="Prefix (mis. general/ atau cuttlefishreads/)"
               value={inputPrefix}
               onChange={(e) => setInputPrefix(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleApplyPrefix()}
