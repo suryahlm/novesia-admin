@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 
 const SCRAPER_NAMES: Record<string, string> = {
   'talesinthevalley': 'TalesInTheValley',
-  '98novels': '98Novels',
   'tinytranslation': 'TinyTranslation',
   'cuttlefishreads': 'CuttlefishReads'
 };

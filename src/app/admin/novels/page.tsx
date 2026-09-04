@@ -7,7 +7,6 @@ import NovelGrid from "./NovelGrid";
 // Source definitions — add new sources here
 const NOVEL_SOURCES = [
   { id: "talesinthevalley", label: "TalesInTheValley", icon: "⚔️", color: "from-blue-600 to-cyan-600", shadow: "shadow-blue-500/20" },
-  { id: "98novels", label: "98Novels", icon: "💎", color: "from-rose-500 to-pink-600", shadow: "shadow-rose-500/20" },
   { id: "tinytranslation", label: "TinyTranslation", icon: "🍄", color: "from-purple-600 to-fuchsia-600", shadow: "shadow-purple-500/20" },
   { id: "cuttlefishreads", label: "CuttlefishReads", icon: "🦑", color: "from-amber-600 to-orange-600", shadow: "shadow-amber-500/20" },
   { id: "general", label: "General", icon: "🌐", color: "from-gray-600 to-slate-600", shadow: "shadow-gray-500/20" },
@@ -63,7 +62,7 @@ export default async function NovelsListPage() {
       </div>
 
       {/* Source Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
         {NOVEL_SOURCES.map((src) => {
           const count = sourceCounts[src.id] || 0;
           return (

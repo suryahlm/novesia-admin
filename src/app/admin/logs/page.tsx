@@ -15,7 +15,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
-type SourceKey = "talesinthevalley" | "98novels" | "tinytranslation" | "cuttlefishreads";
+type SourceKey = "talesinthevalley" | "tinytranslation" | "cuttlefishreads";
 
 export default function UpdateScrapingPage() {
   const [isHovered, setIsHovered] = useState<string | null>(null);
@@ -39,15 +39,6 @@ export default function UpdateScrapingPage() {
       shadow: "shadow-amber-500/20",
       border: "hover:border-amber-500/40",
       desc: "Menangani sumber CuttlefishReads. Ekstraksi Next.js RSC & HTML dengan Cloudflare R2 otomatis.",
-    },
-    {
-      id: "98novels",
-      name: "98Novels Engine",
-      icon: Fingerprint,
-      color: "from-blue-500 via-indigo-500 to-cyan-400",
-      shadow: "shadow-blue-500/20",
-      border: "hover:border-blue-500/40",
-      desc: "Autopilot Cron. Aktif menarik novel dengan pengenalan HTML cerdas dan aset terenkripsi ke Cloudflare R2.",
     },
     {
       id: "talesinthevalley",
