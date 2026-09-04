@@ -69,6 +69,7 @@ interface TranslateLogEntry {
 
 const SOURCE_TABS = [
   { id: "all", label: "Semua", icon: "📋", color: "from-violet-600 to-indigo-600", shadow: "shadow-violet-500/20" },
+  { id: "akknovel", label: "AkkNovel", icon: "✨", color: "from-rose-600 to-pink-600", shadow: "shadow-rose-500/20" },
   { id: "talesinthevalley", label: "TalesInTheValley", icon: "⚔️", color: "from-blue-600 to-cyan-600", shadow: "shadow-blue-500/20" },
   { id: "tinytranslation", label: "TinyTranslation", icon: "🍄", color: "from-purple-600 to-fuchsia-600", shadow: "shadow-purple-500/20" },
   { id: "cuttlefishreads", label: "CuttlefishReads", icon: "🦑", color: "from-amber-600 to-orange-600", shadow: "shadow-amber-500/20" },

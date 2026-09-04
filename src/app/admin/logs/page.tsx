@@ -13,9 +13,10 @@ import {
   Zap,
   Activity,
   ShieldAlert,
+  Sparkles,
 } from "lucide-react";
 
-type SourceKey = "talesinthevalley" | "tinytranslation" | "cuttlefishreads";
+type SourceKey = "akknovel" | "talesinthevalley" | "tinytranslation" | "cuttlefishreads";
 
 export default function UpdateScrapingPage() {
   const [isHovered, setIsHovered] = useState<string | null>(null);
@@ -31,6 +32,15 @@ export default function UpdateScrapingPage() {
     border: string;
     desc: string;
   }[] = [
+    {
+      id: "akknovel",
+      name: "AkkNovel Engine",
+      icon: Sparkles,
+      color: "from-rose-500 via-pink-500 to-rose-400",
+      shadow: "shadow-rose-500/20",
+      border: "hover:border-rose-500/40",
+      desc: "Menangani sumber AkkNovel. Ekstraksi pure HTTP SSR Astro, cover R2 HD, dan chapter lengkap tanpa limit.",
+    },
     {
       id: "cuttlefishreads",
       name: "Cuttlefish Engine",
