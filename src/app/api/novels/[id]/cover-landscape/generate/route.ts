@@ -15,7 +15,7 @@ export async function POST(
 
     let query = supabase
       .from("nu_novels")
-      .select("id, title, nu_slug, source, cover_url, cover_landscape_r2_key")
+      .select("id, title, nu_slug, source, genres, cover_url, cover_landscape_r2_key")
       .eq(isUuid ? "id" : "nu_slug", id)
       .maybeSingle();
 
@@ -25,7 +25,7 @@ export async function POST(
       // Coba fallback dengan slug
       const { data: novelBySlug } = await supabase
         .from("nu_novels")
-        .select("id, title, nu_slug, source, cover_url, cover_landscape_r2_key")
+        .select("id, title, nu_slug, source, genres, cover_url, cover_landscape_r2_key")
         .eq("nu_slug", id)
         .maybeSingle();
       novel = novelBySlug;
@@ -45,8 +45,11 @@ export async function POST(
       );
     }
 
-    // 3. Generate cover landscape (800x500 WebP ~40KB) dengan Sharp
-    const landscapeBuffer = await generateLandscapeFromPortrait(novel.cover_url);
+    // 3. Generate cover landscape (800x500 WebP ~40-60KB) dengan AI Outpainting
+    const landscapeBuffer = await generateLandscapeFromPortrait(novel.cover_url, {
+      title: novel.title,
+      genres: novel.genres || [],
+    });
 
     // 4. Upload ke Cloudflare R2
     const r2Key = coverLandscapeKey(novel.source || "general", novel.nu_slug, "webp");
