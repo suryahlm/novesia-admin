@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   Loader2,
@@ -13,6 +13,11 @@ import {
   X,
   AlertTriangle,
   Sparkles,
+  Globe,
+  StopCircle,
+  CheckCircle2,
+  XCircle,
+  Languages,
 } from "lucide-react";
 
 interface Novel {
@@ -29,6 +34,37 @@ interface Novel {
   status: string;
   author: string | null;
   updated_at: string | null;
+  // Translation stats
+  has_synopsis: boolean;
+  has_synopsis_translated: boolean;
+  translated_chapters: number;
+  pending_chapters: number;
+  total_with_content: number;
+}
+
+interface TranslateProgress {
+  totalNovels: number;
+  totalChapters: number;
+  totalSynopsis: number;
+  currentNovelTitle: string;
+  currentNovelId: string;
+  currentChapterNumber: number;
+  currentChapterIndex: number;
+  currentChapterTotal: number;
+  completedChapters: number;
+  failedChapters: number;
+  synopsisTranslated: number;
+  phase: "synopsis" | "chapter" | "idle";
+  attempt: number;
+}
+
+interface TranslateLogEntry {
+  novelId: string;
+  novelTitle: string;
+  synopsisOk: boolean;
+  translated: number;
+  failed: number;
+  skipped?: boolean;
 }
 
 const SOURCE_TABS = [
@@ -52,20 +88,100 @@ export default function EditNovelPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
-    type: "single" | "bulk";
+    type: "single" | "bulk" | "translate" | "translate-source";
     novelId?: string;
     novelTitle?: string;
+    sourceLabel?: string;
   } | null>(null);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
+  // Bulk Translate State
+  const [bulkTranslating, setBulkTranslating] = useState(false);
+  const [translateProgress, setTranslateProgress] = useState<TranslateProgress | null>(null);
+  const [translateLog, setTranslateLog] = useState<TranslateLogEntry[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const showMsg = (type: "ok" | "err", text: string) => {
     setMessage({ type, text });
-    setTimeout(() => setMessage(null), 3000);
+    setTimeout(() => setMessage(null), 3500);
   };
 
   useEffect(() => {
     fetchNovels();
+    checkBackgroundJob();
   }, []);
+
+  // Poll background job when bulkTranslating is active
+  useEffect(() => {
+    if (!bulkTranslating) return;
+
+    const interval = setInterval(() => {
+      checkBackgroundJob();
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [bulkTranslating]);
+
+  const checkBackgroundJob = async () => {
+    try {
+      const res = await fetch("/api/translate/bulk");
+      const data = await res.json();
+      if (data.job) {
+        syncJobState(data.job);
+      }
+    } catch (err) {
+      console.error("Gagal memeriksa status background translate:", err);
+    }
+  };
+
+  const syncJobState = (job: any) => {
+    if (job.status === "running") {
+      setBulkTranslating(true);
+      setTranslateProgress({
+        totalNovels: job.totalNovels || 0,
+        totalChapters: job.totalChapters || 0,
+        totalSynopsis: job.totalSynopsis || 0,
+        currentNovelTitle: job.currentNovelTitle || "",
+        currentNovelId: job.currentNovelId || "",
+        currentChapterNumber: job.currentChapterNumber || 0,
+        currentChapterIndex: job.currentChapterIndex || 0,
+        currentChapterTotal: job.currentChapterTotal || 0,
+        completedChapters: job.completedChapters || 0,
+        failedChapters: job.failedChapters || 0,
+        synopsisTranslated: job.synopsisTranslated || 0,
+        phase: job.phase || "idle",
+        attempt: job.attempt || 1,
+      });
+      setTranslateLog(job.logs || []);
+    } else if (job.status === "completed") {
+      setBulkTranslating((wasRunning) => {
+        if (wasRunning) {
+          showMsg(
+            job.failedChapters === 0 ? "ok" : "err",
+            `🎉 Selesai! ${job.completedChapters} chapter + ${job.synopsisTranslated} sinopsis berhasil (${job.failedChapters} gagal)`
+          );
+          fetchNovels();
+        }
+        return false;
+      });
+    } else if (job.status === "stopped") {
+      setBulkTranslating((wasRunning) => {
+        if (wasRunning) {
+          showMsg("ok", "Translate background dihentikan oleh user.");
+          fetchNovels();
+        }
+        return false;
+      });
+    } else if (job.status === "error") {
+      setBulkTranslating((wasRunning) => {
+        if (wasRunning) {
+          showMsg("err", `Translate error: ${job.error || "Terjadi kesalahan"}`);
+          fetchNovels();
+        }
+        return false;
+      });
+    }
+  };
 
   const fetchNovels = async () => {
     try {
@@ -181,8 +297,8 @@ export default function EditNovelPage() {
       if (!res.ok) throw new Error(data.error || "Gagal meng-generate genre");
       
       showMsg("ok", `✅ ${data.message}`);
-      await fetchNovels(); // Refresh data
-      setSelectedIds(new Set()); // Clear selection
+      await fetchNovels();
+      setSelectedIds(new Set());
     } catch (err: any) {
       showMsg("err", err.message);
     } finally {
@@ -190,7 +306,84 @@ export default function EditNovelPage() {
     }
   };
 
+  // === BULK TRANSLATE (BACKGROUND WORKER) ===
+  const handleBulkTranslate = async (novelIds: string[]) => {
+    if (novelIds.length === 0) return;
+    setConfirmModal(null);
+
+    try {
+      const res = await fetch("/api/translate/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ novelIds, sourceLabel: activeSourceLabel }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showMsg("err", data.error || "Gagal meluncurkan background translate");
+        checkBackgroundJob();
+        return;
+      }
+
+      setBulkTranslating(true);
+      if (data.job) {
+        syncJobState(data.job);
+      }
+      showMsg("ok", "🚀 Background translate aktif! Anda bebas menutup tab atau browser kapan saja.");
+    } catch (err: any) {
+      showMsg("err", `Error: ${err.message}`);
+    }
+  };
+
+  const handleStopTranslate = async () => {
+    try {
+      const res = await fetch("/api/translate/bulk/stop", { method: "POST" });
+      const data = await res.json();
+      if (data.ok) {
+        showMsg("ok", "Menghentikan background translate...");
+        checkBackgroundJob();
+      } else {
+        showMsg("err", data.message || "Gagal menghentikan translate");
+      }
+    } catch (err: any) {
+      showMsg("err", `Gagal menghentikan: ${err.message}`);
+    }
+  };
+
+  const formatDuration = (sec: number) => {
+    if (sec < 60) return `${sec}s`;
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}m ${s}s`;
+  };
+
+  // Quick translate all novels in current source tab
+  const handleTranslateSource = () => {
+    const sourceNovels = activeSource === "all"
+      ? novels
+      : novels.filter((n) => (n.source || "general") === activeSource);
+    const ids = sourceNovels.map((n) => n.id);
+    handleBulkTranslate(ids);
+  };
+
+  // Translate selected novels
+  const handleTranslateSelected = () => {
+    handleBulkTranslate(Array.from(selectedIds));
+  };
+
   const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
+
+  // Compute translate stats for confirm modal
+  const getTranslateStats = (ids: string[]) => {
+    const idSet = new Set(ids);
+    const selected = novels.filter((n) => idSet.has(n.id));
+    const pendingSynopsis = selected.filter((n) => n.has_synopsis && !n.has_synopsis_translated).length;
+    const pendingChapters = selected.reduce((sum, n) => sum + (n.pending_chapters || 0), 0);
+    return { count: selected.length, pendingSynopsis, pendingChapters };
+  };
+
+  // Active source label
+  const activeSourceLabel = SOURCE_TABS.find((s) => s.id === activeSource)?.label || "Semua";
 
   return (
     <div className="space-y-7 max-w-7xl mx-auto pb-16">
@@ -219,11 +412,21 @@ export default function EditNovelPage() {
         </div>
 
         {/* Bulk Action Controls */}
-        {selectedIds.size > 0 && (
+        {selectedIds.size > 0 && !bulkTranslating && (
           <div className="flex items-center gap-2.5 animate-in fade-in zoom-in-95 duration-200">
+            {/* Translate Massal */}
+            <button
+              onClick={() => setConfirmModal({ type: "translate" })}
+              disabled={bulkTranslating || bulkDeleting || bulkGenerating}
+              className="px-3.5 py-2 bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-500 hover:brightness-110 text-white rounded-lg text-xs font-semibold shadow-[0_2px_12px_-2px_rgba(59,130,246,0.45)] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>Translate Massal ({selectedIds.size})</span>
+            </button>
+
             <button
               onClick={handleBulkGenerate}
-              disabled={bulkGenerating || bulkDeleting}
+              disabled={bulkGenerating || bulkDeleting || bulkTranslating}
               className="px-3.5 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 rounded-lg text-xs font-semibold shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all flex items-center gap-1.5 cursor-pointer"
             >
               {bulkGenerating ? (
@@ -236,7 +439,7 @@ export default function EditNovelPage() {
 
             <button
               onClick={() => setConfirmModal({ type: "bulk" })}
-              disabled={bulkDeleting || bulkGenerating}
+              disabled={bulkDeleting || bulkGenerating || bulkTranslating}
               className="px-3.5 py-2 bg-red-950/60 hover:bg-red-900/60 text-red-300 border border-red-900/60 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
             >
               {bulkDeleting ? (
@@ -302,18 +505,137 @@ export default function EditNovelPage() {
           )}
         </div>
 
-        <button
-          onClick={selectAll}
-          className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
-            allSelected
-              ? "bg-amber-400/20 text-amber-300 border border-amber-400/30"
-              : "bg-[#0a0c10] text-slate-300 border border-white/10 hover:bg-white/5"
-          }`}
-        >
-          {allSelected ? <CheckSquare className="w-4 h-4 text-amber-400" /> : <Square className="w-4 h-4" />}
-          <span>{allSelected ? "Batal Pilih" : "Pilih Semua"}</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Quick Translate Source Button */}
+          {!bulkTranslating && (
+            <button
+              onClick={() => setConfirmModal({ type: "translate-source", sourceLabel: activeSourceLabel })}
+              className="px-3.5 py-2 rounded-lg text-xs font-semibold bg-gradient-to-br from-cyan-500/15 to-blue-500/15 text-cyan-300 border border-cyan-500/20 hover:border-cyan-400/40 transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Languages className="w-4 h-4" />
+              <span className="hidden sm:inline">Translate {activeSourceLabel}</span>
+              <span className="sm:hidden">Translate</span>
+            </button>
+          )}
+
+          <button
+            onClick={selectAll}
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+              allSelected
+                ? "bg-amber-400/20 text-amber-300 border border-amber-400/30"
+                : "bg-[#0a0c10] text-slate-300 border border-white/10 hover:bg-white/5"
+            }`}
+          >
+            {allSelected ? <CheckSquare className="w-4 h-4 text-amber-400" /> : <Square className="w-4 h-4" />}
+            <span>{allSelected ? "Batal Pilih" : "Pilih Semua"}</span>
+          </button>
+        </div>
       </div>
+
+      {/* Bulk Translate Progress Panel */}
+      {bulkTranslating && translateProgress && (
+        <div className="bg-[#0d1520] border border-cyan-500/20 rounded-xl p-5 space-y-4 animate-in fade-in slide-in-from-top-3 duration-300">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/20 flex items-center justify-center">
+                <Globe className="w-4 h-4 text-cyan-400 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-100">Translate Massal Berjalan</h3>
+                  <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] text-emerald-400 font-semibold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Background Aktif (Aman tutup browser)
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {translateProgress.completedChapters + translateProgress.failedChapters} / {translateProgress.totalChapters} chapter
+                  {translateProgress.totalSynopsis > 0 && ` • ${translateProgress.synopsisTranslated} sinopsis`}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleStopTranslate}
+              className="px-3 py-1.5 bg-red-950/60 hover:bg-red-900/60 text-red-300 border border-red-900/50 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <StopCircle className="w-3.5 h-3.5" />
+              <span>Stop</span>
+            </button>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="h-2 bg-[#0a0c10] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-500 ease-out"
+                style={{
+                  width: translateProgress.totalChapters > 0
+                    ? `${Math.round(((translateProgress.completedChapters + translateProgress.failedChapters) / translateProgress.totalChapters) * 100)}%`
+                    : "0%",
+                }}
+              />
+            </div>
+
+            {/* Current Status */}
+            <div className="flex items-center justify-between text-[11px]">
+              <div className="flex items-center gap-2 text-slate-300 min-w-0">
+                {translateProgress.phase === "synopsis" ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin text-cyan-400 shrink-0" />
+                    <span className="truncate">
+                      Sinopsis — <span className="text-cyan-300 font-medium">{translateProgress.currentNovelTitle}</span>
+                      {translateProgress.attempt > 1 && <span className="text-amber-400 ml-1">(Retry {translateProgress.attempt})</span>}
+                    </span>
+                  </>
+                ) : translateProgress.phase === "chapter" && translateProgress.currentChapterNumber > 0 ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin text-cyan-400 shrink-0" />
+                    <span className="truncate">
+                      Ch.{translateProgress.currentChapterNumber} ({translateProgress.currentChapterIndex}/{translateProgress.currentChapterTotal})
+                      — <span className="text-cyan-300 font-medium">{translateProgress.currentNovelTitle}</span>
+                      {translateProgress.attempt > 1 && <span className="text-amber-400 ml-1">(Retry {translateProgress.attempt})</span>}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin text-cyan-400 shrink-0" />
+                    <span className="text-slate-400">Mempersiapkan...</span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-3 shrink-0 text-[10px]">
+                <span className="text-emerald-400 font-mono">{translateProgress.completedChapters} ✓</span>
+                {translateProgress.failedChapters > 0 && (
+                  <span className="text-red-400 font-mono">{translateProgress.failedChapters} ✗</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Log */}
+          {translateLog.length > 0 && (
+            <div className="max-h-36 overflow-y-auto space-y-1.5 border-t border-white/5 pt-3">
+              {translateLog.map((entry, i) => (
+                <div key={i} className="flex items-center gap-2 text-[11px]">
+                  {entry.skipped ? (
+                    <span className="text-slate-500">—</span>
+                  ) : entry.failed === 0 ? (
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                  ) : (
+                    <XCircle className="w-3 h-3 text-amber-400 shrink-0" />
+                  )}
+                  <span className="text-slate-300 truncate flex-1">{entry.novelTitle}</span>
+                  <span className="text-slate-500 font-mono text-[10px] shrink-0">
+                    {entry.skipped ? "skip" : `${entry.translated}ch${entry.synopsisOk ? " +sinopsis" : ""}`}
+                    {entry.failed > 0 && <span className="text-red-400"> {entry.failed}fail</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Novel List Container */}
       <div className="bg-[#12151b] border border-white/5 rounded-xl overflow-hidden w-full min-w-0">
@@ -407,8 +729,40 @@ export default function EditNovelPage() {
                     </div>
                   </div>
 
-                  {/* Right Side: Action Buttons */}
+                  {/* Right Side: Translation Badge + Action Buttons */}
                   <div className="flex items-center gap-2 shrink-0">
+                    {/* Translation Stats Badge */}
+                    <div className="hidden md:flex items-center gap-1.5">
+                      {/* Synopsis badge */}
+                      {novel.has_synopsis && (
+                        <span
+                          className={`text-[8px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                            novel.has_synopsis_translated
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/15"
+                              : "bg-slate-800 text-slate-500 border border-white/5"
+                          }`}
+                          title={novel.has_synopsis_translated ? "Sinopsis sudah diterjemahkan" : "Sinopsis belum diterjemahkan"}
+                        >
+                          {novel.has_synopsis_translated ? "✓ Sin" : "✗ Sin"}
+                        </span>
+                      )}
+                      {/* Chapter translate badge */}
+                      {(novel.total_with_content > 0 || novel.translated_chapters > 0) && (
+                        <span
+                          className={`text-[8px] px-1.5 py-0.5 rounded font-mono ${
+                            novel.pending_chapters === 0 && novel.translated_chapters > 0
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/15"
+                              : novel.translated_chapters > 0
+                              ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/15"
+                              : "bg-slate-800 text-slate-500 border border-white/5"
+                          }`}
+                          title={`${novel.translated_chapters} translated, ${novel.pending_chapters} pending`}
+                        >
+                          {novel.translated_chapters}/{novel.total_with_content} ch
+                        </span>
+                      )}
+                    </div>
+
                     <span className="text-[9px] px-2 py-0.5 bg-[#0a0c10] border border-white/5 text-slate-400 rounded font-mono uppercase hidden md:inline-block">
                       {novel.source || "general"}
                     </span>
@@ -449,56 +803,140 @@ export default function EditNovelPage() {
         )}
       </div>
 
-      {/* Confirm Modal */}
+      {/* Confirm Modal — Delete / Translate */}
       {confirmModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#12151b] border border-white/10 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-100">
+            {/* DELETE MODALS */}
+            {(confirmModal.type === "single" || confirmModal.type === "bulk") && (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-100">
+                      {confirmModal.type === "bulk"
+                        ? `Hapus ${selectedIds.size} Novel?`
+                        : "Hapus Novel Ini?"}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Tindakan ini tidak dapat dibatalkan
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed bg-[#0a0c10] border border-white/5 p-3 rounded-lg">
                   {confirmModal.type === "bulk"
-                    ? `Hapus ${selectedIds.size} Novel?`
-                    : "Hapus Novel Ini?"}
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Tindakan ini tidak dapat dibatalkan
+                    ? `${selectedIds.size} novel yang dipilih akan dihapus secara permanen beserta semua chapter dan aset di Cloudflare R2.`
+                    : `Novel "${confirmModal.novelTitle}" akan dihapus permanen beserta seluruh chapter dan aset terkait.`}
                 </p>
-              </div>
-            </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed bg-[#0a0c10] border border-white/5 p-3 rounded-lg">
-              {confirmModal.type === "bulk"
-                ? `${selectedIds.size} novel yang dipilih akan dihapus secara permanen beserta semua chapter dan aset di Cloudflare R2.`
-                : `Novel "${confirmModal.novelTitle}" akan dihapus permanen beserta seluruh chapter dan aset terkait.`}
-            </p>
+                <div className="flex gap-2 justify-end pt-1">
+                  <button
+                    onClick={() => setConfirmModal(null)}
+                    className="px-4 py-2 bg-[#0a0c10] hover:bg-white/5 text-slate-300 rounded-lg text-xs font-semibold border border-white/10 transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={() =>
+                      confirmModal.type === "bulk"
+                        ? handleBulkDelete()
+                        : handleDeleteSingle(confirmModal.novelId!)
+                    }
+                    disabled={bulkDeleting || !!deletingId}
+                    className="px-4 py-2 bg-red-950/60 hover:bg-red-900/60 text-red-300 border border-red-900/60 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {bulkDeleting || deletingId ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    <span>Hapus Permanen</span>
+                  </button>
+                </div>
+              </>
+            )}
 
-            <div className="flex gap-2 justify-end pt-1">
-              <button
-                onClick={() => setConfirmModal(null)}
-                className="px-4 py-2 bg-[#0a0c10] hover:bg-white/5 text-slate-300 rounded-lg text-xs font-semibold border border-white/10 transition-colors cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() =>
-                  confirmModal.type === "bulk"
-                    ? handleBulkDelete()
-                    : handleDeleteSingle(confirmModal.novelId!)
-                }
-                disabled={bulkDeleting || !!deletingId}
-                className="px-4 py-2 bg-red-950/60 hover:bg-red-900/60 text-red-300 border border-red-900/60 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                {bulkDeleting || deletingId ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="w-3.5 h-3.5" />
-                )}
-                <span>Hapus Permanen</span>
-              </button>
-            </div>
+            {/* TRANSLATE MODALS */}
+            {(confirmModal.type === "translate" || confirmModal.type === "translate-source") && (() => {
+              const targetIds = confirmModal.type === "translate"
+                ? Array.from(selectedIds)
+                : (activeSource === "all"
+                    ? novels.map((n) => n.id)
+                    : novels.filter((n) => (n.source || "general") === activeSource).map((n) => n.id));
+              const stats = getTranslateStats(targetIds);
+
+              return (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                      <Globe className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-100">
+                        {confirmModal.type === "translate"
+                          ? `Translate ${stats.count} Novel`
+                          : `Translate Semua ${confirmModal.sourceLabel}`}
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Sinopsis + chapter yang belum diterjemahkan
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#0a0c10] border border-white/5 p-3.5 rounded-lg space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Novel</span>
+                      <span className="text-slate-200 font-semibold">{stats.count} judul</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Sinopsis pending</span>
+                      <span className={`font-semibold ${stats.pendingSynopsis > 0 ? "text-cyan-300" : "text-emerald-400"}`}>
+                        {stats.pendingSynopsis > 0 ? `${stats.pendingSynopsis} sinopsis` : "Semua sudah ✓"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Chapter pending</span>
+                      <span className={`font-semibold ${stats.pendingChapters > 0 ? "text-cyan-300" : "text-emerald-400"}`}>
+                        {stats.pendingChapters > 0 ? `${stats.pendingChapters} chapter` : "Semua sudah ✓"}
+                      </span>
+                    </div>
+                    {stats.pendingChapters > 0 && (
+                      <div className="flex justify-between text-xs border-t border-white/5 pt-2 mt-1">
+                        <span className="text-slate-400">Estimasi durasi</span>
+                        <span className="text-slate-300 font-mono">
+                          ~{formatDuration(Math.ceil((stats.pendingChapters + stats.pendingSynopsis) * 2.5))}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2.5 flex items-center gap-2 text-[11px] text-emerald-300">
+                    <span className="text-sm">🛡️</span>
+                    <span>Translate berjalan mandiri di background server. Anda bebas menutup tab atau browser kapan saja setelah tombol diklik.</span>
+                  </div>
+
+                  <div className="flex gap-2 justify-end pt-1">
+                    <button
+                      onClick={() => setConfirmModal(null)}
+                      className="px-4 py-2 bg-[#0a0c10] hover:bg-white/5 text-slate-300 rounded-lg text-xs font-semibold border border-white/10 transition-colors cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={() => handleBulkTranslate(targetIds)}
+                      disabled={stats.pendingChapters === 0 && stats.pendingSynopsis === 0}
+                      className="px-4 py-2 bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-500 hover:brightness-110 text-white rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_2px_12px_-2px_rgba(59,130,246,0.45)] disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Mulai Translate</span>
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
