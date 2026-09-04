@@ -49,6 +49,19 @@ export async function PATCH(
 
     if (error) throw error;
 
+    // Sync metadata to Supabase Auth
+    try {
+      const authUpdates: Record<string, any> = {};
+      if ("role" in updateData) authUpdates.role = updateData.role;
+      if ("banned" in updateData) authUpdates.banned = updateData.banned;
+      if ("frozen" in updateData) authUpdates.frozen = updateData.frozen;
+      if (Object.keys(authUpdates).length > 0) {
+        await supabase.auth.admin.updateUserById(id, { user_metadata: authUpdates });
+      }
+    } catch (authErr) {
+      console.warn("[User PATCH] Auth sync warning:", authErr);
+    }
+
     return NextResponse.json(data);
   } catch (err: any) {
     console.error("User patch error:", err);
@@ -69,6 +82,13 @@ export async function DELETE(
       .eq("id", id);
 
     if (error) throw error;
+
+    // Also delete user from Supabase Auth
+    try {
+      await supabase.auth.admin.deleteUser(id);
+    } catch (authErr) {
+      console.warn("[User DELETE] Auth delete warning:", authErr);
+    }
 
     return NextResponse.json({ deleted: true });
   } catch (err: any) {

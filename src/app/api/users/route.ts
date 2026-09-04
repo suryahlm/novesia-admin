@@ -3,6 +3,36 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   try {
+    // Auto-sync missing users from Supabase Auth into nu_users table
+    try {
+      const { data: authData } = await supabase.auth.admin.listUsers();
+      if (authData?.users && authData.users.length > 0) {
+        const { data: existingNuUsers } = await supabase.from("nu_users").select("id");
+        const existingIds = new Set(existingNuUsers?.map((u) => u.id) || []);
+        const missingUsers = authData.users.filter((u) => !existingIds.has(u.id));
+
+        if (missingUsers.length > 0) {
+          const toInsert = missingUsers.map((u) => {
+            const meta = u.user_metadata || {};
+            return {
+              id: u.id,
+              email: u.email || "",
+              name: meta.name || u.email?.split("@")[0] || "User",
+              avatar_url: meta.avatar_url || null,
+              role: meta.role === "VIP" ? "VIP" : "USER",
+              banned: false,
+              frozen: false,
+              created_at: u.created_at,
+              updated_at: u.updated_at || u.created_at,
+            };
+          });
+          await supabase.from("nu_users").upsert(toInsert, { onConflict: "id" });
+        }
+      }
+    } catch (syncErr) {
+      console.warn("[Users API] Auto-sync auth.users warning:", syncErr);
+    }
+
     const { searchParams } = new URL(req.url);
     const page = Math.max(Number(searchParams.get("page")) || 1, 1);
     const limit = Math.min(Number(searchParams.get("limit")) || 30, 100);

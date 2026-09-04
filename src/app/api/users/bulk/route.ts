@@ -27,6 +27,16 @@ export async function POST(req: NextRequest) {
         .in("id", ids);
 
       if (error) throw error;
+
+      // Also remove users from Supabase Auth
+      for (const id of ids) {
+        try {
+          await supabase.auth.admin.deleteUser(id);
+        } catch (authErr) {
+          console.warn("[Bulk DELETE] Auth delete warning:", id, authErr);
+        }
+      }
+
       return NextResponse.json({ deleted: count || ids.length });
     }
 
@@ -62,6 +72,21 @@ export async function POST(req: NextRequest) {
       .in("id", ids);
 
     if (error) throw error;
+
+    // Sync metadata to Supabase Auth in background
+    for (const id of ids) {
+      try {
+        const authUpdates: Record<string, any> = {};
+        if ("role" in updateData) authUpdates.role = updateData.role;
+        if ("banned" in updateData) authUpdates.banned = updateData.banned;
+        if ("frozen" in updateData) authUpdates.frozen = updateData.frozen;
+        if (Object.keys(authUpdates).length > 0) {
+          await supabase.auth.admin.updateUserById(id, { user_metadata: authUpdates });
+        }
+      } catch (authErr) {
+        console.warn("[Bulk PATCH] Auth sync warning:", id, authErr);
+      }
+    }
 
     return NextResponse.json({ updated: count || ids.length });
   } catch (err: any) {
