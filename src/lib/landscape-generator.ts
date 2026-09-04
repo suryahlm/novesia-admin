@@ -36,13 +36,21 @@ function sanitizeText(text: string): string {
 const STRICT_NEGATIVE_PROMPT =
   "person, people, human, character, face, boy, girl, man, woman, student, crowd, extra limbs, extra bodies, animals, creatures, text, watermark, typography, font, title, letters, words, logo, label, signature, frame, border, split line, vertical seam, cutoff, ugly, distorted, blurry, low quality, duplicate elements";
 
+interface CoverAnalysis {
+  isDark: boolean;
+  brightness: number;
+  isBluePurple: boolean;
+  isWarm: boolean;
+}
+
 /**
- * Otomatis menyusun prompt pelebaran latar belakang (outpainting) yang serasi dengan tema novel.
- * Berdasarkan formula instruksi GPT: murni pemandangan (scenery / landscape) tanpa karakter atau teks.
+ * Otomatis menyusun prompt pelebaran latar belakang (outpainting) yang serasi dengan tema & mood visual cover.
+ * Menggabungkan analisis warna cover asli (brightness & color tone) dengan genre / judul novel.
  */
 function buildOutpaintingPrompt(
   title: string = "",
   genres: string[] = [],
+  analysis: CoverAnalysis,
   customPrompt?: string
 ): string {
   if (customPrompt && customPrompt.trim()) {
@@ -63,55 +71,83 @@ function buildOutpaintingPrompt(
   const cleanTitle = sanitizeText(title).toLowerCase();
   const cleanGenres = genres.map((x) => sanitizeText(x).toLowerCase()).filter(Boolean);
 
-  let sceneTheme = "scenic fantasy anime background art, expansive scenery, soft ambient lighting, lush nature and trees";
-
-  if (
-    cleanGenres.some((x) => x.includes("dungeon") || x.includes("abyss")) ||
+  const isDungeonLabyrinth =
+    cleanGenres.some((x) => x.includes("dungeon") || x.includes("abyss") || x.includes("action") || x.includes("horror")) ||
+    cleanTitle.includes("labyrinth") ||
     cleanTitle.includes("dungeon") ||
-    cleanTitle.includes("abyss")
-  ) {
-    sceneTheme = "mystical cavern stone walls, towering canyon cliffs, glowing ambient crystals, underground dungeon chamber, natural rock formations";
-  } else if (
+    cleanTitle.includes("abyss") ||
+    cleanTitle.includes("designer") ||
+    cleanTitle.includes("hunter") ||
+    cleanTitle.includes("gate") ||
+    cleanTitle.includes("necromancer") ||
+    cleanTitle.includes("shadow") ||
+    cleanTitle.includes("level");
+
+  const isCastleRoyal =
+    cleanGenres.some((x) => x.includes("romance") || x.includes("villainess") || x.includes("noble") || x.includes("shoujo")) ||
+    cleanTitle.includes("castle") ||
+    cleanTitle.includes("palace") ||
+    cleanTitle.includes("princess") ||
+    cleanTitle.includes("prince") ||
+    cleanTitle.includes("duke") ||
+    cleanTitle.includes("marriage") ||
+    cleanTitle.includes("beautician");
+
+  const isOriental =
     cleanGenres.some((x) => x.includes("historical") || x.includes("wuxia") || x.includes("martial")) ||
     cleanTitle.includes("tang") ||
     cleanTitle.includes("dynasty") ||
     cleanTitle.includes("forensic") ||
-    cleanTitle.includes("demon")
-  ) {
-    sceneTheme = "ancient oriental imperial architecture, traditional stone courtyard, classical wooden pavilions, scenic mountain landscape, night lanterns";
-  } else if (
-    cleanGenres.some((x) => x.includes("school") || x.includes("academy")) ||
-    cleanTitle.includes("classmates") ||
-    cleanTitle.includes("beautician")
-  ) {
-    sceneTheme = "empty anime school classroom interior, large bright glass windows with cherry blossom tree outside, wooden desks, chalkboard, sunlight rays, architecture only, no humans";
-  } else if (
-    cleanGenres.some((x) => x.includes("romance") || x.includes("villainess") || x.includes("noble")) ||
-    cleanTitle.includes("duke") ||
-    cleanTitle.includes("marriage")
-  ) {
-    sceneTheme = "romantic lush pine forest, European castle grounds, blooming wildflowers, warm sunbeams filtering through trees, soft misty atmosphere";
-  } else if (
-    cleanGenres.some((x) => x.includes("slice") || x.includes("country") || x.includes("farm") || x.includes("life")) ||
+    cleanTitle.includes("demon") ||
+    cleanTitle.includes("heavenly") ||
+    cleanTitle.includes("sect") ||
+    cleanTitle.includes("murim");
+
+  const isCountryside =
+    cleanGenres.some((x) => x.includes("slice") || x.includes("country") || x.includes("farm")) ||
     cleanTitle.includes("comfortable") ||
     cleanTitle.includes("different world life") ||
     cleanTitle.includes("countryside") ||
-    cleanTitle.includes("cottage")
-  ) {
-    sceneTheme = "scenic fantasy countryside forest, pale white tree trunks and branches extending outward, soft green and yellow forest background, tropical foliage, leaves, bushes, blooming flowers, cozy cottage garden, misty atmosphere, gentle sunlight rays";
-  } else if (
-    cleanGenres.some((x) => x.includes("adventure")) ||
-    cleanTitle.includes("tribulation") ||
-    cleanTitle.includes("strongest")
-  ) {
-    sceneTheme = "medieval fantasy kingdom village, charming European cottages, distant white castle spires on green mountain, lush trees, blue sky with soft white clouds, gentle sunlight, storybook hand-painted illustration style";
-  } else if (cleanGenres.some((x) => x.includes("isekai") || x.includes("fantasy") || x.includes("magic"))) {
-    sceneTheme = "ancient isekai fantasy kingdom ruins, stone archways and crumbling pillars, grassy hill under vast blue sky with fluffy clouds";
-  } else if (cleanGenres.some((x) => x.includes("scifi") || x.includes("sci-fi") || x.includes("cyber"))) {
-    sceneTheme = "futuristic cyberpunk city skyline, neon glowing structures, sleek architecture, night sky";
+    cleanTitle.includes("cottage") ||
+    cleanTitle.includes("slow life");
+
+  let sceneTheme = "";
+
+  // 1. Dark dungeon / cavern / labyrinth (prioritaskan jika gambar gelap atau ada nuansa biru-ungu gelap)
+  if (isDungeonLabyrinth && (analysis.isDark || analysis.isBluePurple)) {
+    sceneTheme =
+      "dark fantasy subterranean labyrinth cavern, ancient stone corridors, glowing purple magical energy, dark shadows, dungeon battle environment, dramatic mystical lighting, wide angle background scenery";
+  }
+  // 2. Fairytale Castle / Palace / Royal
+  else if (isCastleRoyal) {
+    if (analysis.isBluePurple || analysis.isDark) {
+      sceneTheme =
+        "grand fantasy royal castle spires, majestic fairytale palace architecture, night sky with glowing full moon and sparkling stars, elegant stone balcony terrace, soft magical ambient lighting, wide angle scenery";
+    } else {
+      sceneTheme =
+        "grand European imperial palace courtyard, majestic royal castle spires, marble balustrade, manicured royal gardens, blooming flowers, soft daytime sunlight, wide angle scenery";
+    }
+  }
+  // 3. Oriental / Martial Arts / Wuxia
+  else if (isOriental) {
+    sceneTheme =
+      "ancient oriental imperial architecture, traditional stone courtyard, classical wooden pavilions, scenic mountain landscape, tranquil atmosphere";
+  }
+  // 4. Countryside / Forest / Cottage
+  else if (isCountryside) {
+    sceneTheme =
+      "scenic fantasy countryside forest, pale white tree trunks and branches extending outward, soft green and yellow forest background, tropical foliage, leaves, bushes, blooming flowers, cozy cottage garden, misty atmosphere, gentle sunlight rays";
+  }
+  // 5. Default adaptif berdasarkan tone warna cover asli
+  else if (analysis.isDark || analysis.isBluePurple) {
+    sceneTheme =
+      "mystical dark fantasy night landscape, distant dark mountains, starry night sky, glowing ethereal ambient light, atmospheric scenery";
+  } else {
+    sceneTheme =
+      "peaceful fantasy anime landscape, rolling green hills, distant white castle spires, blue sky with fluffy white clouds, gentle sunlight";
   }
 
-  return `seamless horizontal background extension, ${sceneTheme}, matching color palette and lighting, hand-painted storybook illustration style, depth and perspective, wide angle view, high quality detailed scenery, pure background, no people, no text`;
+  return `seamless horizontal background extension, ${sceneTheme}, matching color palette and lighting, hand-painted illustration style, depth and perspective, wide angle view, high quality detailed scenery, pure background, no people, no characters, no text`;
 }
 
 /**
@@ -162,11 +198,10 @@ async function callCloudflareInpainting(
 /**
  * Membuat cover landscape (16:10, 800x500 WebP) dengan AI Outpainting murni:
  * 1. Gambar portrait asli di tengah kanvas dijaga 100% utuh tanpa perubahan karakter, teks, atau crop.
- * 2. Sisi kiri dan kanan (kanvas luar) digambar/diperlebar secara nyata oleh AI dengan pemandangan
- *    dan latar belakang yang selaras secara seamless (bukan efek blur).
- * 3. Base canvas menggunakan sampling warna tepi cover asli dan posisi tengah tetap tajam,
- *    sehingga transisi AI ke gambar asli menyatu tanpa garis patah atau kabut.
- * 4. Hasil akhirnya dikompres ke WebP 800x500 (~40-80 KB) yang sangat ringan untuk mobile banner.
+ * 2. Canvas inpainting menggunakan resolusi 800x512 (lebar eksak 800px) sehingga ZERO pergeseran horizontal.
+ * 3. Base canvas menggunakan sampling warna tepi cover asli dan posisi tengah tetap tajam.
+ * 4. Micro-blend compositing presisi di pixel yang sama, lalu di-trim 6px atas & bawah ke 800x500.
+ *    Hasilnya 100% bebas dari garis belah (seam), kabut vertikal, atau pergeseran posisi.
  */
 export async function generateLandscapeFromPortrait(
   portraitUrl: string,
@@ -190,39 +225,51 @@ export async function generateLandscapeFromPortrait(
 
   const inputBuffer = Buffer.from(await res.arrayBuffer());
 
-  // 2. Baca metadata cover asli
-  const meta = await sharp(inputBuffer).metadata();
+  // 2. Baca metadata & analisis warna cover asli
+  const imageInstance = sharp(inputBuffer);
+  const meta = await imageInstance.metadata();
   if (!meta.width || !meta.height) {
     throw new Error("Format gambar cover portrait tidak valid");
   }
 
-  // Resolusi inpainting optimal untuk SD 1.5
-  const inpaintW = 768;
+  const stats = await imageInstance.stats();
+  const meanR = stats.channels[0]?.mean || 128;
+  const meanG = stats.channels[1]?.mean || 128;
+  const meanB = stats.channels[2]?.mean || 128;
+  const brightness = (meanR + meanG + meanB) / 3;
+
+  const analysis: CoverAnalysis = {
+    brightness,
+    isDark: brightness < 105,
+    isBluePurple: meanB > meanG + 15 || (meanR > 70 && meanB > 70 && meanG < 60),
+    isWarm: meanR > meanB + 20,
+  };
+
+  // 3. Resolusi inpainting optimal:
+  // Lebar eksak 800px (sama persis dengan targetW) dan tinggi 512px (kelipatan 64 untuk model diffusion)
+  // Ini MENJAMIN koordinat X tidak akan pernah bergeser bahkan 1 subpixel pun!
+  const inpaintW = targetW; // 800
   const inpaintH = 512;
 
-  // 3. Skalakan portrait agar pas dengan tinggi inpaintH (512px)
   const portraitH = inpaintH;
   const portraitW = Math.max(10, Math.round((meta.width / meta.height) * portraitH));
   const leftPos = Math.round((inpaintW - portraitW) / 2);
   const rightPos = leftPos + portraitW;
 
-  // Resize portrait asli tajam (tanpa blur)
+  // Resize portrait asli tajam
   const portraitResized = await sharp(inputBuffer)
     .resize(portraitW, portraitH, { fit: "fill" })
     .png()
     .toBuffer();
 
   // 4. Siapkan baseCanvas adaptif:
-  // - Ekstrak strip warna dari tepi kiri dan kanan cover asli (12px) dan rentangkan ke sisi samping
-  //   dengan blur halus (10px). Ini memberikan palet warna, horizon, dan pencahayaan yang identik ke model
-  //   tanpa memunculkan duplikasi teks atau wajah di samping.
-  // - Bagian tengah diisi langsung oleh portrait asli yang TAJAM (bukan blur) agar model AI mengenali
-  //   cabang pohon, langit, dan garis tanah tepat di titik perbatasan untuk disambung secara natural.
-  const edgeStripWidth = Math.max(4, Math.min(16, Math.round(portraitW * 0.05)));
+  // Ekstrak strip tepi dari gambar asli dan rentangkan ke sisi samping dengan blur lembut
+  // agar palet warna, horizon, dan pencahayaan 100% konsisten tanpa menduplikasi teks/wajah
+  const edgeStripWidth = Math.max(4, Math.min(24, Math.round(portraitW * 0.06)));
   const leftStrip = await sharp(portraitResized)
     .extract({ left: 0, top: 0, width: edgeStripWidth, height: portraitH })
     .resize(Math.max(1, leftPos), portraitH, { fit: "fill" })
-    .blur(10)
+    .blur(16)
     .png()
     .toBuffer();
 
@@ -230,7 +277,7 @@ export async function generateLandscapeFromPortrait(
   const rightStrip = await sharp(portraitResized)
     .extract({ left: portraitW - edgeStripWidth, top: 0, width: edgeStripWidth, height: portraitH })
     .resize(rightWidth, portraitH, { fit: "fill" })
-    .blur(10)
+    .blur(16)
     .png()
     .toBuffer();
 
@@ -239,7 +286,11 @@ export async function generateLandscapeFromPortrait(
       width: inpaintW,
       height: inpaintH,
       channels: 3,
-      background: { r: 100, g: 130, b: 100 },
+      background: {
+        r: Math.round(meanR * 0.5),
+        g: Math.round(meanG * 0.5),
+        b: Math.round(meanB * 0.5),
+      },
     },
   })
     .composite([
@@ -251,9 +302,8 @@ export async function generateLandscapeFromPortrait(
     .toBuffer();
 
   // 5. Siapkan maskCanvas:
-  // - Sisi kiri & kanan: putih (255) -> AI menggambar pemandangan baru di sini.
-  // - Berikan overlap tipis 4px ke dalam portrait agar AI menyambungkan sapuan kuas secara seamless.
-  // - Bagian tengah: hitam (0) -> area portrait asli dilindungi.
+  // - Sisi samping: putih (255) dengan overlap 4px ke dalam portrait agar AI menyambungkan garis kuas
+  // - Bagian tengah: hitam (0) agar area portrait asli dilindungi
   const overlap = 4;
   const maskLeftWidth = leftPos + overlap;
   const maskRightX = rightPos - overlap;
@@ -268,8 +318,8 @@ export async function generateLandscapeFromPortrait(
   `);
   const maskCanvas = await sharp(maskSvg).toColourspace("srgb").png().toBuffer();
 
-  // 6. Buat prompt outpainting yang disesuaikan dengan novel
-  const prompt = buildOutpaintingPrompt(options.title, options.genres, options.customPrompt);
+  // 6. Buat prompt outpainting adaptif
+  const prompt = buildOutpaintingPrompt(options.title, options.genres, analysis, options.customPrompt);
   const negativePrompt = options.customNegativePrompt || STRICT_NEGATIVE_PROMPT;
 
   // 7. Panggil Cloudflare AI Inpainting (Multi-Tier Account Fallback)
@@ -310,22 +360,17 @@ export async function generateLandscapeFromPortrait(
     }
   }
 
-  // Jika AI inpainting sukses, gunakan sebagai background; jika tidak, gunakan backdrop cover
   const backgroundBase =
     aiGeneratedBuffer ||
     (await sharp(inputBuffer)
       .resize(inpaintW, inpaintH, { fit: "cover" })
       .toBuffer());
 
-  // 8. Kompositkan gambar akhir pada target 800x500 WebP
-  // Overlay portrait asli yang 100% TAJAM di bagian tengah dengan micro-anti-alias 2px
-  // agar garis perbatasan menyatu sempurna tanpa ada efek blur berkabut.
-  const finalPortraitW = Math.round((meta.width / meta.height) * targetH);
-  const finalLeftPos = Math.round((targetW - finalPortraitW) / 2);
-
+  // 8. Kompositkan gambar pada resolusi 800x512
+  // Letakkan portrait asli yang 100% TAJAM di titik koordinat leftPos yang PERSIS SAMA
   const microFade = 2;
   const microMaskSvg = Buffer.from(`
-    <svg width="${finalPortraitW}" height="${targetH}" xmlns="http://www.w3.org/2000/svg">
+    <svg width="${portraitW}" height="${portraitH}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="lf" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stop-color="#000000" />
@@ -336,29 +381,39 @@ export async function generateLandscapeFromPortrait(
           <stop offset="100%" stop-color="#000000" />
         </linearGradient>
       </defs>
-      <rect x="0" y="0" width="${microFade}" height="${targetH}" fill="url(#lf)" />
-      <rect x="${microFade}" y="0" width="${Math.max(1, finalPortraitW - microFade * 2)}" height="${targetH}" fill="#ffffff" />
-      <rect x="${Math.max(0, finalPortraitW - microFade)}" y="0" width="${microFade}" height="${targetH}" fill="url(#rf)" />
+      <rect x="0" y="0" width="${microFade}" height="${portraitH}" fill="url(#lf)" />
+      <rect x="${microFade}" y="0" width="${Math.max(1, portraitW - microFade * 2)}" height="${portraitH}" fill="#ffffff" />
+      <rect x="${Math.max(0, portraitW - microFade)}" y="0" width="${microFade}" height="${portraitH}" fill="url(#rf)" />
     </svg>
   `);
   const microMask = await sharp(microMaskSvg).toColourspace("b-w").png().toBuffer();
 
-  const crispPortraitFinal = await sharp(inputBuffer)
-    .resize(finalPortraitW, targetH, { fit: "fill" })
+  const crispPortrait = await sharp(portraitResized)
     .ensureAlpha()
     .composite([{ input: microMask, blend: "dest-in" }])
     .png()
     .toBuffer();
 
-  const finalImage = await sharp(backgroundBase)
-    .resize(targetW, targetH, { fit: "fill" })
+  const combined800x512 = await sharp(backgroundBase)
     .composite([
       {
-        input: crispPortraitFinal,
+        input: crispPortrait,
         top: 0,
-        left: finalLeftPos,
+        left: leftPos, // KOORDINAT X PERSIS SAMA (0 pixel desync!)
       },
     ])
+    .png()
+    .toBuffer();
+
+  // 9. Potong 6px atas dan 6px bawah untuk mendapatkan target 800x500 WebP murni
+  // Karena dipotong bersamaan dari kanvas terpadu, tidak ada garis patah atau distorsi sama sekali!
+  const finalImage = await sharp(combined800x512)
+    .extract({
+      left: 0,
+      top: 6,
+      width: targetW,
+      height: targetH,
+    })
     .webp({
       quality,
       effort: 4,
