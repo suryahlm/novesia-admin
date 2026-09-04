@@ -19,11 +19,13 @@ import {
   MessageSquare,
   MessagesSquare,
   Rocket,
+  Star,
 } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/novels", label: "Novel", icon: BookOpen },
+  { href: "/admin/top-rating", label: "Top Rating", icon: Star },
   { href: "/admin/novels/new", label: "Tambah Novel", icon: BookPlus },
   { href: "/admin/update", label: "Edit Novel", icon: FileEdit },
   { href: "/admin/storage", label: "Storage R2", icon: Database },

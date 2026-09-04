@@ -33,6 +33,11 @@ export function bannerKey(slot: number, ext: string): string {
   return `banners/slot-${slot}/banner.${ext}`;
 }
 
+export function coverLandscapeKey(source: string, slug: string, ext: string): string {
+  const safeSource = source || "general";
+  return `${safeSource}/${slug}-landscape.${ext}`;
+}
+
 const CONTENT_TYPES: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
