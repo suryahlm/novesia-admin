@@ -45,10 +45,20 @@ export async function POST(
       );
     }
 
-    // 3. Generate cover landscape (800x500 WebP ~40-60KB) dengan AI Outpainting
+    // Baca custom prompt jika ada di body
+    let customPrompt: string | undefined;
+    try {
+      const body = await req.json();
+      if (body?.prompt && typeof body.prompt === "string" && body.prompt.trim()) {
+        customPrompt = body.prompt.trim();
+      }
+    } catch {}
+
+    // 3. Generate cover landscape (800x500 WebP ~40-80KB) dengan AI Outpainting
     const landscapeBuffer = await generateLandscapeFromPortrait(novel.cover_url, {
       title: novel.title,
       genres: novel.genres || [],
+      customPrompt,
     });
 
     // 4. Upload ke Cloudflare R2
