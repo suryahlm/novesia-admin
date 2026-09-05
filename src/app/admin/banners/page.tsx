@@ -17,6 +17,7 @@ import {
   Sparkles,
   Tag,
   Megaphone,
+  Info,
 } from "lucide-react";
 
 interface BannerItem {
@@ -638,6 +639,25 @@ export default function BannersPage() {
         </button>
       </div>
 
+      {/* Information Banner Iklan Sedang Tren */}
+      <div className="bg-[#12151b] border border-amber-400/20 rounded-xl p-4 flex items-start gap-3.5 mb-6">
+        <div className="w-9 h-9 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+          <Megaphone size={18} />
+        </div>
+        <div className="text-xs text-slate-300 space-y-1.5 leading-relaxed">
+          <p className="font-semibold text-slate-100 flex items-center gap-2">
+            <span>Panduan Ukuran & Format Iklan Sedang Tren (Slot 7 Carousel)</span>
+            <span className="text-[10px] bg-amber-400/15 text-amber-300 px-2 py-0.5 rounded-full font-mono font-bold">Auto-Slide 3.5 Detik</span>
+          </p>
+          <p className="text-slate-300">
+            • <strong>Ukuran & Rasio Gambar</strong>: Wajib rasio <strong className="text-amber-300 font-mono">1:1 (Persegi / Kotak)</strong>, ukuran rekomendasi <strong className="text-amber-300 font-mono">800 × 800 px</strong> hingga <strong className="text-amber-300 font-mono">1080 × 1080 px</strong> (maksimal 5MB). Format file: <strong className="text-slate-200">JPG, PNG, atau WebP</strong>.
+          </p>
+          <p className="text-slate-400">
+            • <strong>Tampilan</strong>: Tampil bergulir otomatis pada kartu ke-7 baris "Sedang Tren di NOVESIA" di web (Desktop & Mobile). Jika slot kosong atau belum diisi, web otomatis menampilkan visual kemitraan default.
+          </p>
+        </div>
+      </div>
+
       {adError && (
         <div className="mb-6 p-3 bg-red-950/50 border border-red-900/60 rounded-xl text-xs text-red-300 flex items-center gap-2">
           <AlertTriangle size={16} className="shrink-0" />
@@ -867,6 +887,15 @@ export default function BannersPage() {
                     * Kosongkan jika tidak ingin mengganti gambar banner yang sudah ada.
                   </p>
                 )}
+                <div className="mt-2.5 p-2.5 bg-amber-400/10 border border-amber-400/20 rounded-xl text-[11px] text-amber-200/90 space-y-1">
+                  <p className="font-bold flex items-center gap-1.5 text-amber-300">
+                    <Info size={13} className="shrink-0" />
+                    <span>Catatan Ukuran Banner Beranda:</span>
+                  </p>
+                  <p className="leading-relaxed">
+                    Gunakan rasio <strong>2.5:1 (Landscape Lebar)</strong> dengan resolusi <strong>1200 × 480 px</strong> (maks. 5MB). Format file: JPG, PNG, atau WebP.
+                  </p>
+                </div>
               </div>
 
               {/* Title input */}
@@ -1047,6 +1076,15 @@ export default function BannersPage() {
                     * Kosongkan jika tidak ingin mengganti gambar yang sudah ada.
                   </p>
                 )}
+                <div className="mt-2.5 p-2.5 bg-amber-400/10 border border-amber-400/20 rounded-xl text-[11px] text-amber-200/90 space-y-1">
+                  <p className="font-bold flex items-center gap-1.5 text-amber-300">
+                    <Info size={13} className="shrink-0" />
+                    <span>Catatan Ukuran Gambar Iklan:</span>
+                  </p>
+                  <p className="leading-relaxed">
+                    Gunakan rasio <strong>1:1 (Persegi / Kotak)</strong> dengan ukuran rekomendasi <strong>800 × 800 px</strong> hingga <strong>1080 × 1080 px</strong> (maks. 5MB). Format file: JPG, PNG, atau WebP. Gambar kotak memastikan tampilan produk tampil presisi dan tidak terpotong di desktop maupun mobile.
+                  </p>
+                </div>
               </div>
 
               {/* Title input */}
