@@ -6,6 +6,8 @@ export async function GET() {
     const { data: rows, error } = await supabase
       .from("nu_banners")
       .select("*")
+      .gte("slot", 1)
+      .lte("slot", 6)
       .order("slot", { ascending: true });
 
     if (error) throw error;

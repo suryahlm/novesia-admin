@@ -18,6 +18,7 @@ import {
   Tag,
   Megaphone,
   Info,
+  Power,
 } from "lucide-react";
 
 interface BannerItem {
@@ -69,7 +70,7 @@ interface TrendingAdFormFields {
   expiresAt: string | null;
 }
 
-const SLOTS = [1, 2, 3];
+const SLOTS = [1, 2, 3, 4, 5, 6];
 
 function toLocalInputValue(iso: string | null): string {
   if (!iso) return "";
@@ -435,7 +436,7 @@ export default function BannersPage() {
             <span>Banner Beranda</span>
           </h1>
           <p className="text-slate-400 text-xs mt-1">
-            Kelola 3 slide carousel banner utama di Beranda aplikasi Novesia.
+            Kelola hingga 6 slide carousel banner utama di Beranda aplikasi Novesia.
           </p>
         </div>
         <button
@@ -455,7 +456,7 @@ export default function BannersPage() {
         </div>
         <div className="text-xs text-slate-300 space-y-1 leading-relaxed">
           <p className="font-semibold text-slate-100">
-            Banner carousel tampil di bagian atas Beranda app Novesia (3 slide tetap, auto-slide setiap 3.5 detik).
+            Banner carousel tampil di bagian atas Beranda app Novesia (hingga 6 slide, auto-slide setiap 3.5 detik).
           </p>
           <p className="text-slate-400">
             Rekomendasi gambar creative:{" "}
@@ -476,7 +477,7 @@ export default function BannersPage() {
           <p>{error}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {SLOTS.map((slot) => {
             const a = bySlot[slot];
             const status = a ? computeStatus(a) : null;
@@ -560,24 +561,36 @@ export default function BannersPage() {
                         <button
                           disabled={busy}
                           onClick={() => toggleActive(a)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
                             a.active
-                              ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
-                              : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                              ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border-emerald-500/30"
+                              : "bg-slate-800 text-slate-400 hover:bg-slate-700 border-white/10"
                           }`}
-                          title={a.active ? "Nonaktifkan slide ini" : "Aktifkan slide ini"}
+                          title={a.active ? "Klik untuk nonaktifkan banner sementara" : "Klik untuk aktifkan banner"}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${a.active ? "bg-emerald-400" : "bg-slate-500"}`}
                           />
-                          <span>{a.active ? "Aktif" : "Mati"}</span>
+                          <span>{a.active ? "Aktif" : "Nonaktif"}</span>
                         </button>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            disabled={busy}
+                            onClick={() => toggleActive(a)}
+                            className={`p-1.5 rounded border transition-colors cursor-pointer ${
+                              a.active
+                                ? "bg-[#0a0c10] border-emerald-500/30 text-emerald-400 hover:bg-amber-950/40 hover:border-amber-500/40 hover:text-amber-300"
+                                : "bg-[#0a0c10] border-white/10 text-slate-500 hover:bg-emerald-950/40 hover:border-emerald-500/40 hover:text-emerald-400"
+                            }`}
+                            title={a.active ? "Nonaktifkan sementara (Matikan banner)" : "Aktifkan kembali banner"}
+                          >
+                            <Power size={13} />
+                          </button>
                           <button
                             disabled={busy}
                             onClick={() => openSlot(slot)}
-                            className="p-1.5 bg-[#0a0c10] hover:bg-white/10 text-slate-300 rounded transition-colors cursor-pointer"
+                            className="p-1.5 bg-[#0a0c10] hover:bg-white/10 text-slate-300 rounded border border-white/5 hover:border-white/10 transition-colors cursor-pointer"
                             title="Edit banner"
                           >
                             <Pencil size={13} />
@@ -585,7 +598,7 @@ export default function BannersPage() {
                           <button
                             disabled={busy}
                             onClick={() => setConfirmDelSlot(slot)}
-                            className="p-1.5 bg-[#0a0c10] hover:bg-red-950/60 text-slate-400 hover:text-red-300 rounded transition-colors cursor-pointer"
+                            className="p-1.5 bg-[#0a0c10] hover:bg-red-950/60 text-slate-400 hover:text-red-300 rounded border border-white/5 hover:border-red-900/40 transition-colors cursor-pointer"
                             title="Hapus banner"
                           >
                             <Trash2 size={13} />
@@ -625,7 +638,7 @@ export default function BannersPage() {
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Kelola 3 slide iklan partner pada baris "Sedang Tren di NOVESIA" di website. Carousel bergulir otomatis setiap 3.5 detik.
+            Kelola hingga 6 slide iklan partner pada baris "Sedang Tren di NOVESIA" di website. Carousel bergulir otomatis setiap 3.5 detik.
           </p>
         </div>
 
@@ -671,7 +684,7 @@ export default function BannersPage() {
           <span>Memuat data iklan...</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {SLOTS.map((slot) => {
             const a = adBySlot[slot];
             const status = a ? computeAdStatus(a) : null;
@@ -779,24 +792,36 @@ export default function BannersPage() {
                         <button
                           disabled={busy}
                           onClick={() => toggleAdActive(a)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
                             a.active
-                              ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
-                              : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                              ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border-emerald-500/30"
+                              : "bg-slate-800 text-slate-400 hover:bg-slate-700 border-white/10"
                           }`}
-                          title={a.active ? "Nonaktifkan iklan ini" : "Aktifkan iklan ini"}
+                          title={a.active ? "Klik untuk nonaktifkan iklan sementara" : "Klik untuk aktifkan iklan"}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${a.active ? "bg-emerald-400" : "bg-slate-500"}`}
                           />
-                          <span>{a.active ? "Aktif" : "Mati"}</span>
+                          <span>{a.active ? "Aktif" : "Nonaktif"}</span>
                         </button>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            disabled={busy}
+                            onClick={() => toggleAdActive(a)}
+                            className={`p-1.5 rounded border transition-colors cursor-pointer ${
+                              a.active
+                                ? "bg-[#0a0c10] border-emerald-500/30 text-emerald-400 hover:bg-amber-950/40 hover:border-amber-500/40 hover:text-amber-300"
+                                : "bg-[#0a0c10] border-white/10 text-slate-500 hover:bg-emerald-950/40 hover:border-emerald-500/40 hover:text-emerald-400"
+                            }`}
+                            title={a.active ? "Nonaktifkan sementara (Matikan iklan)" : "Aktifkan kembali iklan"}
+                          >
+                            <Power size={13} />
+                          </button>
                           <button
                             disabled={busy}
                             onClick={() => openAdSlot(slot)}
-                            className="p-1.5 bg-[#0a0c10] hover:bg-white/10 text-slate-300 rounded transition-colors cursor-pointer"
+                            className="p-1.5 bg-[#0a0c10] hover:bg-white/10 text-slate-300 rounded border border-white/5 hover:border-white/10 transition-colors cursor-pointer"
                             title="Edit iklan"
                           >
                             <Pencil size={13} />
@@ -804,7 +829,7 @@ export default function BannersPage() {
                           <button
                             disabled={busy}
                             onClick={() => setConfirmDelAdSlot(slot)}
-                            className="p-1.5 bg-[#0a0c10] hover:bg-red-950/60 text-slate-400 hover:text-red-300 rounded transition-colors cursor-pointer"
+                            className="p-1.5 bg-[#0a0c10] hover:bg-red-950/60 text-slate-400 hover:text-red-300 rounded border border-white/5 hover:border-red-900/40 transition-colors cursor-pointer"
                             title="Hapus iklan"
                           >
                             <Trash2 size={13} />

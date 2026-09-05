@@ -26,7 +26,7 @@ export async function GET() {
       .from("nu_banners")
       .select("*")
       .gte("slot", 11)
-      .lte("slot", 13)
+      .lte("slot", 16)
       .order("slot", { ascending: true });
 
     if (error) throw error;

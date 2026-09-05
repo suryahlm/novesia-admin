@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { uploadBuffer, trendingAdKey, publicUrlFor, deleteFileFromR2 } from "@/lib/r2";
 
-const VALID_SLOTS = [1, 2, 3];
+const VALID_SLOTS = [1, 2, 3, 4, 5, 6];
 
 export async function PUT(
   req: NextRequest,
@@ -13,10 +13,10 @@ export async function PUT(
     const slot = Number(slotParam);
 
     if (!VALID_SLOTS.includes(slot)) {
-      return NextResponse.json({ error: "Slot iklan harus 1, 2, atau 3" }, { status: 400 });
+      return NextResponse.json({ error: "Slot iklan harus 1 sampai 6" }, { status: 400 });
     }
 
-    const dbSlot = slot + 10; // Maps slot 1..3 to db slots 11..13
+    const dbSlot = slot + 10; // Maps slot 1..6 to db slots 11..16
 
     const formData = await req.formData();
     const title = (formData.get("title") || "").toString().trim();
@@ -119,7 +119,7 @@ export async function DELETE(
     const slot = Number(slotParam);
 
     if (!VALID_SLOTS.includes(slot)) {
-      return NextResponse.json({ error: "Slot iklan harus 1, 2, atau 3" }, { status: 400 });
+      return NextResponse.json({ error: "Slot iklan harus 1 sampai 6" }, { status: 400 });
     }
 
     const dbSlot = slot + 10;
