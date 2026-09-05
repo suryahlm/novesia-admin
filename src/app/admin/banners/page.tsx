@@ -1014,12 +1014,12 @@ export default function BannersPage() {
               {/* Image Uploader & Preview */}
               <div>
                 <label className="text-xs font-semibold text-slate-400 mb-1.5 block">
-                  Gambar Creative Iklan (Rasio fleksibel / 2:3 portrait / poster)
+                  Gambar Creative Iklan (Rekomendasi 800 × 800 px s/d 1000 × 1000 px, rasio 1:1 Persegi)
                 </label>
                 <button
                   type="button"
                   onClick={() => adFileInputRef.current?.click()}
-                  className="w-full aspect-[16/9] rounded-xl border border-dashed border-white/15 bg-[#0a0c10] flex items-center justify-center overflow-hidden hover:border-amber-400/50 transition-colors cursor-pointer relative group"
+                  className="w-full aspect-square max-w-[220px] mx-auto rounded-xl border border-dashed border-white/15 bg-[#0a0c10] flex items-center justify-center overflow-hidden hover:border-amber-400/50 transition-colors cursor-pointer relative group"
                 >
                   {adImagePreview ? (
                     <>
