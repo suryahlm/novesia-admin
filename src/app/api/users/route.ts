@@ -3,10 +3,27 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   try {
+    // Extract platform info from Supabase auth.users metadata
+    const userMetaMap = new Map<string, { platform: "web" | "app"; os?: string | null }>();
+    let totalWeb = 0;
+    let totalApp = 0;
+
     // Auto-sync missing users from Supabase Auth into nu_users table
     try {
       const { data: authData } = await supabase.auth.admin.listUsers();
       if (authData?.users && authData.users.length > 0) {
+        for (const u of authData.users) {
+          const meta = u.user_metadata || {};
+          const raw = String(meta.platform || meta.registered_via || (u.email === "datakerja26@gmail.com" ? "app" : "web")).toLowerCase();
+          const p: "web" | "app" = raw.includes("app") || raw.includes("android") || raw.includes("ios") ? "app" : "web";
+          userMetaMap.set(u.id, { platform: p, os: meta.os || null });
+          if (p === "app") {
+            totalApp++;
+          } else {
+            totalWeb++;
+          }
+        }
+
         const { data: existingNuUsers } = await supabase.from("nu_users").select("id");
         const existingIds = new Set(existingNuUsers?.map((u) => u.id) || []);
         const missingUsers = authData.users.filter((u) => !existingIds.has(u.id));
@@ -40,6 +57,7 @@ export async function GET(req: NextRequest) {
     const role = searchParams.get("role") || "ALL";
     const banned = searchParams.get("banned") || "ALL";
     const frozen = searchParams.get("frozen") || "ALL";
+    const platform = (searchParams.get("platform") || "ALL").toUpperCase();
 
     const offset = (page - 1) * limit;
 
@@ -63,12 +81,29 @@ export async function GET(req: NextRequest) {
       query = query.eq("frozen", false);
     }
 
-    const { data: rows, count: total, error } = await query
+    const { data: rawRows, count: total, error } = await query
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (error) {
       throw error;
+    }
+
+    // Attach platform to each row
+    let rows = (rawRows || []).map((r) => {
+      const meta = userMetaMap.get(r.id);
+      const userPlatform = meta?.platform || (r.email === "datakerja26@gmail.com" ? "app" : "web");
+      return {
+        ...r,
+        platform: userPlatform,
+        os: meta?.os || null,
+      };
+    });
+
+    if (platform === "APP") {
+      rows = rows.filter((r) => r.platform === "app");
+    } else if (platform === "WEB") {
+      rows = rows.filter((r) => r.platform === "web");
     }
 
     // Grand total (semua user tanpa filter)
@@ -84,12 +119,14 @@ export async function GET(req: NextRequest) {
       .gte("created_at", sevenDaysAgo);
 
     return NextResponse.json({
-      total: total || 0,
+      total: platform !== "ALL" ? rows.length : (total || 0),
       grandTotal: grandTotal || 0,
+      totalWeb: totalWeb || (grandTotal && totalApp ? grandTotal - totalApp : 0),
+      totalApp: totalApp || 0,
       newLast7Days: newLast7Days || 0,
       page,
       limit,
-      rows: rows || [],
+      rows,
     });
   } catch (err: any) {
     console.error("Users list API error:", err);

@@ -16,6 +16,8 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  Globe,
+  Smartphone,
 } from "lucide-react";
 
 interface UserItem {
@@ -24,6 +26,8 @@ interface UserItem {
   name: string;
   avatar_url: string | null;
   role: "USER" | "VIP";
+  platform?: "web" | "app";
+  os?: string | null;
   banned: boolean;
   frozen: boolean;
   vip_until: string | null;
@@ -43,11 +47,14 @@ export default function UsersPage() {
   const [rows, setRows] = useState<UserItem[]>([]);
   const [total, setTotal] = useState(0);
   const [grandTotal, setGrandTotal] = useState(0);
+  const [totalWeb, setTotalWeb] = useState(0);
+  const [totalApp, setTotalApp] = useState(0);
   const [newLast7Days, setNewLast7Days] = useState(0);
   const [page, setPage] = useState(1);
   const [limit] = useState(30);
   const [q, setQ] = useState("");
   const [role, setRole] = useState("ALL");
+  const [platform, setPlatform] = useState("ALL");
   const [banned, setBanned] = useState("ALL");
   const [frozen, setFrozen] = useState("ALL");
   const [loading, setLoading] = useState(true);
@@ -76,6 +83,7 @@ export default function UsersPage() {
           limit: String(limit),
           ...(q.trim() ? { q: q.trim() } : {}),
           ...(role !== "ALL" ? { role } : {}),
+          ...(platform !== "ALL" ? { platform } : {}),
           ...(banned !== "ALL" ? { banned } : {}),
           ...(frozen !== "ALL" ? { frozen } : {}),
         });
@@ -87,6 +95,8 @@ export default function UsersPage() {
         setRows(data.rows || []);
         setTotal(data.total || 0);
         setGrandTotal(data.grandTotal || 0);
+        setTotalWeb(data.totalWeb || 0);
+        setTotalApp(data.totalApp || 0);
         setNewLast7Days(data.newLast7Days || 0);
         setPage(targetPage);
       } catch (e: any) {
@@ -95,12 +105,12 @@ export default function UsersPage() {
         setLoading(false);
       }
     },
-    [limit, q, role, banned, frozen]
+    [limit, q, role, platform, banned, frozen]
   );
 
   useEffect(() => {
     load(1);
-  }, [role, banned, frozen, load]);
+  }, [role, platform, banned, frozen, load]);
 
   const search = () => load(1);
 
@@ -227,7 +237,7 @@ export default function UsersPage() {
       year: "numeric",
     });
 
-  const filterActive = q.trim() !== "" || role !== "ALL" || banned !== "ALL" || frozen !== "ALL";
+  const filterActive = q.trim() !== "" || role !== "ALL" || platform !== "ALL" || banned !== "ALL" || frozen !== "ALL";
   const totalPages = Math.ceil(total / limit) || 1;
 
   return (
@@ -247,7 +257,7 @@ export default function UsersPage() {
             <span>Kelola Pengguna</span>
           </h1>
           <p className="text-slate-400 text-xs mt-1">
-            Pantau dan kelola akun pembaca Novesia, atur status VIP, pembekuan sementara, atau sanksi ban.
+            Pantau dan kelola akun pembaca Novesia, bedakan pengguna web dan aplikasi, atur status VIP, pembekuan sementara, atau sanksi ban.
           </p>
         </div>
         <button
@@ -273,30 +283,56 @@ export default function UsersPage() {
         </div>
 
         <div className="bg-[#12151b] border border-white/5 rounded-xl p-4 flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
+            <Globe size={20} />
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">User Web</div>
+            <div className="text-xl font-bold text-sky-300 mt-0.5">{totalWeb.toLocaleString("id-ID")}</div>
+          </div>
+        </div>
+
+        <div className="bg-[#12151b] border border-white/5 rounded-xl p-4 flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+            <Smartphone size={20} />
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">User App</div>
+            <div className="text-xl font-bold text-emerald-300 mt-0.5">{totalApp.toLocaleString("id-ID")}</div>
+          </div>
+        </div>
+
+        <div className="bg-[#12151b] border border-white/5 rounded-xl p-4 flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
             <UserPlus size={20} />
           </div>
           <div>
             <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">User Baru (7 hari)</div>
-            <div className="text-xl font-bold text-emerald-300 mt-0.5">{newLast7Days.toLocaleString("id-ID")}</div>
+            <div className="text-xl font-bold text-purple-300 mt-0.5">{newLast7Days.toLocaleString("id-ID")}</div>
           </div>
         </div>
-
-        {filterActive && (
-          <div className="bg-[#12151b] border border-amber-400/20 rounded-xl p-4 flex items-center gap-3.5 col-span-2 md:col-span-2">
-            <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-300 shrink-0">
-              <Search size={20} />
-            </div>
-            <div>
-              <div className="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">Hasil Filter</div>
-              <div className="text-xl font-bold text-slate-100 mt-0.5">
-                {total.toLocaleString("id-ID")}{" "}
-                <span className="text-xs font-normal text-slate-400">dari {grandTotal} total user</span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {filterActive && (
+        <div className="bg-[#12151b] border border-amber-400/20 rounded-xl p-3 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2 text-amber-300 font-medium">
+            <Search size={14} />
+            <span>Hasil filter: <strong>{total}</strong> dari <strong>{grandTotal}</strong> total pengguna</span>
+          </div>
+          <button
+            onClick={() => {
+              setQ("");
+              setRole("ALL");
+              setPlatform("ALL");
+              setBanned("ALL");
+              setFrozen("ALL");
+            }}
+            className="text-[11px] text-slate-400 hover:text-white underline cursor-pointer"
+          >
+            Reset Filter
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="bg-[#12151b] border border-white/5 rounded-xl p-4 space-y-3">
@@ -312,6 +348,16 @@ export default function UsersPage() {
               className="w-full bg-[#0a0c10] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all"
             />
           </div>
+
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all cursor-pointer"
+          >
+            <option value="ALL">Semua Platform</option>
+            <option value="WEB">🌐 Web Browser</option>
+            <option value="APP">📱 Aplikasi (App)</option>
+          </select>
 
           <select
             value={role}
@@ -449,6 +495,7 @@ export default function UsersPage() {
                   </th>
                   <th className="py-3 px-3 font-semibold w-12">No</th>
                   <th className="py-3 px-4 font-semibold">Pengguna</th>
+                  <th className="py-3 px-4 font-semibold">Platform</th>
                   <th className="py-3 px-4 font-semibold">Role</th>
                   <th className="py-3 px-4 font-semibold">Status</th>
                   <th className="py-3 px-4 font-semibold">Bergabung</th>
@@ -485,6 +532,19 @@ export default function UsersPage() {
                             <div className="text-[11px] text-slate-400 font-mono truncate">{u.email}</div>
                           </div>
                         </div>
+                      </td>
+                      <td className="py-2.5 px-4">
+                        {u.platform === "app" ? (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <Smartphone size={12} className="shrink-0" />
+                            <span>Aplikasi{u.os ? ` (${u.os})` : ""}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                            <Globe size={12} className="shrink-0" />
+                            <span>Web</span>
+                          </span>
+                        )}
                       </td>
                       <td className="py-2.5 px-4">
                         <div className="flex flex-col gap-1 items-start">
