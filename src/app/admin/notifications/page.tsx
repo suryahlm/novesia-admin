@@ -12,6 +12,9 @@ import {
   Megaphone,
   Check,
   Radio,
+  Smartphone,
+  Globe,
+  Layers,
 } from "lucide-react";
 
 interface Notification {
@@ -19,6 +22,7 @@ interface Notification {
   title: string;
   message: string;
   type: "info" | "warning" | "maintenance";
+  target?: "all" | "web" | "app";
   is_active: boolean;
   created_at: string;
 }
@@ -34,6 +38,7 @@ export default function NotificationsPage() {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [type, setType] = useState("info");
+  const [target, setTarget] = useState<"all" | "web" | "app">("all");
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -61,12 +66,13 @@ export default function NotificationsPage() {
       const res = await fetch("/api/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, message, type }),
+        body: JSON.stringify({ title, message, type, target }),
       });
       if (res.ok) {
         setTitle("");
         setMessage("");
         setType("info");
+        setTarget("all");
         fetchNotifications();
         showToast("✅ Notifikasi berhasil dikirim!");
       }
@@ -157,6 +163,22 @@ export default function NotificationsPage() {
               {activeNotif.type}
             </span>
             <span>•</span>
+            <span
+              className={`px-2 py-0.5 rounded-full font-bold ${
+                activeNotif.target === "app"
+                  ? "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                  : activeNotif.target === "web"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  : "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+              }`}
+            >
+              {activeNotif.target === "app"
+                ? "📱 Target: App"
+                : activeNotif.target === "web"
+                ? "🌐 Target: Web"
+                : "⚡ Target: Semua"}
+            </span>
+            <span>•</span>
             <span>{formatDate(activeNotif.created_at)}</span>
           </div>
         </div>
@@ -164,10 +186,54 @@ export default function NotificationsPage() {
 
       {/* Create Form */}
       <div className="bg-[#12151b] border border-white/5 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-          <Radio className="w-4 h-4 text-amber-400" />
-          <span>Buat Broadcast Baru</span>
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+          <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <Radio className="w-4 h-4 text-amber-400" />
+            <span>Buat Broadcast Baru</span>
+          </h2>
+
+          {/* 3 Tombol Pilihan Target: App - Web - Semua */}
+          <div className="flex items-center gap-1.5 p-1 bg-[#0a0c10] border border-white/10 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setTarget("app")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                target === "app"
+                  ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold shadow-[0_2px_10px_rgba(251,191,36,0.3)]"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>App</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTarget("web")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                target === "web"
+                  ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold shadow-[0_2px_10px_rgba(251,191,36,0.3)]"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>Web</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTarget("all")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                target === "all"
+                  ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold shadow-[0_2px_10px_rgba(251,191,36,0.3)]"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Semua</span>
+            </button>
+          </div>
+        </div>
 
         <div>
           <label className="text-xs font-semibold text-slate-400 mb-1.5 block">
@@ -235,6 +301,7 @@ export default function NotificationsPage() {
                 <tr className="border-b border-white/5 text-slate-400 text-left">
                   <th className="py-2.5 px-3 font-semibold">Status</th>
                   <th className="py-2.5 px-3 font-semibold">Tipe</th>
+                  <th className="py-2.5 px-3 font-semibold">Target</th>
                   <th className="py-2.5 px-3 font-semibold">Judul</th>
                   <th className="py-2.5 px-3 font-semibold">Waktu</th>
                   <th className="py-2.5 px-3 font-semibold text-right">Aksi</th>
@@ -257,6 +324,19 @@ export default function NotificationsPage() {
                     <td className="py-2.5 px-3">
                       <span className="text-[10px] font-semibold text-slate-300 uppercase">
                         {n.type}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                          n.target === "app"
+                            ? "bg-sky-500/15 text-sky-300 border-sky-500/25"
+                            : n.target === "web"
+                            ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/25"
+                            : "bg-purple-500/15 text-purple-300 border-purple-500/25"
+                        }`}
+                      >
+                        {n.target === "app" ? "📱 App" : n.target === "web" ? "🌐 Web" : "⚡ Semua"}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 font-medium text-slate-200">{n.title}</td>

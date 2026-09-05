@@ -19,7 +19,7 @@ export async function GET() {
 
 // POST — create new notification (auto-deactivate previous)
 export async function POST(req: NextRequest) {
-  const { title, message, type } = await req.json();
+  const { title, message, type, target } = await req.json();
 
   if (!title?.trim() || !message?.trim()) {
     return NextResponse.json({ error: "Judul dan pesan wajib diisi" }, { status: 400 });
@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
     .update({ is_active: false })
     .eq("is_active", true);
 
+  // Validate target: "all" | "web" | "app"
+  const validTarget = ["all", "web", "app"].includes(target) ? target : "all";
+
   // Insert new notification
   const { data, error } = await supabase
     .from("nu_notifications")
@@ -38,6 +41,7 @@ export async function POST(req: NextRequest) {
       title: title.trim(),
       message: message.trim(),
       type: type || "info",
+      target: validTarget,
       is_active: true,
     })
     .select()
