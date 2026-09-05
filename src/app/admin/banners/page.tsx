@@ -431,12 +431,17 @@ export default function BannersPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2.5">
-            <Rocket className="w-6 h-6 text-amber-400" />
-            <span>Banner Beranda</span>
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2.5">
+              <Rocket className="w-6 h-6 text-amber-400" />
+              <span>Banner Beranda</span>
+            </h1>
+            <span className="text-[10px] uppercase font-extrabold tracking-wider bg-sky-400/10 text-sky-400 border border-sky-400/20 px-2 py-0.5 rounded-full">
+              Khusus App
+            </span>
+          </div>
           <p className="text-slate-400 text-xs mt-1">
-            Kelola hingga 6 slide carousel banner utama di Beranda aplikasi Novesia.
+            Kelola hingga 6 slide carousel banner utama di Beranda aplikasi Novesia (Android & iOS).
           </p>
         </div>
         <button
@@ -633,12 +638,12 @@ export default function BannersPage() {
               <Megaphone className="w-5 h-5 text-amber-400" />
               <span>Iklan Sedang Tren (Partner Ad Carousel)</span>
             </h2>
-            <span className="text-[10px] uppercase font-extrabold tracking-wider bg-amber-400/10 text-amber-400 border border-amber-400/20 px-2 py-0.5 rounded-full">
-              Web & App
+            <span className="text-[10px] uppercase font-extrabold tracking-wider bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 px-2.5 py-0.5 rounded-full">
+              Khusus Web
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Kelola hingga 6 slide iklan partner pada baris "Sedang Tren di NOVESIA" di website. Carousel bergulir otomatis setiap 3.5 detik.
+            Kelola hingga 6 slide iklan partner pada baris &quot;Sedang Tren di NOVESIA&quot; di website (khusus Web, tidak tampil di App). Carousel bergulir otomatis setiap 3.5 detik.
           </p>
         </div>
 
@@ -666,7 +671,7 @@ export default function BannersPage() {
             • <strong>Ukuran & Rasio Gambar</strong>: Wajib rasio <strong className="text-amber-300 font-mono">1:1 (Persegi / Kotak)</strong>, ukuran rekomendasi <strong className="text-amber-300 font-mono">800 × 800 px</strong> hingga <strong className="text-amber-300 font-mono">1080 × 1080 px</strong> (maksimal 5MB). Format file: <strong className="text-slate-200">JPG, PNG, atau WebP</strong>.
           </p>
           <p className="text-slate-400">
-            • <strong>Tampilan</strong>: Tampil bergulir otomatis pada kartu ke-7 baris "Sedang Tren di NOVESIA" di web (Desktop & Mobile). Jika slot kosong atau belum diisi, web otomatis menampilkan visual kemitraan default.
+            • <strong>Tampilan</strong>: Khusus tampil di website NOVESIA pada kartu ke-7 baris &quot;Sedang Tren di NOVESIA&quot; (Desktop &amp; Mobile Web, tidak tampil di mobile app). Jika slot kosong atau belum diisi, web otomatis menampilkan visual kemitraan default.
           </p>
         </div>
       </div>
@@ -1050,7 +1055,7 @@ export default function BannersPage() {
               <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                 <Megaphone size={16} className="text-amber-400" />
                 <span>
-                  {adBySlot[adEditingSlot] ? `Edit Iklan - Slide ${adEditingSlot}` : `Buat Iklan Baru - Slide ${adEditingSlot}`}
+                  {adBySlot[adEditingSlot] ? `Edit Iklan (Khusus Web) - Slide ${adEditingSlot}` : `Buat Iklan Baru (Khusus Web) - Slide ${adEditingSlot}`}
                 </span>
               </h3>
               <button onClick={() => setAdEditingSlot(null)} className="text-slate-400 hover:text-white cursor-pointer">
