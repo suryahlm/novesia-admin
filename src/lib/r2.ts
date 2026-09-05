@@ -33,6 +33,10 @@ export function bannerKey(slot: number, ext: string): string {
   return `banners/slot-${slot}/banner.${ext}`;
 }
 
+export function trendingAdKey(slot: number, ext: string): string {
+  return `trending-ads/slot-${slot}/creative.${ext}`;
+}
+
 export function coverLandscapeKey(source: string, slug: string, ext: string): string {
   const safeSource = source || "general";
   return `${safeSource}/${slug}-landscape.${ext}`;
