@@ -52,6 +52,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     activeItem?.label ??
     (pathname.startsWith("/admin/novels/") ? "Detail Novel" : "Novesia Admin");
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/login";
+    } catch {
+      window.location.href = "/login";
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#0a0c10]">
       {/* ═══ Komiku Style Sidebar ═══ */}
@@ -98,6 +107,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             );
           })}
         </nav>
+
+        {/* Logout at bottom of sidebar */}
+        <div className="p-3 border-t border-white/5 hidden md:block">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left text-slate-400 hover:text-red-400 hover:bg-red-950/20 transition-colors cursor-pointer"
+          >
+            <LogOut size={17} />
+            <span>Keluar Sesi</span>
+          </button>
+        </div>
       </aside>
 
       {/* ═══ Main Content Viewport ═══ */}
@@ -105,9 +125,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Top Header Bar */}
         <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-white/5 bg-[#0a0c10]/80 backdrop-blur-sm sticky top-0 z-10">
           <h1 className="text-lg md:text-xl font-bold text-slate-100">{pageTitle}</h1>
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-[#12151b] border border-white/5">
-            <ShieldCheck size={15} className="text-amber-400" />
-            <span className="text-xs text-slate-300">Admin</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-[#12151b] border border-white/5">
+              <ShieldCheck size={15} className="text-amber-400" />
+              <span className="text-xs text-slate-300">Admin</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              title="Keluar dari Admin Studio"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400/90 hover:text-red-300 bg-red-950/30 hover:bg-red-950/60 border border-red-900/30 transition-colors cursor-pointer"
+            >
+              <LogOut size={14} />
+              <span className="hidden sm:inline">Keluar</span>
+            </button>
           </div>
         </header>
 
