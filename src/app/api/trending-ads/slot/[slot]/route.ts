@@ -4,6 +4,36 @@ import { uploadBuffer, trendingAdKey, publicUrlFor, deleteFileFromR2 } from "@/l
 
 const VALID_SLOTS = [1, 2, 3, 4, 5, 6];
 
+async function getAdsList(): Promise<any[]> {
+  const { data } = await supabase
+    .from("nu_app_config")
+    .select("value")
+    .eq("key", "web_trending_ads")
+    .maybeSingle();
+
+  if (!data?.value) return [];
+  try {
+    const parsed = JSON.parse(data.value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveAdsList(items: any[]) {
+  const { error } = await supabase
+    .from("nu_app_config")
+    .upsert(
+      {
+        key: "web_trending_ads",
+        value: JSON.stringify(items),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" }
+    );
+  if (error) throw error;
+}
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ slot: string }> }
@@ -15,8 +45,6 @@ export async function PUT(
     if (!VALID_SLOTS.includes(slot)) {
       return NextResponse.json({ error: "Slot iklan harus 1 sampai 6" }, { status: 400 });
     }
-
-    const dbSlot = slot + 10; // Maps slot 1..6 to db slots 11..16
 
     const formData = await req.formData();
     const title = (formData.get("title") || "").toString().trim();
@@ -32,19 +60,16 @@ export async function PUT(
       return NextResponse.json({ error: "Judul iklan wajib diisi" }, { status: 400 });
     }
 
-    // Check existing banner in dbSlot
-    const { data: existing } = await supabase
-      .from("nu_banners")
-      .select("*")
-      .eq("slot", dbSlot)
-      .maybeSingle();
+    const items = await getAdsList();
+    const existingIndex = items.findIndex((i) => Number(i.slot) === slot);
+    const existing = existingIndex >= 0 ? items[existingIndex] : null;
 
     if (!existing && (!imageFile || imageFile.size === 0)) {
       return NextResponse.json({ error: "Gambar creative iklan wajib diupload" }, { status: 400 });
     }
 
-    let imageKey = existing?.image_key;
-    let imageUrl = existing?.image_url;
+    let imageKey = existing?.imageKey;
+    let imageUrl = existing?.imageUrl;
 
     if (imageFile && imageFile.size > 0) {
       const ext = (imageFile.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
@@ -56,54 +81,38 @@ export async function PUT(
       imageUrl = publicUrlFor(newKey);
 
       // Clean up old key if different
-      if (existing?.image_key && existing.image_key !== newKey) {
-        deleteFileFromR2(existing.image_key).catch(() => {});
+      if (existing?.imageKey && existing.imageKey !== newKey) {
+        deleteFileFromR2(existing.imageKey).catch(() => {});
       }
     }
 
-    // Pack title, subtitle, and badge into JSON string safely
-    const titlePayload = JSON.stringify({
+    const updatedItem = {
+      id: existing?.id || crypto.randomUUID(),
+      slot,
+      dbSlot: slot,
       title,
       subtitle,
       badge,
-    });
-
-    const bannerData = {
-      slot: dbSlot,
-      title: titlePayload,
-      image_key: imageKey,
-      image_url: imageUrl,
-      target_url: targetUrl,
+      imageKey,
+      imageUrl,
+      targetUrl,
       active,
-      start_at: startAt,
-      expires_at: expiresAt,
-      updated_at: new Date().toISOString(),
+      startAt,
+      expiresAt,
+      createdAt: existing?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    const { data: saved, error } = await supabase
-      .from("nu_banners")
-      .upsert(bannerData, { onConflict: "slot" })
-      .select()
-      .single();
+    if (existingIndex >= 0) {
+      items[existingIndex] = updatedItem;
+    } else {
+      items.push(updatedItem);
+    }
+    items.sort((a, b) => Number(a.slot) - Number(b.slot));
 
-    if (error) throw error;
+    await saveAdsList(items);
 
-    return NextResponse.json({
-      id: saved.id,
-      slot,
-      dbSlot: saved.slot,
-      title,
-      subtitle,
-      badge,
-      imageKey: saved.image_key,
-      imageUrl: saved.image_url,
-      targetUrl: saved.target_url,
-      active: Boolean(saved.active),
-      startAt: saved.start_at,
-      expiresAt: saved.expires_at,
-      createdAt: saved.created_at,
-      updatedAt: saved.updated_at,
-    });
+    return NextResponse.json(updatedItem);
   } catch (err: any) {
     console.error("Trending Ad save error:", err);
     return NextResponse.json({ error: err.message || "Gagal menyimpan iklan trending" }, { status: 500 });
@@ -122,19 +131,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Slot iklan harus 1 sampai 6" }, { status: 400 });
     }
 
-    const dbSlot = slot + 10;
+    const items = await getAdsList();
+    const existingIndex = items.findIndex((i) => Number(i.slot) === slot);
 
-    const { data: existing } = await supabase
-      .from("nu_banners")
-      .select("*")
-      .eq("slot", dbSlot)
-      .maybeSingle();
-
-    if (existing) {
-      if (existing.image_key) {
-        deleteFileFromR2(existing.image_key).catch(() => {});
+    if (existingIndex >= 0) {
+      const existing = items[existingIndex];
+      if (existing.imageKey) {
+        deleteFileFromR2(existing.imageKey).catch(() => {});
       }
-      await supabase.from("nu_banners").delete().eq("slot", dbSlot);
+      items.splice(existingIndex, 1);
+      await saveAdsList(items);
     }
 
     return NextResponse.json({ deleted: true });
@@ -143,3 +149,4 @@ export async function DELETE(
     return NextResponse.json({ error: err.message || "Gagal menghapus iklan trending" }, { status: 500 });
   }
 }
+
