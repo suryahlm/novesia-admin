@@ -11,7 +11,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1009.0",
     "@aws-sdk/s3-request-presigner": "^3.1126.0",
-    "@supabase/supabase-js": "^2.99.1",
     "groq-sdk": "^1.1.1",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",

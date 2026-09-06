@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet } from "@/lib/apiClient";
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,46 +9,28 @@ export async function GET(req: NextRequest) {
     const q = (searchParams.get("q") || "").trim();
     const categoryId = searchParams.get("categoryId") || "";
 
-    const offset = (page - 1) * limit;
-
-    let query = supabase
-      .from("nu_forum_threads")
-      .select("*, category:nu_forum_categories(id, name, slug)", { count: "exact" });
-
-    if (categoryId) {
-      query = query.eq("category_id", categoryId);
-    }
-
-    if (q) {
-      query = query.or(`title.ilike.%${q}%,content.ilike.%${q}%,user_name.ilike.%${q}%`);
-    }
-
-    const { data: rows, count: total, error } = await query
-      .order("last_activity_at", { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (error) throw error;
+    const data = await apiGet<any>("/api/forum/threads", { page, limit, q, categoryId });
 
     return NextResponse.json({
-      total: total || 0,
-      page,
-      limit,
-      rows: (rows || []).map((t: any) => ({
+      total: data?.total || 0,
+      page: data?.page || page,
+      limit: data?.limit || limit,
+      rows: (data?.rows || data?.threads || []).map((t: any) => ({
         id: t.id,
         title: t.title,
         content: t.content,
         pinned: Boolean(t.pinned),
         locked: Boolean(t.locked),
-        createdAt: t.created_at,
-        lastActivityAt: t.last_activity_at || t.created_at,
-        user: {
-          id: t.user_id,
-          name: t.user_name || "Pembaca",
-          avatarUrl: t.user_avatar || null,
-          role: t.user_role || "USER",
+        createdAt: t.createdAt || t.created_at,
+        lastActivityAt: t.lastActivityAt || t.last_activity_at || t.createdAt || t.created_at,
+        user: t.user || {
+          id: t.userId || t.user_id,
+          name: t.userName || t.user_name || "Pembaca",
+          avatarUrl: t.userAvatar || t.user_avatar || null,
+          role: t.userRole || t.user_role || "USER",
         },
         category: t.category || { name: "Umum", slug: "umum" },
-        postCount: t.post_count || 0,
+        postCount: t.postCount ?? t.post_count ?? 0,
       })),
     });
   } catch (err: any) {

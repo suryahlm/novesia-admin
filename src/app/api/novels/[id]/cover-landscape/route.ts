@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPatch } from "@/lib/apiClient";
 import { coverLandscapeKey, uploadBuffer, publicUrlFor, deleteFileFromR2 } from "@/lib/r2";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -25,23 +25,8 @@ export async function POST(
       return NextResponse.json({ error: "Ukuran file terlalu besar (maksimal 10MB)" }, { status: 400 });
     }
 
-    // Ambil data novel berdasarkan id atau nu_slug
-    let query = supabase
-      .from("nu_novels")
-      .select("id, nu_slug, source, cover_landscape_r2_key")
-      .eq("id", id)
-      .maybeSingle();
-
-    let { data: novel } = await query;
-    if (!novel) {
-      // Coba fallback via nu_slug
-      const { data: novelBySlug } = await supabase
-        .from("nu_novels")
-        .select("id, nu_slug, source, cover_landscape_r2_key")
-        .eq("nu_slug", id)
-        .maybeSingle();
-      novel = novelBySlug;
-    }
+    // Ambil data novel
+    const novel = await apiGet<any>(`/api/novels/${id}`);
 
     if (!novel) {
       return NextResponse.json({ error: "Novel tidak ditemukan" }, { status: 404 });
@@ -49,31 +34,25 @@ export async function POST(
 
     const rawExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const ext = rawExt === "jpeg" ? "jpg" : rawExt;
-    const r2Key = coverLandscapeKey(novel.source || "general", novel.nu_slug, ext);
+    const sourcePrefix = novel.source || "general";
+    const slug = novel.nu_slug || novel.nuSlug;
+    const r2Key = coverLandscapeKey(sourcePrefix, slug, ext);
     const buffer = Buffer.from(await file.arrayBuffer());
 
     await uploadBuffer(r2Key, buffer, file.type);
     const publicUrl = publicUrlFor(r2Key);
 
     // Hapus key lama jika nama/ekstensi berbeda
-    const oldKey = novel.cover_landscape_r2_key;
+    const oldKey = novel.cover_landscape_r2_key || novel.coverLandscapeR2Key;
     if (oldKey && oldKey !== r2Key) {
       deleteFileFromR2(oldKey).catch(() => {});
     }
 
     // Update database
-    const { error: updateError } = await supabase
-      .from("nu_novels")
-      .update({
-        cover_landscape_url: publicUrl,
-        cover_landscape_r2_key: r2Key,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", novel.id);
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 400 });
-    }
+    await apiPatch(`/api/novels/${novel.id || id}`, {
+      cover_landscape_url: publicUrl,
+      cover_landscape_r2_key: r2Key,
+    });
 
     return NextResponse.json({
       success: true,
@@ -93,41 +72,25 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    // Ambil novel
-    let { data: novel } = await supabase
-      .from("nu_novels")
-      .select("id, cover_landscape_r2_key")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (!novel) {
-      const { data: novelBySlug } = await supabase
-        .from("nu_novels")
-        .select("id, cover_landscape_r2_key")
-        .eq("nu_slug", id)
-        .maybeSingle();
-      novel = novelBySlug;
-    }
+    const novel = await apiGet<any>(`/api/novels/${id}`);
 
     if (!novel) {
       return NextResponse.json({ error: "Novel tidak ditemukan" }, { status: 404 });
     }
 
-    if (novel.cover_landscape_r2_key) {
-      await deleteFileFromR2(novel.cover_landscape_r2_key);
+    const oldKey = novel.cover_landscape_r2_key || novel.coverLandscapeR2Key;
+    if (oldKey) {
+      await deleteFileFromR2(oldKey);
     }
 
-    await supabase
-      .from("nu_novels")
-      .update({
-        cover_landscape_url: null,
-        cover_landscape_r2_key: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", novel.id);
+    await apiPatch(`/api/novels/${novel.id || id}`, {
+      cover_landscape_url: null,
+      cover_landscape_r2_key: null,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
+    console.error("Cover landscape delete error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

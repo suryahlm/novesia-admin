@@ -1,7 +1,7 @@
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPatch, apiDelete } from "@/lib/apiClient";
 import { NextRequest, NextResponse } from "next/server";
 
-// PUT: Update novel metadata
+// PUT / PATCH: Update novel metadata
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -10,8 +10,11 @@ export async function PUT(
   const body = await req.json();
 
   const allowedFields = [
-    "title", "synopsis", "synopsis_translated", "genres", "tags", "author", "status",
-    "original_status", "language", "rating", "cover_url", "cover_r2_key"
+    "title", "synopsis", "synopsis_translated", "genres", "tags", "author", "artist", "status",
+    "novel_type", "novelType", "original_status", "translation_status", "translationStatus",
+    "language", "rating", "year", "cover_url", "cover_r2_key",
+    "cover_landscape_url", "cover_landscape_r2_key", "is_blacklisted", "blacklist_reason",
+    "associated_names", "associatedNames", "publisher", "source",
   ];
 
   const updates: Record<string, any> = {};
@@ -22,18 +25,12 @@ export async function PUT(
   }
   updates.updated_at = new Date().toISOString();
 
-  const { data, error } = await supabase
-    .from("nu_novels")
-    .update(updates)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const data = await apiPatch<any>(`/api/novels/${id}`, updates);
+    return NextResponse.json({ success: true, novel: data });
+  } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
-
-  return NextResponse.json({ success: true, novel: data });
 }
 
 // DELETE: Delete novel and all its chapters
@@ -43,25 +40,11 @@ export async function DELETE(
 ) {
   const { id } = await params;
 
-  // 1. Get novel data to check for R2 cover
-  const { data: novel } = await supabase
-    .from("nu_novels")
-    .select("cover_r2_key")
-    .eq("id", id)
-    .single();
-
-  // 2. Delete from R2 if key exists
-  if (novel?.cover_r2_key) {
-    const { deleteFileFromR2 } = await import("@/lib/r2");
-    await deleteFileFromR2(novel.cover_r2_key);
-  }
-
-  // 3. Delete from Supabase (Chapters cascade-delete via FK)
-  const { error } = await supabase.from("nu_novels").delete().eq("id", id);
-
-  if (error) {
+  try {
+    // API akan handle R2 cleanup dan cascade delete
+    await apiDelete(`/api/novels/${id}`);
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
-
-  return NextResponse.json({ success: true });
 }

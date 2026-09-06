@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiPost, apiPatch } from "@/lib/apiClient";
 
-// Genre keywords mapping (sama dengan versi tunggal)
+// Genre keywords mapping
 const GENRE_KEYWORDS: Record<string, string[]> = {
   "Action": ["fight", "battle", "war", "sword", "combat", "warrior", "kill", "attack", "martial", "weapon", "army", "action"],
   "Adventure": ["adventure", "journey", "explore", "quest", "discover", "travel", "expedition", "dungeon"],
@@ -33,14 +33,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid array of IDs" }, { status: 400 });
     }
 
-    // 1. Fetch novel data from DB (we only need id, title, and synopsis)
-    // Supabase IN query to get multiple items
-    const { data: novels, error: fetchError } = await supabase
-      .from("nu_novels")
-      .select("id, title, synopsis")
-      .in("id", ids);
+    // 1. Fetch novel data from API
+    const novels = await apiPost<any[]>("/api/novels/bulk", { ids });
 
-    if (fetchError) throw fetchError;
     if (!novels || novels.length === 0) {
       return NextResponse.json({ error: "Novels not found" }, { status: 404 });
     }
@@ -73,15 +68,11 @@ export async function POST(req: NextRequest) {
         generatedGenres.push("General");
       }
 
-      // 3. Update DB
-      const { error: updateError } = await supabase
-        .from("nu_novels")
-        .update({ genres: generatedGenres })
-        .eq("id", novel.id);
-
-      if (!updateError) {
+      // 3. Update DB via apiClient
+      try {
+        await apiPatch(`/api/novels/${novel.id}`, { genres: generatedGenres });
         updatedCount++;
-      } else {
+      } catch (updateError) {
         console.error(`Gagal update genre untuk novel ID ${novel.id}:`, updateError);
       }
     }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet } from "@/lib/apiClient";
 
 // GET: Cari novel untuk dimasukkan ke blacklist
 export async function GET(req: NextRequest) {
@@ -12,18 +12,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ novels: [] });
     }
 
-    const { data: novels, error } = await supabase
-      .from("nu_novels")
-      .select("id, title, nu_slug, source, cover_url, total_chapters, status, original_status, is_blacklisted, created_at")
-      .or(`title.ilike.%${q.trim()}%,nu_slug.ilike.%${q.trim()}%`)
-      .order("total_chapters", { ascending: true })
-      .limit(limit);
+    const data = await apiGet<any>("/api/novels", { q: q.trim(), limit });
+    const novels = (data?.novels || data?.data || []).map((n: any) => ({
+      id: n.id,
+      title: n.title,
+      nu_slug: n.nuSlug || n.nu_slug,
+      source: n.source,
+      cover_url: n.coverUrl || n.cover_url,
+      total_chapters: n.totalChapters || n.total_chapters,
+      status: n.status,
+      original_status: n.originalStatus || n.original_status,
+      is_blacklisted: n.isBlacklisted || n.is_blacklisted,
+      created_at: n.createdAt || n.created_at,
+    }));
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ novels: novels || [] });
+    return NextResponse.json({ novels });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Terjadi kesalahan pencarian";
     return NextResponse.json({ error: message }, { status: 500 });

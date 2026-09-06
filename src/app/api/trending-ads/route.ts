@@ -1,22 +1,19 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet } from "@/lib/apiClient";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const { data, error } = await supabase
-      .from("nu_app_config")
-      .select("value")
-      .eq("key", "web_trending_ads")
-      .maybeSingle();
-
-    if (error) throw error;
+    const configData = await apiGet<any>("/api/config/web_trending_ads").catch(() => null);
 
     let items: any[] = [];
-    if (data?.value) {
+    if (configData?.data) {
+      items = Array.isArray(configData.data) ? configData.data : [];
+    } else if (configData?.value) {
       try {
-        items = JSON.parse(data.value);
+        const parsed = JSON.parse(configData.value);
+        items = Array.isArray(parsed) ? parsed : [];
       } catch {
         items = [];
       }
@@ -48,4 +45,3 @@ export async function GET() {
     );
   }
 }
-

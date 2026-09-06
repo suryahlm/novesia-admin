@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { apiGet } from "@/lib/apiClient";
 
 export const dynamic = 'force-dynamic'; // Selalu fetch fresh, tidak di-cache
 import Link from "next/link";
@@ -14,28 +14,31 @@ const NOVEL_SOURCES = [
 ];
 
 async function getNovels() {
-  const { data } = await supabase
-    .from("nu_novels")
-    .select("*")
-    .eq("is_blacklisted", false)
-    .in("status", ["active", "completed", "ongoing", "published", "draft"])
-    .order("created_at", { ascending: false });
-  return data || [];
+  try {
+    const data = await apiGet<any[]>('/api/novels/all');
+    return (data || []).filter(
+      (n: any) => !n.is_blacklisted && ["active", "completed", "ongoing", "published", "draft"].includes(n.status)
+    );
+  } catch (err) {
+    console.error("Failed to load novels:", err);
+    return [];
+  }
 }
 
 async function getSourceCounts() {
-  const { data } = await supabase
-    .from("nu_novels")
-    .select("source")
-    .eq("is_blacklisted", false)
-    .in("status", ["active", "completed", "ongoing", "published", "draft"]);
-  const counts: Record<string, number> = {};
-  (data || []).forEach((n: any) => {
-    const src = n.source;
-    if (!src) return; // skip jika source null
-    counts[src] = (counts[src] || 0) + 1;
-  });
-  return counts;
+  try {
+    const stats = await apiGet<any>('/api/novels/stats');
+    if (stats?.sourceCounts) return stats.sourceCounts;
+    const novels = await getNovels();
+    const counts: Record<string, number> = {};
+    novels.forEach((n: any) => {
+      const src = n.source;
+      if (src) counts[src] = (counts[src] || 0) + 1;
+    });
+    return counts;
+  } catch {
+    return {};
+  }
 }
 
 export default async function NovelsListPage() {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPost } from "@/lib/apiClient";
 import { uploadCoverToR2 } from "@/lib/r2";
 
 export async function POST(req: NextRequest) {
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       original_status,
       status,
       genres,
-      coverBase64, // Format: data:image/jpeg;base64,...
+      coverBase64,
     } = body;
 
     if (!title || !nu_slug) {
@@ -25,21 +25,17 @@ export async function POST(req: NextRequest) {
 
     let finalCoverUrl = null;
 
-    // Handle base64 image upload
+    // Handle base64 image upload to R2
     if (coverBase64 && coverBase64.startsWith("data:image")) {
       const base64Data = coverBase64.replace(/^data:image\/\w+;base64,/, "");
       const buffer = Buffer.from(base64Data, "base64");
-      
       const fileName = `${nu_slug}.jpg`;
-      // explicitly use "general" as prefix (folder)
       const uploadRes = await uploadCoverToR2(buffer, fileName, "general");
-      
       if (uploadRes) {
         finalCoverUrl = uploadRes.publicUrl;
       }
     }
 
-    // Insert metadata into nu_novels
     const novelData = {
       title,
       nu_slug,
@@ -53,23 +49,11 @@ export async function POST(req: NextRequest) {
       genres: genres || [],
       source: "General",
       cover_url: finalCoverUrl,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
-      .from("nu_novels")
-      .insert(novelData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Supabase insert error:", error);
-      // Delete from R2 if DB fails? Usually good practice, but skipping for simplicity
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
+    const data = await apiPost<{ novel: any }>("/api/novels", novelData);
     return NextResponse.json({ success: true, novel: data });
-
   } catch (error: any) {
     console.error("Create novel error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

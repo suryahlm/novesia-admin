@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPatch } from "@/lib/apiClient";
 import { uploadCoverToR2 } from "@/lib/r2";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -27,18 +27,16 @@ export async function POST(
     }
 
     // Get novel slug for filename
-    const { data: novel } = await supabase
-      .from("nu_novels")
-      .select("nu_slug, source")
-      .eq("id", id)
-      .single();
+    const novel = await apiGet<any>(`/api/novels/${id}`);
 
     if (!novel) {
       return NextResponse.json({ error: "Novel not found" }, { status: 404 });
     }
 
+    const sourcePrefix = novel.source || "general";
+    const slug = novel.nu_slug || novel.nuSlug;
     const ext = file.name.split(".").pop() || "jpg";
-    const filename = `${novel.source}/${novel.nu_slug}.${ext}`;
+    const filename = `${sourcePrefix}/${slug}.${ext}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
     const result = await uploadCoverToR2(buffer, filename);
@@ -48,18 +46,10 @@ export async function POST(
     }
 
     // Update novel in DB
-    const { error } = await supabase
-      .from("nu_novels")
-      .update({
-        cover_url: result.publicUrl,
-        cover_r2_key: result.r2Key,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
+    await apiPatch(`/api/novels/${novel.id || id}`, {
+      cover_url: result.publicUrl,
+      cover_r2_key: result.r2Key,
+    });
 
     return NextResponse.json({
       success: true,
@@ -67,6 +57,7 @@ export async function POST(
       cover_r2_key: result.r2Key,
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error("Cover upload error:", e);
+    return NextResponse.json({ error: e.message || "Failed to upload cover" }, { status: 500 });
   }
 }

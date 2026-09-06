@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPut } from "@/lib/apiClient";
 import { uploadBuffer, trendingAdKey, publicUrlFor, deleteFileFromR2 } from "@/lib/r2";
 
 const VALID_SLOTS = [1, 2, 3, 4, 5, 6];
 
 async function getAdsList(): Promise<any[]> {
-  const { data } = await supabase
-    .from("nu_app_config")
-    .select("value")
-    .eq("key", "web_trending_ads")
-    .maybeSingle();
-
-  if (!data?.value) return [];
+  const data = await apiGet<any>("/api/config/web_trending_ads").catch(() => null);
+  if (!data) return [];
+  if (data.data && Array.isArray(data.data)) return data.data;
+  if (!data.value) return [];
   try {
     const parsed = JSON.parse(data.value);
     return Array.isArray(parsed) ? parsed : [];
@@ -21,17 +18,7 @@ async function getAdsList(): Promise<any[]> {
 }
 
 async function saveAdsList(items: any[]) {
-  const { error } = await supabase
-    .from("nu_app_config")
-    .upsert(
-      {
-        key: "web_trending_ads",
-        value: JSON.stringify(items),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "key" }
-    );
-  if (error) throw error;
+  await apiPut("/api/config/web_trending_ads", { value: items });
 }
 
 export async function PUT(
@@ -149,4 +136,3 @@ export async function DELETE(
     return NextResponse.json({ error: err.message || "Gagal menghapus iklan trending" }, { status: 500 });
   }
 }
-

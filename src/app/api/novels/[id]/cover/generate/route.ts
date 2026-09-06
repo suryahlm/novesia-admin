@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPatch } from "@/lib/apiClient";
 import { uploadCoverToR2 } from "@/lib/r2";
 import { generateCoverImageBuffer, buildNovelCoverPrompt } from "@/lib/cloudflare-image";
 
@@ -13,20 +13,14 @@ export async function POST(
     const body = await req.json().catch(() => ({}));
     const customPrompt = body?.prompt;
 
-    // 1. Fetch novel data from DB (by UUID or slug)
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    const { data: novel, error: fetchError } = await supabase
-      .from("nu_novels")
-      .select("id, title, nu_slug, source, genres, synopsis, author")
-      .eq(isUuid ? "id" : "nu_slug", id)
-      .single();
+    // 1. Fetch novel data from API
+    const novel = await apiGet<any>(`/api/novels/${id}`);
 
-    if (fetchError || !novel) {
+    if (!novel) {
       return NextResponse.json({ error: "Novel tidak ditemukan." }, { status: 404 });
     }
 
-
-    // 2. Build Light Novel Aesthetic Prompt (Custom or AI-generated via Gemini 3.7 Flash)
+    // 2. Build Light Novel Aesthetic Prompt
     let finalPrompt = customPrompt;
     if (!finalPrompt || typeof finalPrompt !== "string" || !finalPrompt.trim()) {
       finalPrompt = await buildNovelCoverPrompt(
@@ -36,12 +30,13 @@ export async function POST(
       );
     }
 
-    // 3. Generate Image Buffer using FLUX (512 x 680 - Hemat Token & Ukuran Ringan untuk App)
+    // 3. Generate Image Buffer using FLUX
     const imageBuffer = await generateCoverImageBuffer(finalPrompt, 512, 680);
 
     // 4. Upload to Cloudflare R2
     const sourcePrefix = novel.source || "general";
-    const filename = `${sourcePrefix}/${novel.nu_slug}/cover.jpg`;
+    const slug = novel.nu_slug || novel.nuSlug;
+    const filename = `${sourcePrefix}/${slug}/cover.jpg`;
     const result = await uploadCoverToR2(imageBuffer, filename);
 
     if (!result) {
@@ -50,20 +45,11 @@ export async function POST(
 
     const finalPublicUrl = `${result.publicUrl}?t=${Date.now()}`;
 
-    // 5. Update DB
-    const { error: updateError } = await supabase
-      .from("nu_novels")
-      .update({
-        cover_url: finalPublicUrl,
-        cover_r2_key: result.r2Key,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", novel.id);
-
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 400 });
-    }
+    // 5. Update DB via apiClient
+    await apiPatch(`/api/novels/${novel.id || id}`, {
+      cover_url: finalPublicUrl,
+      cover_r2_key: result.r2Key,
+    });
 
     return NextResponse.json({
       success: true,

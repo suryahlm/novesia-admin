@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPost, apiPatch } from "@/lib/apiClient";
 
 export const maxDuration = 300; // 5 menit max
 
@@ -137,11 +137,18 @@ function wordCount(text: string): number {
 export async function POST() {
   const startTime = Date.now();
 
-  // 1. Ambil semua novel ongoing
-  const { data: novels } = await supabase
-    .from("nu_novels")
-    .select("id, title, nu_slug, total_chapters, original_status, cover_url, source")
-    .order("title", { ascending: true });
+  // 1. Ambil semua novel ongoing dari API
+  let novels: any[] = [];
+  try {
+    novels = await apiGet<any[]>("/api/novels/ongoing");
+  } catch {
+    try {
+      novels = await apiGet<any[]>("/api/novels/all");
+    } catch (e) {
+      console.error("Gagal mengambil novel ongoing:", e);
+      return NextResponse.json({ results: [], message: "Gagal mengambil novel" }, { status: 500 });
+    }
+  }
 
   if (!novels || novels.length === 0) {
     return NextResponse.json({ results: [], message: "Tidak ada novel" });
@@ -149,7 +156,7 @@ export async function POST() {
 
   // Filter ongoing + novelib only
   const ongoingNovels = novels.filter((n) => {
-    const status = (n.original_status || "").toLowerCase();
+    const status = (n.original_status || n.originalStatus || "").toLowerCase();
     const source = n.source || "novelib";
     return !status.includes("completed") && source === "novelib";
   });
@@ -157,22 +164,18 @@ export async function POST() {
   const results = [];
 
   for (const novel of ongoingNovels) {
+    const novelSlug = novel.nu_slug || novel.nuSlug;
     try {
       // 2. Derive novelib slug dari existing chapter source_url
-      const { data: sampleChapter } = await supabase
-        .from("nu_chapter_content")
-        .select("source_url")
-        .eq("novel_id", novel.id)
-        .not("source_url", "is", null)
-        .limit(1)
-        .single();
+      const sampleRes = await apiGet<any>(`/api/chapters/${novelSlug}/sample`).catch(() => null);
+      const sampleUrl = sampleRes?.source_url || sampleRes?.sourceUrl;
 
-      if (!sampleChapter?.source_url) {
+      if (!sampleUrl) {
         results.push({
-          slug: novel.nu_slug,
+          slug: novelSlug,
           title: novel.title,
-          oldChapters: novel.total_chapters || 0,
-          newChapters: novel.total_chapters || 0,
+          oldChapters: novel.total_chapters || novel.totalChapters || 0,
+          newChapters: novel.total_chapters || novel.totalChapters || 0,
           status: "no_change" as const,
           scraped: 0,
         });
@@ -180,13 +183,13 @@ export async function POST() {
       }
 
       // Extract novelib slug: https://novelib.com/story/{slug}/{chapter}/
-      const urlMatch = sampleChapter.source_url.match(/\/story\/([^/]+)\//);
+      const urlMatch = sampleUrl.match(/\/story\/([^/]+)\//);
       if (!urlMatch) {
         results.push({
-          slug: novel.nu_slug,
+          slug: novelSlug,
           title: novel.title,
-          oldChapters: novel.total_chapters || 0,
-          newChapters: novel.total_chapters || 0,
+          oldChapters: novel.total_chapters || novel.totalChapters || 0,
+          newChapters: novel.total_chapters || novel.totalChapters || 0,
           status: "error" as const,
           error: "Tidak bisa derive novelib slug",
           scraped: 0,
@@ -202,10 +205,10 @@ export async function POST() {
 
       if (!html) {
         results.push({
-          slug: novel.nu_slug,
+          slug: novelSlug,
           title: novel.title,
-          oldChapters: novel.total_chapters || 0,
-          newChapters: novel.total_chapters || 0,
+          oldChapters: novel.total_chapters || novel.totalChapters || 0,
+          newChapters: novel.total_chapters || novel.totalChapters || 0,
           status: "error" as const,
           error: "Gagal fetch Novelib",
           scraped: 0,
@@ -216,16 +219,14 @@ export async function POST() {
       // 4. Extract chapter slugs dari halaman
       const chapterSlugs = extractChapterSlugs(html, novelibSlug);
 
-      // 5. Ambil chapter yang sudah ada di DB
-      const { data: existingChapters } = await supabase
-        .from("nu_chapter_content")
-        .select("chapter_number, source_url")
-        .eq("novel_id", novel.id);
+      // 5. Ambil chapter yang sudah ada di DB via API
+      const chaptersRes = await apiGet<any>(`/api/chapters/${novelSlug}`, { all: true }).catch(() => null);
+      const existingChapters = chaptersRes?.chapters || [];
 
       const existingUrls = new Set(
-        (existingChapters || []).map((c) => c.source_url).filter(Boolean)
+        existingChapters.map((c: any) => c.source_url || c.sourceUrl).filter(Boolean)
       );
-      const existingCount = existingChapters?.length || 0;
+      const existingCount = existingChapters.length;
 
       // 6. Filter chapter baru yang belum ada di DB
       const newChapterSlugs = chapterSlugs.filter((slug) => {
@@ -235,7 +236,7 @@ export async function POST() {
 
       if (newChapterSlugs.length === 0) {
         results.push({
-          slug: novel.nu_slug,
+          slug: novelSlug,
           title: novel.title,
           oldChapters: existingCount,
           newChapters: existingCount,
@@ -255,39 +256,37 @@ export async function POST() {
         const chSlug = newChapterSlugs[i];
         const chUrl = `https://novelib.com/story/${novelibSlug}/${chSlug}/`;
         const chNumber = startNumber + i;
-        const chTitle = chSlug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        const chTitle = chSlug.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
 
-        // Insert chapter row
-        const { data: inserted, error: insertErr } = await supabase
-          .from("nu_chapter_content")
-          .upsert({
-            novel_id: novel.id,
-            chapter_number: chNumber,
-            chapter_title: chTitle,
-            source_url: chUrl,
-          }, { onConflict: "novel_id,chapter_number" })
-          .select("id")
-          .single();
-
-        if (insertErr || !inserted) continue;
+        let content: string | null = null;
+        let wc = 0;
 
         // Scrape chapter content
         try {
           const chHtml = await fetchNovelibHtml(chUrl);
           if (chHtml) {
-            const content = extractChapterContent(chHtml);
-            if (content && content.length > 50) {
-              const wc = wordCount(content);
-              await supabase
-                .from("nu_chapter_content")
-                .update({ content_original: content, word_count_original: wc })
-                .eq("id", inserted.id);
+            const extracted = extractChapterContent(chHtml);
+            if (extracted && extracted.length > 50) {
+              content = extracted;
+              wc = wordCount(extracted);
               scrapedCount++;
             }
           }
         } catch {
-          // Skip failed chapter, continue
+          // Skip failed content scrape
         }
+
+        // Insert / upsert chapter row via apiClient
+        await apiPost("/api/chapters", {
+          novel_id: novel.id,
+          chapter_number: chNumber,
+          chapter_title: chTitle,
+          source_url: chUrl,
+          content_original: content,
+          word_count_original: wc,
+        }).catch((err) => {
+          console.warn(`Gagal simpan chapter ${chNumber} untuk ${novel.title}:`, err);
+        });
 
         // Rate limit
         await sleep(1500);
@@ -295,25 +294,21 @@ export async function POST() {
 
       // 8. Update total_chapters di novel
       const newTotal = existingCount + newChapterSlugs.length;
-      await supabase
-        .from("nu_novels")
-        .update({
-          total_chapters: newTotal,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", novel.id);
+      await apiPatch(`/api/novels/${novel.id}`, {
+        total_chapters: newTotal,
+      }).catch(() => {});
 
       // 9. Log ke scrape_log
-      await supabase.from("nu_scrape_log").insert({
+      await apiPost("/api/scrape/logs", {
         novel_id: novel.id,
-        nu_slug: novel.nu_slug,
+        nu_slug: novelSlug,
         status: "success",
         chapters_found: newChapterSlugs.length,
         duration_sec: 0,
-      });
+      }).catch(() => {});
 
       results.push({
-        slug: novel.nu_slug,
+        slug: novelSlug,
         title: novel.title,
         oldChapters: existingCount,
         newChapters: newTotal,
@@ -326,10 +321,10 @@ export async function POST() {
 
     } catch (err) {
       results.push({
-        slug: novel.nu_slug,
+        slug: novelSlug,
         title: novel.title,
-        oldChapters: novel.total_chapters || 0,
-        newChapters: novel.total_chapters || 0,
+        oldChapters: novel.total_chapters || novel.totalChapters || 0,
+        newChapters: novel.total_chapters || novel.totalChapters || 0,
         status: "error" as const,
         error: String(err).slice(0, 100),
         scraped: 0,

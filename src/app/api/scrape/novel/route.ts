@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { scraperGet } from "@/lib/scraper";
 import { parseNovelHtml } from "@/lib/parser";
 import { uploadCoverToR2 } from "@/lib/r2";
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPost } from "@/lib/apiClient";
 
 export const maxDuration = 120;
 
@@ -25,22 +25,19 @@ export async function POST(req: NextRequest) {
     const info = parseNovelHtml(html, url);
     if (!info.postId || info.title === "Unknown Title") {
       // Log gagal
-      await supabase.from("nu_scrape_log").insert({
+      await apiPost("/api/scrape/logs", {
         nu_slug: info.slug || "unknown",
         status: "failed",
         error_message: "Metadata tidak ditemukan (kemungkinan Cloudflare challenge)",
         duration_sec: (Date.now() - startTime) / 1000,
-      });
+      }).catch(() => {});
       return NextResponse.json({ success: false, error: "Halaman tidak bisa di-parse" }, { status: 422 });
     }
 
     // 2b. Cek apakah novel ini di-blacklist
-    const { data: blacklisted } = await supabase
-      .from("nu_blacklist")
-      .select("id, reason")
-      .eq("nu_slug", info.slug)
-      .eq("type", "novel")
-      .maybeSingle();
+    const blRes: any = await apiGet("/api/blacklist", { nu_slug: info.slug, type: "novel" }).catch(() => null);
+    const blItems = Array.isArray(blRes) ? blRes : (blRes?.items || blRes?.list || []);
+    const blacklisted = blItems.length > 0 ? blItems[0] : null;
 
     if (blacklisted) {
       return NextResponse.json(
@@ -67,8 +64,6 @@ export async function POST(req: NextRequest) {
           const upload = await uploadCoverToR2(buffer, filename);
           if (upload) {
             r2Key = upload.r2Key;
-            // Tetap gunakan coverSrc (CDN NU) sebagai display URL
-            // R2 hanya sebagai backup storage
           }
         }
       } catch (e) {
@@ -76,10 +71,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Upsert ke Supabase
-    const { data: novelData, error: upsertError } = await supabase
-      .from("nu_novels")
-      .upsert({
+    // 4. Upsert ke novesia-api
+    let novelData: any = null;
+    try {
+      novelData = await apiPost("/api/novels", {
         nu_slug: info.slug,
         nu_post_id: info.postId,
         title: info.title,
@@ -99,24 +94,21 @@ export async function POST(req: NextRequest) {
         associated_names: info.associatedNames,
         publisher: info.publisher || null,
         language: info.language || null,
-      }, { onConflict: "nu_slug" })
-      .select()
-      .single();
-
-    if (upsertError) {
-      console.error("Supabase upsert error:", upsertError);
+      });
+    } catch (upsertError: any) {
+      console.error("Novel upsert error:", upsertError);
       return NextResponse.json({ success: false, error: `Database error: ${upsertError.message}` }, { status: 500 });
     }
 
     // 5. Log sukses
     const duration = (Date.now() - startTime) / 1000;
-    await supabase.from("nu_scrape_log").insert({
+    await apiPost("/api/scrape/logs", {
       novel_id: novelData?.id,
       nu_slug: info.slug,
       status: "success",
       chapters_found: info.totalChapters,
       duration_sec: duration,
-    });
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,

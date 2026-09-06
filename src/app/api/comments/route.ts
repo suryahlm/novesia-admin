@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet } from "@/lib/apiClient";
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,27 +8,13 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(Number(searchParams.get("limit")) || 30, 100);
     const q = (searchParams.get("q") || "").trim();
 
-    const offset = (page - 1) * limit;
-
-    let query = supabase
-      .from("nu_comments")
-      .select("*, novel:nu_novels(id, title, nu_slug)", { count: "exact" });
-
-    if (q) {
-      query = query.or(`content.ilike.%${q}%,user_name.ilike.%${q}%,user_email.ilike.%${q}%`);
-    }
-
-    const { data: rows, count: total, error } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (error) throw error;
+    const data = await apiGet<any>("/api/comments", { page, limit, q });
 
     return NextResponse.json({
-      total: total || 0,
-      page,
-      limit,
-      rows: rows || [],
+      total: data?.total || 0,
+      page: data?.page || page,
+      limit: data?.limit || limit,
+      rows: data?.rows || data?.comments || [],
     });
   } catch (err: any) {
     console.error("Comments list error:", err);

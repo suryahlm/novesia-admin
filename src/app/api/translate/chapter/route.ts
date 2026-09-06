@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { translateText } from "@/lib/translator";
-import { supabase } from "@/lib/supabase";
+import { apiPost } from "@/lib/apiClient";
 
 export const maxDuration = 120;
 
@@ -9,7 +9,6 @@ export const maxDuration = 120;
  * Hapus script, style, nav, header, footer — ambil hanya konten utama.
  */
 function extractCleanText(html: string): string {
-  // Hapus script, style, nav, header, footer, sidebar
   let clean = html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
@@ -19,7 +18,6 @@ function extractCleanText(html: string): string {
     .replace(/<aside[\s\S]*?<\/aside>/gi, "")
     .replace(/<!--[\s\S]*?-->/g, "");
 
-  // Cari konten utama: elemen entry-content, chapter-content, text-left, dll
   const contentPatterns = [
     /class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
     /class="[^"]*chapter-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
@@ -38,13 +36,11 @@ function extractCleanText(html: string): string {
     }
   }
 
-  // Fallback: gunakan body
   if (!mainContent) {
     const bodyMatch = clean.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     mainContent = bodyMatch?.[1] || clean;
   }
 
-  // HTML → plain text
   const text = mainContent
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/p>/gi, "\n\n")
@@ -71,14 +67,14 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Update status → translating
-    await supabase.from("nu_chapter_content").upsert({
-      novel_id: novelId,
-      chapter_number: chapterNumber,
-      source_url: sourceUrl,
+    await apiPost("/api/chapters", {
+      novelId,
+      chapterNumber,
+      sourceUrl,
       translation_status: "translating",
-    }, { onConflict: "novel_id,chapter_number" });
+    }).catch(() => {});
 
-    // 2. Fetch halaman chapter (langsung, tanpa ScraperAPI — translator sites umumnya tidak pakai CF)
+    // 2. Fetch halaman chapter
     const resp = await fetch(sourceUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0",
@@ -89,10 +85,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (!resp.ok) {
-      await supabase.from("nu_chapter_content")
-        .update({ translation_status: "failed" })
-        .eq("novel_id", novelId)
-        .eq("chapter_number", chapterNumber);
+      await apiPost("/api/chapters", {
+        novelId,
+        chapterNumber,
+        translation_status: "failed",
+      }).catch(() => {});
       return NextResponse.json({ success: false, error: `Gagal fetch halaman: HTTP ${resp.status}` }, { status: 502 });
     }
 
@@ -101,46 +98,41 @@ export async function POST(req: NextRequest) {
     // 3. Extract teks bersih
     const originalText = extractCleanText(html);
     if (originalText.length < 100) {
-      await supabase.from("nu_chapter_content")
-        .update({ translation_status: "failed", content_original: originalText })
-        .eq("novel_id", novelId)
-        .eq("chapter_number", chapterNumber);
+      await apiPost("/api/chapters", {
+        novelId,
+        chapterNumber,
+        translation_status: "failed",
+        content_original: originalText,
+      }).catch(() => {});
       return NextResponse.json({ success: false, error: "Konten terlalu pendek — mungkin halaman salah atau ada proteksi" }, { status: 422 });
     }
 
-    // 4. Terjemahkan via AI (Guts AI Gemini 3.7 Flash / Groq)
+    // 4. Terjemahkan via AI
     const translatedText = await translateText(originalText, "chapter");
     if (!translatedText) {
-      await supabase.from("nu_chapter_content")
-        .update({ translation_status: "failed", content_original: originalText })
-        .eq("novel_id", novelId)
-        .eq("chapter_number", chapterNumber);
+      await apiPost("/api/chapters", {
+        novelId,
+        chapterNumber,
+        translation_status: "failed",
+        content_original: originalText,
+      }).catch(() => {});
       return NextResponse.json({ success: false, error: "AI translation gagal" }, { status: 502 });
     }
 
     // 5. Simpan ke database
-    const wordCountOrig = originalText.split(/\s+/).length;
-    const wordCountTrans = translatedText.split(/\s+/).length;
+    const wordCountOrig = originalText.split(/\s+/).filter(Boolean).length;
+    const wordCountTrans = translatedText.split(/\s+/).filter(Boolean).length;
 
-    await supabase.from("nu_chapter_content")
-      .update({
-        content_original: originalText,
-        content_translated: translatedText,
-        word_count_original: wordCountOrig,
-        word_count_translated: wordCountTrans,
-        translation_status: "done",
-        translated_at: new Date().toISOString(),
-      })
-      .eq("novel_id", novelId)
-      .eq("chapter_number", chapterNumber);
-
-    // Tandai novel bahwa sudah memiliki terjemahan bahasa Indonesia (bahkan sejak 1 chapter)
-    await supabase.from("nu_novels")
-      .update({
-        translation_status: "id_translated",
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", novelId);
+    await apiPost("/api/chapters", {
+      novelId,
+      chapterNumber,
+      content_original: originalText,
+      content_translated: translatedText,
+      word_count_original: wordCountOrig,
+      word_count_translated: wordCountTrans,
+      translation_status: "done",
+      translated_at: new Date().toISOString(),
+    });
 
     return NextResponse.json({
       success: true,

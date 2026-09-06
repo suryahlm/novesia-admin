@@ -1,52 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+import { apiGet, apiPost } from "@/lib/apiClient";
 
 // GET — list all notifications
 export async function GET() {
-  const { data, error } = await supabase
-    .from("nu_notifications")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  try {
+    const data = await apiGet<any[]>("/api/notifications/all");
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.error("Notifications GET error:", error);
+    return NextResponse.json({ error: error.message || "Gagal mengambil notifikasi" }, { status: 500 });
+  }
 }
 
 // POST — create new notification (auto-deactivate previous)
 export async function POST(req: NextRequest) {
-  const { title, message, type, target } = await req.json();
+  try {
+    const { title, message, type, target } = await req.json();
 
-  if (!title?.trim() || !message?.trim()) {
-    return NextResponse.json({ error: "Judul dan pesan wajib diisi" }, { status: 400 });
-  }
+    if (!title?.trim() || !message?.trim()) {
+      return NextResponse.json({ error: "Judul dan pesan wajib diisi" }, { status: 400 });
+    }
 
-  // Deactivate all existing active notifications
-  await supabase
-    .from("nu_notifications")
-    .update({ is_active: false })
-    .eq("is_active", true);
+    // Validate target: "all" | "web" | "app"
+    const validTarget = ["all", "web", "app"].includes(target) ? target : "all";
 
-  // Validate target: "all" | "web" | "app"
-  const validTarget = ["all", "web", "app"].includes(target) ? target : "all";
-
-  // Insert new notification
-  const { data, error } = await supabase
-    .from("nu_notifications")
-    .insert({
+    const data = await apiPost("/api/notifications", {
       title: title.trim(),
       message: message.trim(),
       type: type || "info",
       target: validTarget,
       is_active: true,
-    })
-    .select()
-    .single();
+    });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.error("Notifications POST error:", error);
+    return NextResponse.json({ error: error.message || "Gagal membuat notifikasi" }, { status: 500 });
+  }
 }

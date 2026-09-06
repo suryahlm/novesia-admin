@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { apiGet } from "@/lib/apiClient";
 import Link from "next/link";
 import { BookOpen, ArrowLeft } from "lucide-react";
 
@@ -12,12 +12,13 @@ const SOURCE_META: Record<string, { label: string; icon: string; color: string }
 };
 
 async function getNovelsBySource(source: string) {
-  const { data } = await supabase
-    .from("nu_novels")
-    .select("*")
-    .eq("source", source)
-    .order("created_at", { ascending: false });
-  return data || [];
+  try {
+    const data = await apiGet<any[]>('/api/novels/all', { source });
+    return data || [];
+  } catch (err) {
+    console.error("Failed to load novels by source:", err);
+    return [];
+  }
 }
 
 export default async function SourceNovelsPage({ params }: { params: Promise<{ sourceId: string }> }) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPut, apiDelete } from "@/lib/apiClient";
 import { uploadBuffer, bannerKey, publicUrlFor, deleteFileFromR2 } from "@/lib/r2";
 
 const VALID_SLOTS = [1, 2, 3, 4, 5, 6];
@@ -28,19 +28,16 @@ export async function PUT(
       return NextResponse.json({ error: "Judul banner wajib diisi" }, { status: 400 });
     }
 
-    // Check existing banner in slot
-    const { data: existing } = await supabase
-      .from("nu_banners")
-      .select("*")
-      .eq("slot", slot)
-      .maybeSingle();
+    // Check existing banner in slot via apiGet
+    const allBanners = await apiGet<any[]>("/api/banners", { all: true }).catch(() => []);
+    const existing = (allBanners || []).find((b: any) => Number(b.slot) === slot);
 
     if (!existing && (!imageFile || imageFile.size === 0)) {
       return NextResponse.json({ error: "Gambar creative banner wajib diupload" }, { status: 400 });
     }
 
-    let imageKey = existing?.image_key;
-    let imageUrl = existing?.image_url;
+    let imageKey = existing?.imageKey || existing?.image_key;
+    let imageUrl = existing?.imageUrl || existing?.image_url;
 
     if (imageFile && imageFile.size > 0) {
       const ext = (imageFile.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
@@ -52,43 +49,37 @@ export async function PUT(
       imageUrl = publicUrlFor(newKey);
 
       // Clean up old key if different
-      if (existing?.image_key && existing.image_key !== newKey) {
-        deleteFileFromR2(existing.image_key).catch(() => {});
+      const oldKey = existing?.imageKey || existing?.image_key;
+      if (oldKey && oldKey !== newKey) {
+        deleteFileFromR2(oldKey).catch(() => {});
       }
     }
 
     const bannerData = {
       slot,
       title,
-      image_key: imageKey,
-      image_url: imageUrl,
-      target_url: targetUrl,
+      imageKey,
+      imageUrl,
+      targetUrl,
       active,
-      start_at: startAt,
-      expires_at: expiresAt,
-      updated_at: new Date().toISOString(),
+      startAt,
+      expiresAt,
     };
 
-    const { data: saved, error } = await supabase
-      .from("nu_banners")
-      .upsert(bannerData, { onConflict: "slot" })
-      .select()
-      .single();
-
-    if (error) throw error;
+    const saved = await apiPut<any>(`/api/banners/${slot}`, bannerData);
 
     return NextResponse.json({
       id: saved.id,
       slot: saved.slot,
       title: saved.title,
-      imageKey: saved.image_key,
-      imageUrl: saved.image_url,
-      targetUrl: saved.target_url,
+      imageKey: saved.imageKey || saved.image_key,
+      imageUrl: saved.imageUrl || saved.image_url,
+      targetUrl: saved.targetUrl || saved.target_url,
       active: Boolean(saved.active),
-      startAt: saved.start_at,
-      expiresAt: saved.expires_at,
-      createdAt: saved.created_at,
-      updatedAt: saved.updated_at,
+      startAt: saved.startAt || saved.start_at,
+      expiresAt: saved.expiresAt || saved.expires_at,
+      createdAt: saved.createdAt || saved.created_at,
+      updatedAt: saved.updatedAt || saved.updated_at,
     });
   } catch (err: any) {
     console.error("Banner save error:", err);
@@ -108,17 +99,15 @@ export async function DELETE(
       return NextResponse.json({ error: "Slot harus 1 sampai 6" }, { status: 400 });
     }
 
-    const { data: existing } = await supabase
-      .from("nu_banners")
-      .select("*")
-      .eq("slot", slot)
-      .maybeSingle();
+    const allBanners = await apiGet<any[]>("/api/banners", { all: true }).catch(() => []);
+    const existing = (allBanners || []).find((b: any) => Number(b.slot) === slot);
 
     if (existing) {
-      if (existing.image_key) {
-        deleteFileFromR2(existing.image_key).catch(() => {});
+      const key = existing.imageKey || existing.image_key;
+      if (key) {
+        deleteFileFromR2(key).catch(() => {});
       }
-      await supabase.from("nu_banners").delete().eq("slot", slot);
+      await apiDelete(`/api/banners/${slot}`);
     }
 
     return NextResponse.json({ deleted: true });

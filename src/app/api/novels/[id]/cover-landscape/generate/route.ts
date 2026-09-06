@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPatch } from "@/lib/apiClient";
 import { coverLandscapeKey, uploadBuffer, publicUrlFor, deleteFileFromR2 } from "@/lib/r2";
 import { generateLandscapeFromPortrait } from "@/lib/landscape-generator";
 
@@ -10,33 +10,17 @@ export async function POST(
   const { id } = await params;
 
   try {
-    // 1. Cari novel berdasarkan UUID atau slug
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    // 1. Cari novel via apiClient
+    const novel = await apiGet<any>(`/api/novels/${id}`);
 
-    let query = supabase
-      .from("nu_novels")
-      .select("id, title, nu_slug, source, genres, cover_url, cover_landscape_r2_key")
-      .eq(isUuid ? "id" : "nu_slug", id)
-      .maybeSingle();
-
-    let { data: novel, error: fetchError } = await query;
-
-    if (!novel && isUuid) {
-      // Coba fallback dengan slug
-      const { data: novelBySlug } = await supabase
-        .from("nu_novels")
-        .select("id, title, nu_slug, source, genres, cover_url, cover_landscape_r2_key")
-        .eq("nu_slug", id)
-        .maybeSingle();
-      novel = novelBySlug;
-    }
-
-    if (fetchError || !novel) {
+    if (!novel) {
       return NextResponse.json({ error: "Novel tidak ditemukan" }, { status: 404 });
     }
 
+    const coverUrl = novel.cover_url || novel.coverUrl;
+
     // 2. Pastikan novel memiliki cover portrait sebagai sumber pelebaran
-    if (!novel.cover_url || typeof novel.cover_url !== "string" || !novel.cover_url.trim()) {
+    if (!coverUrl || typeof coverUrl !== "string" || !coverUrl.trim()) {
       return NextResponse.json(
         {
           error: `Novel "${novel.title}" belum memiliki cover portrait. Cover portrait dibutuhkan untuk dilebarkan ke landscape.`,
@@ -55,37 +39,31 @@ export async function POST(
     } catch {}
 
     // 3. Generate cover landscape (800x500 WebP ~40-80KB) dengan AI Outpainting
-    const landscapeBuffer = await generateLandscapeFromPortrait(novel.cover_url, {
+    const landscapeBuffer = await generateLandscapeFromPortrait(coverUrl, {
       title: novel.title,
       genres: novel.genres || [],
       customPrompt,
     });
 
     // 4. Upload ke Cloudflare R2
-    const r2Key = coverLandscapeKey(novel.source || "general", novel.nu_slug, "webp");
+    const sourcePrefix = novel.source || "general";
+    const slug = novel.nu_slug || novel.nuSlug;
+    const r2Key = coverLandscapeKey(sourcePrefix, slug, "webp");
     await uploadBuffer(r2Key, landscapeBuffer, "image/webp");
 
     const finalPublicUrl = `${publicUrlFor(r2Key)}?t=${Date.now()}`;
 
     // 5. Bersihkan file R2 landscape lama jika key berbeda (misal sebelumnya .jpg)
-    const oldKey = novel.cover_landscape_r2_key;
+    const oldKey = novel.cover_landscape_r2_key || novel.coverLandscapeR2Key;
     if (oldKey && oldKey !== r2Key) {
       deleteFileFromR2(oldKey).catch(() => {});
     }
 
-    // 6. Update database
-    const { error: updateError } = await supabase
-      .from("nu_novels")
-      .update({
-        cover_landscape_url: finalPublicUrl,
-        cover_landscape_r2_key: r2Key,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", novel.id);
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 400 });
-    }
+    // 6. Update database via apiClient
+    await apiPatch(`/api/novels/${novel.id || id}`, {
+      cover_landscape_url: finalPublicUrl,
+      cover_landscape_r2_key: r2Key,
+    });
 
     return NextResponse.json({
       success: true,

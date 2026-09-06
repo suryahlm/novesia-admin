@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiDelete } from "@/lib/apiClient";
 
 export async function DELETE(
   req: NextRequest,
@@ -7,14 +7,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
-    const { error } = await supabase
-      .from("nu_comments")
-      .delete()
-      .eq("id", id);
-
-    if (error) throw error;
-
+    await apiDelete(`/api/comments/${id}`);
     return NextResponse.json({ deleted: true });
   } catch (err: any) {
     console.error("Comment delete error:", err);

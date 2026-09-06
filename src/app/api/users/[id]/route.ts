@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiPatch, apiDelete } from "@/lib/apiClient";
 
 export async function PATCH(
   req: NextRequest,
@@ -9,59 +9,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
 
-    const updateData: Record<string, any> = {
-      updated_at: new Date().toISOString(),
-    };
-
-    if ("role" in body) {
-      if (!["USER", "VIP"].includes(body.role)) {
-        return NextResponse.json({ error: "Role harus USER atau VIP" }, { status: 400 });
-      }
-      updateData.role = body.role;
-      if (body.role === "VIP") {
-        const days = Number(body.vipDurationDays);
-        if (!Number.isFinite(days) || days <= 0) {
-          return NextResponse.json(
-            { error: "vipDurationDays wajib diisi angka > 0 untuk status VIP" },
-            { status: 400 }
-          );
-        }
-        updateData.vip_until = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-      } else {
-        updateData.vip_until = null;
-      }
-    }
-
-    if ("banned" in body) {
-      updateData.banned = Boolean(body.banned);
-    }
-
-    if ("frozen" in body) {
-      updateData.frozen = Boolean(body.frozen);
-    }
-
-    const { data, error } = await supabase
-      .from("nu_users")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Sync metadata to Supabase Auth
-    try {
-      const authUpdates: Record<string, any> = {};
-      if ("role" in updateData) authUpdates.role = updateData.role;
-      if ("banned" in updateData) authUpdates.banned = updateData.banned;
-      if ("frozen" in updateData) authUpdates.frozen = updateData.frozen;
-      if (Object.keys(authUpdates).length > 0) {
-        await supabase.auth.admin.updateUserById(id, { user_metadata: authUpdates });
-      }
-    } catch (authErr) {
-      console.warn("[User PATCH] Auth sync warning:", authErr);
-    }
-
+    const data = await apiPatch(`/api/users/${id}`, body);
     return NextResponse.json(data);
   } catch (err: any) {
     console.error("User patch error:", err);
@@ -75,21 +23,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
-    const { error } = await supabase
-      .from("nu_users")
-      .delete()
-      .eq("id", id);
-
-    if (error) throw error;
-
-    // Also delete user from Supabase Auth
-    try {
-      await supabase.auth.admin.deleteUser(id);
-    } catch (authErr) {
-      console.warn("[User DELETE] Auth delete warning:", authErr);
-    }
-
+    await apiDelete(`/api/users/${id}`);
     return NextResponse.json({ deleted: true });
   } catch (err: any) {
     console.error("User delete error:", err);

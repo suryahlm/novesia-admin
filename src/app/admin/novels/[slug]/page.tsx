@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { apiGet } from "@/lib/apiClient";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -9,12 +9,12 @@ interface PageProps {
 }
 
 async function getNovel(slug: string) {
-  const { data } = await supabase
-    .from("nu_novels")
-    .select("*")
-    .eq("nu_slug", slug)
-    .single();
-  return data;
+  try {
+    const novel = await apiGet<any>(`/api/novels/${encodeURIComponent(slug)}`);
+    return novel || null;
+  } catch {
+    return null;
+  }
 }
 
 export default async function NovelDetailPage({ params }: PageProps) {

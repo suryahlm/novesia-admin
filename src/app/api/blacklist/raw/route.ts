@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet, apiPatch } from "@/lib/apiClient";
 import { deleteFileFromR2, deletePrefixFromR2 } from "@/lib/r2";
 
 // DELETE: Hapus file RAW R2 (Cover / Assets) milik novel yang di-blacklist
@@ -13,31 +13,19 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Slug atau ID novel diperlukan." }, { status: 400 });
     }
 
-    // 1. Cek apakah novel ada di database dan SUDAH DI-BLACKLIST (Safety Rail Komiku)
-    let query = supabase
-      .from("nu_novels")
-      .select("id, title, nu_slug, source, cover_r2_key, is_blacklisted");
+    // 1. Cek apakah novel ada di database
+    const novel = await apiGet<any>(`/api/novels/${encodeURIComponent(slug || id || "")}`).catch(() => null);
 
-    if (id) {
-      query = query.eq("id", id);
-    } else if (slug) {
-      query = query.eq("nu_slug", slug);
-    }
-
-    const { data: novel, error: novelErr } = await query.maybeSingle();
-
-    if (novelErr || !novel) {
+    if (!novel) {
       return NextResponse.json({ error: "Novel tidak ditemukan di database." }, { status: 404 });
     }
 
     // Pastikan status blacklist
-    const { data: isBl } = await supabase
-      .from("nu_blacklist")
-      .select("id")
-      .eq("nu_slug", novel.nu_slug)
-      .maybeSingle();
+    const nuSlug = novel.nuSlug || novel.nu_slug;
+    const isBlData = await apiGet<any>("/api/blacklist", { q: nuSlug }).catch(() => ({ items: [] }));
+    const isBl = (isBlData?.items || []).some((b: any) => (b.nuSlug || b.nu_slug) === nuSlug);
 
-    if (!novel.is_blacklisted && !isBl) {
+    if (!novel.isBlacklisted && !novel.is_blacklisted && !isBl) {
       return NextResponse.json(
         { error: "Hanya bisa menghapus file RAW R2 untuk novel yang sudah masuk daftar Blacklist!" },
         { status: 400 }
@@ -47,17 +35,18 @@ export async function DELETE(req: NextRequest) {
     let deletedCount = 0;
 
     // 2. Hapus Cover spesifik jika ada cover_r2_key
-    if (novel.cover_r2_key) {
-      const ok = await deleteFileFromR2(novel.cover_r2_key);
+    const coverR2Key = novel.coverR2Key || novel.cover_r2_key;
+    if (coverR2Key) {
+      const ok = await deleteFileFromR2(coverR2Key);
       if (ok) deletedCount++;
     }
 
-    // 3. Hapus kemungkinan prefix folder R2 (misal nu/covers/source/slug atau covers/slug)
+    // 3. Hapus kemungkinan prefix folder R2
     const prefixes = [
-      `nu/covers/${novel.source || ""}/${novel.nu_slug}`,
-      `nu/covers/${novel.nu_slug}`,
-      `covers/${novel.nu_slug}`,
-      `novels/${novel.nu_slug}`,
+      `nu/covers/${novel.source || ""}/${nuSlug}`,
+      `nu/covers/${nuSlug}`,
+      `covers/${nuSlug}`,
+      `novels/${nuSlug}`,
     ];
 
     for (const pfx of prefixes) {
@@ -65,34 +54,20 @@ export async function DELETE(req: NextRequest) {
       deletedCount += res.deleted;
     }
 
-    // 4. Hapus seluruh isi chapter di nu_chapter_content untuk menghemat kapasitas database
-    const { data: deletedChapters } = await supabase
-      .from("nu_chapter_content")
-      .delete()
-      .eq("novel_id", novel.id)
-      .select("id");
-
-    const chapterCountDeleted = deletedChapters?.length || 0;
-
-    // 5. Update row DB nu_novels: kosongkan cover dan total_chapters=0
-    // Baris data novel TETAP ADA di nu_novels & nu_blacklist sebagai penangkal agar scraper TIDAK mengambilnya lagi!
-    await supabase
-      .from("nu_novels")
-      .update({
-        cover_r2_key: null,
-        total_chapters: 0,
-        is_blacklisted: true,
-        status: "dropped",
-      })
-      .eq("id", novel.id);
+    // 4. Update row DB novel: kosongkan cover dan total_chapters=0
+    await apiPatch(`/api/novels/${novel.id}`, {
+      cover_r2_key: null,
+      total_chapters: 0,
+      is_blacklisted: true,
+      status: "dropped",
+    });
 
     return NextResponse.json({
       success: true,
       deletedR2: deletedCount,
-      deletedChapters: chapterCountDeleted,
       title: novel.title,
-      slug: novel.nu_slug,
-      message: `Berhasil menghapus ${deletedCount} file R2 dan ${chapterCountDeleted} chapter DB untuk "${novel.title}". Judul novel tetap aman di Blacklist untuk mencegah scraper mengambil ulang.`,
+      slug: nuSlug,
+      message: `Berhasil menghapus ${deletedCount} file R2 untuk "${novel.title}". Judul novel tetap aman di Blacklist untuk mencegah scraper mengambil ulang.`,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Gagal menghapus file RAW & Chapter";

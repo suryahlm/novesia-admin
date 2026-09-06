@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { apiPatch } from "@/lib/apiClient";
 import { NextRequest, NextResponse } from "next/server";
 
 // PUT: Update chapter content (original or translated)
@@ -33,16 +33,10 @@ export async function PUT(
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from("nu_chapter_content")
-    .update(updates)
-    .eq("id", chapterId)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    const data = await apiPatch<any>(`/api/chapters/by-id/${chapterId}`, updates);
+    return NextResponse.json({ success: true, chapter: data });
+  } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
-
-  return NextResponse.json({ success: true, chapter: data });
 }

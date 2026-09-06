@@ -1,30 +1,23 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiGet } from "@/lib/apiClient";
 
 export async function GET() {
   try {
-    const { data: rows, error } = await supabase
-      .from("nu_banners")
-      .select("*")
-      .gte("slot", 1)
-      .lte("slot", 6)
-      .order("slot", { ascending: true });
-
-    if (error) throw error;
+    const banners = await apiGet<any[]>("/api/banners", { all: true });
 
     return NextResponse.json(
-      (rows || []).map((b: any) => ({
+      (banners || []).map((b: any) => ({
         id: b.id,
         slot: b.slot,
         title: b.title,
-        imageKey: b.image_key,
-        imageUrl: b.image_url,
-        targetUrl: b.target_url,
+        imageKey: b.imageKey || b.image_key,
+        imageUrl: b.imageUrl || b.image_url,
+        targetUrl: b.targetUrl || b.target_url,
         active: Boolean(b.active),
-        startAt: b.start_at,
-        expiresAt: b.expires_at,
-        createdAt: b.created_at,
-        updatedAt: b.updated_at,
+        startAt: b.startAt || b.start_at,
+        expiresAt: b.expiresAt || b.expires_at,
+        createdAt: b.createdAt || b.created_at,
+        updatedAt: b.updatedAt || b.updated_at,
       }))
     );
   } catch (err: any) {

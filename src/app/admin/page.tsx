@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { apiGet } from "@/lib/apiClient";
 import {
   BookOpen,
   Layers,
@@ -28,79 +28,91 @@ interface NovelItem {
 }
 
 async function getStats() {
-  const [novelsRes, translatedRes] = await Promise.all([
-    supabase
-      .from("nu_novels")
-      .select("id, nu_slug, total_chapters, title, cover_url, genres, rating, created_at, updated_at, status, total_views, is_blacklisted")
-      .order("updated_at", { ascending: false }),
-    supabase
-      .from("nu_chapter_content")
-      .select("id", { count: "exact", head: true })
-      .not("content_translated", "is", null),
-  ]);
+  try {
+    const [stats, allNovels] = await Promise.all([
+      apiGet<any>('/api/novels/stats').catch(() => null),
+      apiGet<any[]>('/api/novels/all').catch(() => []),
+    ]);
 
-  const novels: NovelItem[] = novelsRes.data || [];
-  
-  // Pisahkan novel aktif dan novel blacklist/dropped
-  const activeNovels = novels.filter(
-    (n) => !n.is_blacklisted && n.status !== "dropped" && n.status !== "blacklisted"
-  );
-  const totalActiveNovels = activeNovels.length;
-  const blacklistedCount = novels.length - totalActiveNovels;
-  const totalChapters = activeNovels.reduce((sum, n) => sum + (n.total_chapters || 0), 0);
-  const totalTranslated = translatedRes.count || 0;
-  const totalViews = activeNovels.reduce((sum, n) => sum + (n.total_views || 0), 0);
+    const novels: NovelItem[] = allNovels || [];
+    
+    // Pisahkan novel aktif dan novel blacklist/dropped
+    const activeNovels = novels.filter(
+      (n) => !n.is_blacklisted && n.status !== "dropped" && n.status !== "blacklisted"
+    );
+    const totalActiveNovels = stats?.totalActiveNovels ?? activeNovels.length;
+    const blacklistedCount = stats?.blacklistedCount ?? (novels.length - totalActiveNovels);
+    const totalChapters = stats?.totalChapters ?? activeNovels.reduce((sum, n) => sum + (n.total_chapters || 0), 0);
+    const totalTranslated = stats?.totalTranslated ?? 0;
+    const totalViews = stats?.totalViews ?? activeNovels.reduce((sum, n) => sum + (n.total_views || 0), 0);
 
-  // Genre counts (hanya dari novel aktif)
-  const genreMap: Record<string, number> = {};
-  activeNovels.forEach((n) => {
-    (n.genres || []).forEach((g) => {
-      const trimmed = g.trim();
-      if (trimmed && trimmed.toLowerCase() !== "general") {
-        genreMap[trimmed] = (genreMap[trimmed] || 0) + 1;
+    // Genre counts (hanya dari novel aktif)
+    const genreMap: Record<string, number> = stats?.genreMap || {};
+    if (Object.keys(genreMap).length === 0) {
+      activeNovels.forEach((n) => {
+        (n.genres || []).forEach((g) => {
+          const trimmed = g.trim();
+          if (trimmed && trimmed.toLowerCase() !== "general") {
+            genreMap[trimmed] = (genreMap[trimmed] || 0) + 1;
+          }
+        });
+      });
+    }
+    const totalGenres = Object.keys(genreMap).length;
+    const topGenres = Object.entries(genreMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+
+    // Status breakdown
+    const statusCounts: Record<string, number> = {
+      ONGOING: 0,
+      COMPLETED: 0,
+      HIATUS: 0,
+      "DROPPED (BLACKLIST)": 0,
+    };
+
+    novels.forEach((n) => {
+      const s = (n.status || "").toUpperCase();
+      if (s.includes("COMPLET")) {
+        statusCounts.COMPLETED++;
+      } else if (s.includes("HIATUS")) {
+        statusCounts.HIATUS++;
+      } else if (s.includes("DROP") || n.is_blacklisted) {
+        statusCounts["DROPPED (BLACKLIST)"]++;
+      } else {
+        statusCounts.ONGOING++;
       }
     });
-  });
-  const totalGenres = Object.keys(genreMap).length;
-  const topGenres = Object.entries(genreMap)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6);
 
-  // Status breakdown
-  const statusCounts: Record<string, number> = {
-    ONGOING: 0,
-    COMPLETED: 0,
-    HIATUS: 0,
-    "DROPPED (BLACKLIST)": 0,
-  };
+    const pendingChapters = Math.max(0, totalChapters - totalTranslated);
 
-  novels.forEach((n) => {
-    const s = (n.status || "").toUpperCase();
-    if (s.includes("COMPLET")) {
-      statusCounts.COMPLETED++;
-    } else if (s.includes("HIATUS")) {
-      statusCounts.HIATUS++;
-    } else if (s.includes("DROP") || n.is_blacklisted) {
-      statusCounts["DROPPED (BLACKLIST)"]++;
-    } else {
-      statusCounts.ONGOING++;
-    }
-  });
-
-  const pendingChapters = Math.max(0, totalChapters - totalTranslated);
-
-  return {
-    totalActiveNovels,
-    blacklistedCount,
-    totalChapters,
-    totalTranslated,
-    totalGenres,
-    totalViews,
-    pendingChapters,
-    statusCounts,
-    topGenres,
-    recentNovels: activeNovels.slice(0, 10),
-  };
+    return {
+      totalActiveNovels,
+      blacklistedCount,
+      totalChapters,
+      totalTranslated,
+      totalGenres,
+      totalViews,
+      pendingChapters,
+      statusCounts,
+      topGenres,
+      recentNovels: activeNovels.slice(0, 10),
+    };
+  } catch (err) {
+    console.error("Failed to load admin stats:", err);
+    return {
+      totalActiveNovels: 0,
+      blacklistedCount: 0,
+      totalChapters: 0,
+      totalTranslated: 0,
+      totalGenres: 0,
+      totalViews: 0,
+      pendingChapters: 0,
+      statusCounts: { ONGOING: 0, COMPLETED: 0, HIATUS: 0, "DROPPED (BLACKLIST)": 0 },
+      topGenres: [],
+      recentNovels: [],
+    };
+  }
 }
 
 function StatCard({
