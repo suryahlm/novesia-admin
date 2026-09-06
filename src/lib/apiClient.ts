@@ -4,7 +4,7 @@
  * Digunakan di semua Next.js API routes (server-side only).
  */
 
-const API_BASE = (process.env.NOVESIA_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://141.11.160.187:4300').replace(/\/$/, '');
+const API_BASE = (process.env.NOVESIA_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.novesia.cc').replace(/\/$/, '');
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'novesia_admin_api_key_2026_change_in_prod';
 
 function adminHeaders(): Record<string, string> {
