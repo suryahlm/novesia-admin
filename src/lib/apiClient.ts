@@ -14,21 +14,40 @@ function adminHeaders(): Record<string, string> {
   };
 }
 
+async function safeFetch(url: string, options: RequestInit, pathWithParams: string): Promise<Response> {
+  try {
+    return await fetch(url, options);
+  } catch (err: any) {
+    if (API_BASE.includes('localhost') || API_BASE.includes('127.0.0.1')) {
+      const fallbackUrl = `https://api.novesia.cc${pathWithParams}`;
+      try {
+        console.warn(`[apiClient] Local API offline (${url}). Fallback ke live API: ${fallbackUrl}`);
+        return await fetch(fallbackUrl, options);
+      } catch {
+        throw err;
+      }
+    }
+    throw err;
+  }
+}
+
 export async function apiGet<T>(path: string, params?: Record<string, string | number | boolean | undefined>): Promise<T> {
-  let url = `${API_BASE}${path}`;
+  let relativePath = path;
   if (params) {
     const qs = Object.entries(params)
       .filter(([, v]) => v !== undefined && v !== null)
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
       .join('&');
-    if (qs) url += `?${qs}`;
+    if (qs) relativePath += `?${qs}`;
   }
 
-  const res = await fetch(url, {
+  const url = `${API_BASE}${relativePath}`;
+
+  const res = await safeFetch(url, {
     method: 'GET',
     headers: adminHeaders(),
     cache: 'no-store',
-  });
+  }, relativePath);
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -39,11 +58,11 @@ export async function apiGet<T>(path: string, params?: Record<string, string | n
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await safeFetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: adminHeaders(),
     body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  }, path);
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -54,11 +73,11 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await safeFetch(`${API_BASE}${path}`, {
     method: 'PATCH',
     headers: adminHeaders(),
     body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  }, path);
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -69,11 +88,11 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await safeFetch(`${API_BASE}${path}`, {
     method: 'PUT',
     headers: adminHeaders(),
     body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  }, path);
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -84,11 +103,11 @@ export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export async function apiDelete<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await safeFetch(`${API_BASE}${path}`, {
     method: 'DELETE',
     headers: adminHeaders(),
     body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  }, path);
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -107,11 +126,11 @@ export async function apiPostForm<T>(path: string, formData: FormData): Promise<
     'x-admin-key': ADMIN_API_KEY,
   };
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await safeFetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers,
     body: formData,
-  });
+  }, path);
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
