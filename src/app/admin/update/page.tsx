@@ -186,7 +186,17 @@ export default function EditNovelPage() {
     try {
       const res = await fetch("/api/novels/all");
       const data = await res.json();
-      setNovels(data.novels || []);
+      const rawList: any[] = Array.isArray(data) ? data : (data?.novels || data?.data || []);
+      const formatted: Novel[] = rawList.map((n: any) => ({
+        ...n,
+        genres: Array.isArray(n.genres) ? n.genres : [],
+        has_synopsis: Boolean(n.synopsis || n.has_synopsis),
+        has_synopsis_translated: Boolean(n.synopsis_translated || n.synopsisTranslated || n.has_synopsis_translated),
+        translated_chapters: n.translated_chapters ?? 0,
+        pending_chapters: n.pending_chapters ?? 0,
+        total_with_content: n.total_with_content ?? n.total_chapters ?? n.totalChapters ?? 0,
+      }));
+      setNovels(formatted);
     } catch (err) {
       console.error("Gagal memuat novel:", err);
     } finally {
