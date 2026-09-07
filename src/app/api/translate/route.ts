@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { translateText } from "@/lib/translator";
+import { isInvalidOrBrokenTranslation } from "@/lib/translation-validator";
 
 export const maxDuration = 120;
 
@@ -16,9 +17,9 @@ export async function POST(req: NextRequest) {
 
     const translatedText = await translateText(text, type);
 
-    if (!translatedText) {
+    if (!translatedText || isInvalidOrBrokenTranslation(translatedText, text)) {
       return NextResponse.json(
-        { success: false, error: "AI tidak menghasilkan terjemahan." },
+        { success: false, error: "AI tidak menghasilkan terjemahan yang valid." },
         { status: 500 }
       );
     }
