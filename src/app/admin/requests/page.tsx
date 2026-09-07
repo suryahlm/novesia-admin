@@ -92,6 +92,42 @@ export default function TranslationRequestsPage() {
   // Toast feedback
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
+  // Ultra-Premium & Minimalist Confirmation Modal
+  interface ConfirmModalConfig {
+    title: string;
+    message: string;
+    detail?: string;
+    confirmText?: string;
+    cancelText?: string;
+    tone?: "gold" | "danger" | "warning";
+    icon?: "trash" | "clear" | "stop" | "alert";
+    onConfirm: () => Promise<void> | void;
+  }
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  const openConfirm = (config: ConfirmModalConfig) => {
+    setConfirmModal(config);
+  };
+
+  const closeConfirm = () => {
+    if (isConfirming) return;
+    setConfirmModal(null);
+  };
+
+  const executeConfirm = async () => {
+    if (!confirmModal || isConfirming) return;
+    try {
+      setIsConfirming(true);
+      await confirmModal.onConfirm();
+      setConfirmModal(null);
+    } catch (err: any) {
+      showMsg("err", err?.message || "Terjadi kesalahan saat memproses permintaan.");
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
   const showMsg = (type: "ok" | "err", text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 4000);
@@ -236,22 +272,32 @@ export default function TranslationRequestsPage() {
   };
 
   // Stop current background job
-  const handleStopJob = async () => {
-    if (!confirm("Hentikan proses penerjemahan latar belakang sekarang?")) return;
-    try {
-      setStoppingJob(true);
-      const res = await fetch("/api/translate/bulk", { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Gagal menghentikan job");
-      showMsg("ok", "Proses penerjemahan berhasil dihentikan.");
-      setBulkTranslating(false);
-      setTranslateProgress(null);
-      fetchRequests();
-    } catch (err: any) {
-      showMsg("err", err.message || "Gagal menghentikan penerjemahan");
-    } finally {
-      setStoppingJob(false);
-    }
+  const handleStopJob = () => {
+    openConfirm({
+      title: "Hentikan Penerjemahan",
+      message: "Hentikan proses penerjemahan latar belakang sekarang?",
+      detail: "Job penerjemahan AI yang sedang berjalan akan dihentikan seketika. Seluruh bab yang telah selesai diterjemahkan sebelumnya tetap tersimpan aman.",
+      confirmText: "Hentikan Job",
+      cancelText: "Batal",
+      tone: "danger",
+      icon: "stop",
+      onConfirm: async () => {
+        try {
+          setStoppingJob(true);
+          const res = await fetch("/api/translate/bulk", { method: "DELETE" });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Gagal menghentikan job");
+          showMsg("ok", "Proses penerjemahan berhasil dihentikan.");
+          setBulkTranslating(false);
+          setTranslateProgress(null);
+          fetchRequests();
+        } catch (err: any) {
+          showMsg("err", err.message || "Gagal menghentikan penerjemahan");
+        } finally {
+          setStoppingJob(false);
+        }
+      },
+    });
   };
 
   // Execute Single Translation
@@ -360,72 +406,84 @@ export default function TranslationRequestsPage() {
   };
 
   // Delete Single Request
-  const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Hapus permintaan terjemahan untuk novel "${title}"?`)) return;
-
-    try {
-      const res = await fetch(`/api/requests?id=${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Gagal menghapus permintaan");
-      showMsg("ok", "Permintaan berhasil dihapus");
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      fetchRequests(true);
-    } catch (err: any) {
-      showMsg("err", err.message || "Gagal menghapus permintaan");
-    }
+  const handleDelete = (id: string, title: string) => {
+    openConfirm({
+      title: "Hapus Permintaan Terjemahan",
+      message: `Hapus permintaan terjemahan untuk novel "${title}"?`,
+      detail: "Entri permintaan terjemahan novel ini akan dihapus dari antrean sistem. Status data novel di database tidak akan terpengaruh.",
+      confirmText: "Hapus",
+      cancelText: "Batal",
+      tone: "danger",
+      icon: "trash",
+      onConfirm: async () => {
+        const res = await fetch(`/api/requests?id=${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Gagal menghapus permintaan");
+        showMsg("ok", "Permintaan berhasil dihapus");
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        fetchRequests(true);
+      },
+    });
   };
 
   // Clear Completed Requests History (membersihkan novel yang sudah selesai)
-  const handleClearHistory = async () => {
+  const handleClearHistory = () => {
     if (counts.completed === 0) {
       showMsg("err", "Tidak ada riwayat novel yang sudah selesai untuk dibersihkan.");
       return;
     }
 
-    if (
-      !confirm(
-        `Bersihkan ${counts.completed} riwayat novel yang sudah selesai diterjemahkan dari daftar antrean request?`
-      )
-    ) {
-      return;
-    }
+    openConfirm({
+      title: "Bersihkan Riwayat Selesai",
+      message: `Bersihkan ${counts.completed} riwayat novel yang sudah selesai diterjemahkan dari daftar antrean request?`,
+      detail: "Novel yang sudah 100% selesai diterjemahkan akan diarsipkan dan dibersihkan dari daftar antrean aktif. Novel dan chapter tetap tersimpan utuh di database.",
+      confirmText: `Bersihkan (${counts.completed})`,
+      cancelText: "Batal",
+      tone: "gold",
+      icon: "clear",
+      onConfirm: async () => {
+        setClearingHistory(true);
+        try {
+          const res = await fetch("/api/requests?clearCompleted=true", { method: "DELETE" });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Gagal membersihkan riwayat selesai");
 
-    try {
-      setClearingHistory(true);
-      const res = await fetch("/api/requests?clearCompleted=true", { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Gagal membersihkan riwayat selesai");
-
-      showMsg("ok", data.message || "Riwayat novel yang selesai berhasil dibersihkan.");
-      setSelectedIds(new Set());
-      await fetchRequests();
-    } catch (err: any) {
-      showMsg("err", err.message || "Gagal membersihkan riwayat");
-    } finally {
-      setClearingHistory(false);
-    }
+          showMsg("ok", data.message || "Riwayat novel yang selesai berhasil dibersihkan.");
+          setSelectedIds(new Set());
+          await fetchRequests();
+        } finally {
+          setClearingHistory(false);
+        }
+      },
+    });
   };
 
   // Delete Selected Requests (Multiple)
-  const handleDeleteSelected = async () => {
+  const handleDeleteSelected = () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Hapus ${selectedIds.size} permintaan terjemahan yang dipilih?`)) return;
 
-    try {
-      const ids = Array.from(selectedIds).join(",");
-      const res = await fetch(`/api/requests?id=${encodeURIComponent(ids)}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Gagal menghapus permintaan terpilih");
+    openConfirm({
+      title: "Hapus Permintaan Terpilih",
+      message: `Hapus ${selectedIds.size} permintaan terjemahan yang telah Anda pilih?`,
+      detail: "Semua entri permintaan terpilih akan dihapus dari daftar antrean. Tindakan ini tidak dapat dibatalkan.",
+      confirmText: `Hapus (${selectedIds.size})`,
+      cancelText: "Batal",
+      tone: "danger",
+      icon: "trash",
+      onConfirm: async () => {
+        const ids = Array.from(selectedIds).join(",");
+        const res = await fetch(`/api/requests?id=${encodeURIComponent(ids)}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Gagal menghapus permintaan terpilih");
 
-      showMsg("ok", `${selectedIds.size} permintaan berhasil dihapus.`);
-      setSelectedIds(new Set());
-      await fetchRequests(true);
-    } catch (err: any) {
-      showMsg("err", err.message || "Gagal menghapus permintaan");
-    }
+        showMsg("ok", `${selectedIds.size} permintaan berhasil dihapus.`);
+        setSelectedIds(new Set());
+        await fetchRequests(true);
+      },
+    });
   };
 
   return (
@@ -1065,6 +1123,117 @@ export default function TranslationRequestsPage() {
           </table>
         </div>
       </div>
+
+      {/* ═══ Ultra-Premium & Minimalist Confirmation Modal ═══ */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+          {/* Frosted Glass Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/75 backdrop-blur-md transition-opacity"
+            onClick={closeConfirm}
+          />
+
+          {/* Modal Container */}
+          <div
+            className="relative w-full max-w-md bg-[#0D1117] border border-white/[0.09] rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8),0_0_35px_rgba(212,168,67,0.08)] overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top ambient gold / red accent line */}
+            <div
+              className={`absolute top-0 inset-x-0 h-[2px] ${
+                confirmModal.tone === "danger"
+                  ? "bg-gradient-to-r from-transparent via-rose-500/60 to-transparent"
+                  : "bg-gradient-to-r from-transparent via-[#D4A843]/70 to-transparent"
+              }`}
+            />
+
+            {/* Close 'X' Button */}
+            <button
+              type="button"
+              onClick={closeConfirm}
+              disabled={isConfirming}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer disabled:opacity-40"
+              aria-label="Tutup"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="p-6 sm:p-7 space-y-5">
+              {/* Header Icon & Title */}
+              <div className="flex items-start gap-4">
+                <div
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
+                    confirmModal.tone === "danger"
+                      ? "bg-rose-500/10 border border-rose-500/25 text-rose-400 shadow-rose-950/20"
+                      : "bg-[#D4A843]/10 border border-[#D4A843]/25 text-[#D4A843] shadow-[#D4A843]/15"
+                  }`}
+                >
+                  {confirmModal.icon === "clear" ? (
+                    <RotateCcw className="w-5 h-5" />
+                  ) : confirmModal.icon === "stop" ? (
+                    <AlertCircle className="w-5 h-5" />
+                  ) : (
+                    <Trash2 className="w-5 h-5" />
+                  )}
+                </div>
+
+                <div className="space-y-1 pt-0.5 min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-100 tracking-tight leading-snug">
+                    {confirmModal.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
+                    {confirmModal.message}
+                  </p>
+                </div>
+              </div>
+
+              {/* Context Detail Box */}
+              {confirmModal.detail && (
+                <div className="p-3.5 rounded-xl bg-white/[0.025] border border-white/[0.06] text-xs text-slate-400 leading-relaxed flex items-start gap-2.5">
+                  <Sparkles
+                    className={`w-4 h-4 shrink-0 mt-0.5 ${
+                      confirmModal.tone === "danger" ? "text-rose-400/80" : "text-[#D4A843]"
+                    }`}
+                  />
+                  <span>{confirmModal.detail}</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeConfirm}
+                  disabled={isConfirming}
+                  className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/[0.08] transition-all cursor-pointer disabled:opacity-40"
+                >
+                  {confirmModal.cancelText || "Batal"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={executeConfirm}
+                  disabled={isConfirming}
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 ${
+                    confirmModal.tone === "danger"
+                      ? "bg-gradient-to-r from-rose-600 to-red-600 hover:brightness-110 text-white shadow-rose-950/40 border border-rose-500/40"
+                      : "bg-gradient-to-r from-[#E5C378] via-[#D4A843] to-[#B88B2E] hover:brightness-110 text-slate-950 shadow-[#D4A843]/20 border border-[#E5C378]/40 font-extrabold"
+                  }`}
+                >
+                  {isConfirming ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Memproses...</span>
+                    </>
+                  ) : (
+                    <span>{confirmModal.confirmText || "Konfirmasi"}</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
