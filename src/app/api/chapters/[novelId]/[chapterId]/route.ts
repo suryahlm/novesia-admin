@@ -1,5 +1,6 @@
 import { apiPatch } from "@/lib/apiClient";
 import { NextRequest, NextResponse } from "next/server";
+import { isInvalidOrBrokenTranslation } from "@/lib/translation-validator";
 
 // PUT: Update chapter content (original or translated)
 export async function PUT(
@@ -17,10 +18,17 @@ export async function PUT(
   }
 
   if (body.content_translated !== undefined) {
+    const isBroken = isInvalidOrBrokenTranslation(body.content_translated, body.content_original);
+    if (isBroken && body.content_translated && body.content_translated.trim().length > 0) {
+      return NextResponse.json(
+        { error: "Konten terjemahan terdeteksi sebagai error HTML / halaman proxy rusak dan ditolak." },
+        { status: 400 }
+      );
+    }
     updates.content_translated = body.content_translated;
-    updates.word_count_translated = body.content_translated.split(/\s+/).filter(Boolean).length;
-    updates.translation_status = body.content_translated.trim() ? "done" : "pending";
-    if (body.content_translated.trim()) {
+    updates.word_count_translated = body.content_translated ? body.content_translated.split(/\s+/).filter(Boolean).length : 0;
+    updates.translation_status = body.content_translated && body.content_translated.trim() ? "done" : "pending";
+    if (body.content_translated && body.content_translated.trim()) {
       updates.translated_at = new Date().toISOString();
     }
   }

@@ -188,15 +188,23 @@ export default function EditNovelPage() {
       const res = await fetch("/api/novels/all");
       const data = await res.json();
       const rawList: any[] = Array.isArray(data) ? data : (data?.novels || data?.data || []);
-      const formatted: Novel[] = rawList.map((n: any) => ({
-        ...n,
-        genres: Array.isArray(n.genres) ? n.genres : [],
-        has_synopsis: Boolean(n.synopsis || n.has_synopsis),
-        has_synopsis_translated: Boolean(n.synopsis_translated || n.synopsisTranslated || n.has_synopsis_translated),
-        translated_chapters: n.translated_chapters ?? 0,
-        pending_chapters: n.pending_chapters ?? 0,
-        total_with_content: n.total_with_content ?? n.total_chapters ?? n.totalChapters ?? 0,
-      }));
+      const formatted: Novel[] = rawList.map((n: any) => {
+        const total = Number(n.total_with_content ?? n.total_chapters ?? n.totalChapters ?? 0);
+        const translated = Number(n.translated_chapters ?? 0);
+        let pending = n.pending_chapters !== undefined && n.pending_chapters !== null && Number(n.pending_chapters) > 0
+          ? Number(n.pending_chapters)
+          : Math.max(0, total - translated);
+
+        return {
+          ...n,
+          genres: Array.isArray(n.genres) ? n.genres : [],
+          has_synopsis: Boolean(n.synopsis || n.has_synopsis),
+          has_synopsis_translated: Boolean(n.synopsis_translated || n.synopsisTranslated || n.has_synopsis_translated),
+          translated_chapters: translated,
+          pending_chapters: pending,
+          total_with_content: total,
+        };
+      });
       setNovels(formatted);
     } catch (err) {
       console.error("Gagal memuat novel:", err);
@@ -388,7 +396,14 @@ export default function EditNovelPage() {
     const idSet = new Set(ids);
     const selected = novels.filter((n) => idSet.has(n.id));
     const pendingSynopsis = selected.filter((n) => n.has_synopsis && !n.has_synopsis_translated).length;
-    const pendingChapters = selected.reduce((sum, n) => sum + (n.pending_chapters || 0), 0);
+    const pendingChapters = selected.reduce((sum, n) => {
+      const total = Number(n.total_with_content || n.total_chapters || 0);
+      const translated = Number(n.translated_chapters || 0);
+      const pending = n.pending_chapters !== undefined && n.pending_chapters !== null && Number(n.pending_chapters) > 0
+        ? Number(n.pending_chapters)
+        : Math.max(0, total - translated);
+      return sum + pending;
+    }, 0);
     return { count: selected.length, pendingSynopsis, pendingChapters };
   };
 

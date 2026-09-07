@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { translateText } from "@/lib/translator";
+import { isInvalidOrBrokenTranslation } from "@/lib/translation-validator";
 import { apiPost } from "@/lib/apiClient";
 
 export const maxDuration = 120;
@@ -109,14 +110,14 @@ export async function POST(req: NextRequest) {
 
     // 4. Terjemahkan via AI
     const translatedText = await translateText(originalText, "chapter");
-    if (!translatedText) {
+    if (!translatedText || isInvalidOrBrokenTranslation(translatedText, originalText)) {
       await apiPost("/api/chapters", {
         novelId,
         chapterNumber,
         translation_status: "failed",
         content_original: originalText,
       }).catch(() => {});
-      return NextResponse.json({ success: false, error: "AI translation gagal" }, { status: 502 });
+      return NextResponse.json({ success: false, error: "AI translation gagal atau menghasilkan output tidak valid" }, { status: 502 });
     }
 
     // 5. Simpan ke database

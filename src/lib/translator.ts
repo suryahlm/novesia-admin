@@ -469,6 +469,13 @@ DILARANG memberikan:
 Jangan membungkus keseluruhan terjemahan dengan tanda kutip.
 OUTPUT = TEKS NOVEL TERJEMAHAN SAJA.`;
 
+// State for adaptive rate limiting & cooldown
+let lastGutsRateLimitTime = 0;
+const GUTS_RATE_LIMIT_COOLDOWN_MS = 20_000; // 20s cooldown if 429 occurred
+
+export { isInvalidOrBrokenTranslation } from "./translation-validator";
+import { isInvalidOrBrokenTranslation } from "./translation-validator";
+
 export async function translateText(
   text: string,
   type: "synopsis" | "chapter" = "chapter"
@@ -479,8 +486,11 @@ export async function translateText(
 
   const systemPrompt = type === "synopsis" ? SYNOPSIS_SYSTEM_PROMPT : CHAPTER_SYSTEM_PROMPT;
 
-  // Try Guts AI first (Gemini 3.7 Flash) with smart retry
-  if (GUTSAI_API_KEY) {
+  // Cek apakah Gemini/GutsAI sedang dalam cooldown akibat rate limit baru-baru ini
+  const isInGutsCooldown = Date.now() - lastGutsRateLimitTime < GUTS_RATE_LIMIT_COOLDOWN_MS;
+
+  // Coba Guts AI (Gemini 3.7 Flash) jika tidak sedang cooldown
+  if (GUTSAI_API_KEY && !isInGutsCooldown) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const endpoint = `${GUTSAI_BASE_URL.replace(/\/+$/, "")}/chat/completions`;
@@ -511,16 +521,23 @@ export async function translateText(
         if (response.ok) {
           const data = await response.json();
           const content = data.choices?.[0]?.message?.content?.trim();
-          if (content && content.length > 0) {
+
+          if (content && !isInvalidOrBrokenTranslation(content, text)) {
             return content;
           }
+
+          console.warn(`[GutsAI] Attempt ${attempt} menghasilkan output rusak/HTML error. Mengabaikan...`);
         } else {
-          const errText = await response.text();
-          console.warn(`[GutsAI] Attempt ${attempt} returned HTTP ${response.status}:`, errText);
-          if (response.status === 429 && attempt === 1) {
-            // Wait 2.5s for GutsAI cooldown before 2nd attempt
-            await new Promise((r) => setTimeout(r, 2500));
-            continue;
+          const errText = await response.text().catch(() => "");
+          console.warn(`[GutsAI] Attempt ${attempt} HTTP ${response.status}:`, errText);
+
+          if (response.status === 429) {
+            lastGutsRateLimitTime = Date.now();
+            if (attempt === 1) {
+              // Tunggu sejenak sebelum percobaan kedua
+              await new Promise((r) => setTimeout(r, 3000));
+              continue;
+            }
           }
         }
       } catch (err) {
@@ -533,11 +550,15 @@ export async function translateText(
     }
   }
 
-  // Fallback to Groq
+  // === FALLBACK KE GROQ (Llama 3.3 70B) ===
   try {
-    return await translateViaGroq(text);
-  } catch (groqErr) {
-    console.error("[Groq] Translation fallback also failed:", groqErr);
-    throw new Error("Gagal menerjemahkan dengan AI. Silakan coba lagi.");
+    const groqResult = await translateViaGroq(text);
+    if (groqResult && !isInvalidOrBrokenTranslation(groqResult, text)) {
+      return groqResult.trim();
+    }
+    throw new Error("Hasil terjemahan Groq tidak valid atau terpotong.");
+  } catch (groqErr: any) {
+    console.error("[Groq] Translation fallback failed:", groqErr?.message || groqErr);
+    throw new Error("Gagal menerjemahkan dengan AI (Gemini & Groq fallback gagal).");
   }
 }

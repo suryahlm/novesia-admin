@@ -23,6 +23,7 @@ import {
   Play,
   RotateCcw,
 } from "lucide-react";
+import { isInvalidOrBrokenTranslation, isChapterPending } from "@/lib/translation-validator";
 
 interface NovelEditorProps {
   novel: any;
@@ -293,8 +294,8 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Gagal menerjemahkan sinopsis");
+      if (!res.ok || !data.success || !data.translatedText || isInvalidOrBrokenTranslation(data.translatedText, novel.synopsis)) {
+        throw new Error(data.error || "Gagal menerjemahkan sinopsis (hasil tidak valid atau error)");
       }
       setNovel({ ...novel, synopsis_translated: data.translatedText });
       showMsg("ok", "✨ Sinopsis berhasil diterjemahkan!");
@@ -322,8 +323,8 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Gagal menerjemahkan chapter");
+      if (!res.ok || !data.success || !data.translatedText || isInvalidOrBrokenTranslation(data.translatedText, editOriginal)) {
+        throw new Error(data.error || "Gagal menerjemahkan chapter (hasil tidak valid atau error)");
       }
       setEditTranslated(data.translatedText);
       showMsg("ok", `✨ Chapter ${selectedChapter?.chapter_number || ""} berhasil diterjemahkan!`);
@@ -356,8 +357,8 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
       });
 
       const data = await res.json();
-      if (!res.ok || !data.success || !data.translatedText) {
-        throw new Error(data.error || "Gagal menerjemahkan chapter");
+      if (!res.ok || !data.success || !data.translatedText || isInvalidOrBrokenTranslation(data.translatedText, ch.content_original)) {
+        throw new Error(data.error || "Gagal menerjemahkan chapter (hasil tidak valid atau error)");
       }
 
       const trans = data.translatedText;
@@ -396,9 +397,10 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
 
   // === BATCH TRANSLATE PENDING CHAPTERS ===
   const handleBatchTranslate = async () => {
+    // Cari chapter yang belum diterjemahkan atau rusak (HTML error) tapi punya konten original
     const pendingList = chapters.filter(
       (ch) =>
-        (!ch.content_translated || !ch.content_translated.trim()) &&
+        isChapterPending(ch) &&
         ch.content_original &&
         ch.content_original.trim().length > 50
     );
@@ -444,7 +446,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
           });
           const data = await res.json();
 
-          if (res.ok && data.success && data.translatedText) {
+          if (res.ok && data.success && data.translatedText && !isInvalidOrBrokenTranslation(data.translatedText, ch.content_original)) {
             const trans = data.translatedText;
             // Save directly to DB
             await fetch(`/api/chapters/${novel.id}/${ch.id}`, {
@@ -477,7 +479,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
             chapterSuccess = true;
             break; // Success, exit retry loop
           } else {
-            console.warn(`Chapter ${ch.chapter_number} attempt ${attempt} failed:`, data?.error || res.statusText);
+            console.warn(`Chapter ${ch.chapter_number} attempt ${attempt} failed or returned broken output`);
             if (attempt < MAX_RETRIES && !abortBatchRef.current) {
               const waitSec = attempt * 3;
               setBatchProgress({
@@ -540,12 +542,10 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
   });
 
   const isDraft = novel.status === "draft";
-  const translatedCount = chapters.filter(
-    (ch) => !!ch.content_translated?.trim() || ch.translation_status === "completed" || ch.translation_status === "done"
-  ).length;
+  const translatedCount = chapters.filter((ch) => !isChapterPending(ch)).length;
   const pendingWithContent = chapters.filter(
     (ch) =>
-      (!ch.content_translated || !ch.content_translated.trim()) &&
+      isChapterPending(ch) &&
       !!ch.content_original &&
       ch.content_original.trim().length > 50
   ).length;
@@ -991,8 +991,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                   <div className="flex-1 overflow-y-auto divide-y divide-white/5">
                     {filteredChapters.map((ch) => {
                       const isActive = selectedChapter?.id === ch.id;
-                      const hasTranslated =
-                        !!ch.content_translated && ch.content_translated.trim().length > 0;
+                      const hasTranslated = !isChapterPending(ch);
                       const isThisTranslating = translatingChapterId === ch.id;
                       const hasOriginal =
                         !!ch.content_original && ch.content_original.trim().length > 20;

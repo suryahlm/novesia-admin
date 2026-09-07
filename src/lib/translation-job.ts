@@ -1,5 +1,6 @@
 import { apiGet, apiPost, apiPatch } from "@/lib/apiClient";
 import { translateText } from "@/lib/translator";
+import { isInvalidOrBrokenTranslation } from "@/lib/translation-validator";
 
 export interface TranslationLogEntry {
   novelId: string;
@@ -171,13 +172,34 @@ async function runBackgroundLoop(job: TranslationJobState) {
 
       const synopsis = novel.synopsis;
       const synopsisTrans = novel.synopsis_translated || novel.synopsisTranslated;
-      if (synopsis?.trim() && !synopsisTrans?.trim()) {
+      const needsSynopsis = !!synopsis?.trim() && (!synopsisTrans?.trim() || isInvalidOrBrokenTranslation(synopsisTrans, synopsis));
+      if (needsSynopsis) {
         totalPendingSynopsis++;
       }
 
       const novelSlug = novel.nu_slug || novel.nuSlug;
-      const chaptersRes = await apiGet<any>(`/api/chapters/${novelSlug}`, { pending: true, limit: 1 }).catch(() => null);
-      const pending = chaptersRes?.pendingCount || 0;
+      let pending = 0;
+      try {
+        const chaptersRes = await apiGet<any>(`/api/chapters/${novelSlug}`, { pending: true, limit: 1 });
+        if (chaptersRes?.pendingCount !== undefined && chaptersRes?.pendingCount !== null) {
+          pending = Number(chaptersRes.pendingCount);
+        } else {
+          const total = Number(novel.total_with_content || novel.total_chapters || novel.totalChapters || 0);
+          const trans = Number(novel.translated_chapters || 0);
+          pending = Math.max(0, total - trans);
+        }
+      } catch {
+        const total = Number(novel.total_with_content || novel.total_chapters || novel.totalChapters || 0);
+        const trans = Number(novel.translated_chapters || 0);
+        pending = Math.max(0, total - trans);
+      }
+
+      // Robust fallback: if pending is 0, but total > 0 and translated is 0, pending is total
+      const total = Number(novel.total_with_content || novel.total_chapters || novel.totalChapters || 0);
+      const trans = Number(novel.translated_chapters || 0);
+      if (pending === 0 && total > 0 && trans === 0) {
+        pending = total;
+      }
 
       novelPendingMap.set(novel.id, pending);
       totalPendingChapters += pending;
@@ -191,17 +213,26 @@ async function runBackgroundLoop(job: TranslationJobState) {
       if (job.aborted) break;
 
       const novelSlug = novel.nu_slug || novel.nuSlug;
-      const pendingChapterCount = novelPendingMap.get(novel.id) || 0;
+      let pendingChapterCount = novelPendingMap.get(novel.id) || 0;
       const synopsis = novel.synopsis;
       const synopsisTrans = novel.synopsis_translated || novel.synopsisTranslated;
-      const hasPendingSynopsis = !!synopsis?.trim() && !synopsisTrans?.trim();
+      const hasPendingSynopsis = !!synopsis?.trim() && (!synopsisTrans?.trim() || isInvalidOrBrokenTranslation(synopsisTrans, synopsis));
 
-      // Skip novel with nothing to translate
+      // Re-verify pendingChapterCount from metadata if 0
+      if (pendingChapterCount === 0) {
+        const total = Number(novel.total_with_content || novel.total_chapters || novel.totalChapters || 0);
+        const trans = Number(novel.translated_chapters || 0);
+        if (total > trans) {
+          pendingChapterCount = total - trans;
+        }
+      }
+
+      // Skip novel only if neither synopsis nor chapters need translation
       if (!hasPendingSynopsis && pendingChapterCount === 0) {
         job.logs.push({
           novelId: novel.id,
           novelTitle: novel.title,
-          synopsisOk: !!synopsisTrans?.trim(),
+          synopsisOk: !!synopsisTrans?.trim() && !isInvalidOrBrokenTranslation(synopsisTrans, synopsis),
           translated: 0,
           failed: 0,
           skipped: true,
@@ -226,7 +257,9 @@ async function runBackgroundLoop(job: TranslationJobState) {
 
           try {
             const translated = await translateText(synopsis!, "synopsis");
-            if (translated?.trim()) {
+            const isBroken = isInvalidOrBrokenTranslation(translated, synopsis);
+
+            if (translated?.trim() && !isBroken) {
               await apiPatch(`/api/novels/${novel.id}`, {
                 synopsis_translated: translated,
               });
@@ -234,6 +267,11 @@ async function runBackgroundLoop(job: TranslationJobState) {
               job.synopsisTranslated++;
               synopsisSuccess = true;
               break;
+            } else {
+              console.warn(`[BackgroundTranslate] Synopsis ${novel.title} attempt ${attempt} returned broken translation.`);
+              if (attempt < MAX_RETRIES && !job.aborted) {
+                await new Promise((r) => setTimeout(r, attempt * 2500));
+              }
             }
           } catch (err) {
             console.warn(`[BackgroundTranslate] Synopsis ${novel.title} attempt ${attempt}:`, err);
@@ -248,31 +286,40 @@ async function runBackgroundLoop(job: TranslationJobState) {
         }
       }
 
-      // === TRANSLATE CHAPTERS (BATCHED) ===
+      // === TRANSLATE CHAPTERS (BATCHED & PROTECTED AGAINST INFINITE LOOPS) ===
       let novelTranslated = 0;
       let novelFailed = 0;
       let currentChIndex = 0;
+      const attemptedChapterIds = new Set<string>();
 
       if (pendingChapterCount > 0 && !job.aborted) {
         job.phase = "chapter";
 
-        // Query in batches of 100 to handle large novels safely
+        // Query in batches to handle large novels safely
         while (!job.aborted) {
           const batchRes = await apiGet<any>(`/api/chapters/${novelSlug}`, {
             pending: true,
             includeContent: true,
-            limit: 100,
+            limit: 50,
           }).catch(() => null);
 
-          const batch = batchRes?.chapters || [];
+          const rawBatch = batchRes?.chapters || [];
+          // Exclude chapters already attempted in this run to avoid infinite loop on stubborn chapters
+          const batch = rawBatch.filter((ch: any) => !attemptedChapterIds.has(ch.id));
           if (!batch || batch.length === 0) break;
 
           for (let i = 0; i < batch.length; i++) {
             if (job.aborted) break;
 
             const ch = batch[i];
+            attemptedChapterIds.add(ch.id);
+
             const chNumber = ch.chapter_number ?? ch.chapterNumber;
             const contentOrig = ch.content_original ?? ch.contentOriginal;
+
+            if (!contentOrig || !contentOrig.trim()) {
+              continue;
+            }
 
             currentChIndex++;
             job.currentChapterNumber = chNumber;
@@ -285,7 +332,9 @@ async function runBackgroundLoop(job: TranslationJobState) {
 
               try {
                 const translated = await translateText(contentOrig, "chapter");
-                if (translated?.trim()) {
+                const isBroken = isInvalidOrBrokenTranslation(translated, contentOrig);
+
+                if (translated?.trim() && !isBroken) {
                   const wordCount = translated.split(/\s+/).filter(Boolean).length;
 
                   await apiPatch(`/api/chapters/${ch.id}`, {
@@ -300,14 +349,15 @@ async function runBackgroundLoop(job: TranslationJobState) {
                   chapterSuccess = true;
                   break;
                 } else {
+                  console.warn(`[BackgroundTranslate] Ch ${chNumber} attempt ${attempt} returned broken translation.`);
                   if (attempt < MAX_RETRIES && !job.aborted) {
-                    await new Promise((r) => setTimeout(r, attempt * 3000));
+                    await new Promise((r) => setTimeout(r, attempt * 2500));
                   }
                 }
               } catch (err) {
                 console.warn(`[BackgroundTranslate] Ch ${chNumber} attempt ${attempt}:`, err);
                 if (attempt < MAX_RETRIES && !job.aborted) {
-                  await new Promise((r) => setTimeout(r, attempt * 3000));
+                  await new Promise((r) => setTimeout(r, attempt * 2500));
                 }
               }
             }
@@ -315,6 +365,10 @@ async function runBackgroundLoop(job: TranslationJobState) {
             if (!chapterSuccess && !job.aborted) {
               novelFailed++;
               job.failedChapters++;
+              // Mark as failed in DB cleanly without saving broken HTML
+              await apiPatch(`/api/chapters/${ch.id}`, {
+                translation_status: "failed",
+              }).catch(() => {});
             }
 
             // Rate limit delay between chapters
@@ -324,14 +378,14 @@ async function runBackgroundLoop(job: TranslationJobState) {
           }
         }
 
-        // Mark novel as having Indonesian translation
+        // Mark novel as having Indonesian translation if any chapter was translated
         if (novelTranslated > 0) {
           await apiPatch(`/api/novels/${novel.id}`, {
             translation_status: "id_translated",
           }).catch(() => {});
         }
 
-        // Auto-mark translation request for this novel as COMPLETED
+        // Auto-mark translation request for this novel as COMPLETED if no more pending chapters
         await apiPatch(`/api/translation-requests/by-novel/${novel.id}`, {
           status: "COMPLETED",
         }).catch(() => {});
@@ -368,3 +422,4 @@ async function runBackgroundLoop(job: TranslationJobState) {
     job.endTime = Date.now();
   }
 }
+
