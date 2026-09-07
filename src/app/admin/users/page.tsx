@@ -521,8 +521,17 @@ export default function UsersPage() {
                       <td className="py-2.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-[#0a0c10] border border-white/10 shrink-0 flex items-center justify-center">
-                            {u.avatar_url ? (
-                              <img src={u.avatar_url} alt={u.name} className="w-full h-full object-cover" />
+                            {u.avatar_url || (u as any).avatarUrl ? (
+                              <img
+                                src={u.avatar_url || (u as any).avatarUrl}
+                                alt={u.name}
+                                referrerPolicy="no-referrer"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Fallback jika URL avatar gagal dimuat
+                                  (e.target as HTMLElement).style.display = 'none';
+                                }}
+                              />
                             ) : (
                               <UserIcon size={14} className="text-slate-500" />
                             )}
