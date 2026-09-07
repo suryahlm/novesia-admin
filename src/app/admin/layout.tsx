@@ -20,6 +20,7 @@ import {
   MessagesSquare,
   Rocket,
   Star,
+  Languages,
 } from "lucide-react";
 
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
   { href: "/admin/top-rating", label: "Top Rating", icon: Star },
   { href: "/admin/novels/new", label: "Tambah Novel", icon: BookPlus },
   { href: "/admin/update", label: "Edit Novel", icon: FileEdit },
+  { href: "/admin/requests", label: "Request Terjemahan", icon: Languages },
   { href: "/admin/storage", label: "Storage R2", icon: Database },
   { href: "/admin/users", label: "Pengguna", icon: Users },
   { href: "/admin/comments", label: "Komentar", icon: MessageSquare },
