@@ -45,9 +45,9 @@ export default function UpdateScrapingPage() {
       id: "cuttlefishreads",
       name: "Cuttlefish Engine",
       icon: Cpu,
-      color: "from-amber-500 via-orange-500 to-yellow-400",
-      shadow: "shadow-amber-500/20",
-      border: "hover:border-amber-500/40",
+      color: "from-[#B99762] via-[#D4A843] to-[#8C6D3B]",
+      shadow: "shadow-[#B99762]/20",
+      border: "hover:border-[#B99762]/40",
       desc: "Menangani sumber CuttlefishReads. Ekstraksi Next.js RSC & HTML dengan Cloudflare R2 otomatis.",
     },
     {
@@ -135,11 +135,11 @@ export default function UpdateScrapingPage() {
           return (
             <div
               key={sc.id}
-              className="p-5 rounded-xl border border-white/5 bg-[#12151b] flex flex-col justify-between hover:border-amber-400/30 transition-colors"
+              className="p-5 rounded-xl border border-white/5 bg-[#12151b] flex flex-col justify-between hover:border-[#B99762]/40 transition-colors"
             >
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-amber-400/10 border border-amber-400/20 text-amber-400">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#B99762]/10 border border-[#B99762]/30 text-[#D4A843]">
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>
@@ -160,7 +160,7 @@ export default function UpdateScrapingPage() {
                   className={`w-full py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
                     isBusy
                       ? "bg-[#0a0c10] text-slate-400 cursor-not-allowed"
-                      : "bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)]"
+                      : "bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black shadow-lg shadow-[#B99762]/20"
                   } disabled:opacity-50`}
                 >
                   {isBusy ? (
@@ -183,12 +183,12 @@ export default function UpdateScrapingPage() {
 
       {/* Architecture Note */}
       <div className="p-4 rounded-xl bg-[#12151b] border border-white/5 flex items-start gap-3">
-        <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0">
+        <div className="w-8 h-8 rounded-lg bg-[#B99762]/10 border border-[#B99762]/30 flex items-center justify-center text-[#D4A843] shrink-0">
           <Server className="w-4 h-4" />
         </div>
         <div className="text-xs text-slate-400 leading-relaxed">
           <strong className="text-slate-200">Catatan:</strong> Tombol di atas mengeksekusi background daemon process terpisah (
-          <code className="font-mono text-amber-300 bg-white/5 px-1 py-0.5 rounded text-[11px]">
+          <code className="font-mono text-[#e6ca91] bg-white/5 px-1 py-0.5 rounded text-[11px]">
             detached: true
           </code>
           ). Anda dapat menutup halaman ini kapan saja tanpa mengganggu scraping yang sedang berjalan.

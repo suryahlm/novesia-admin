@@ -122,7 +122,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
               placeholder="Cari judul novel atau slug..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 bg-[#0a0c10] border border-white/10 rounded-lg text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400/70 focus:ring-1 focus:ring-amber-400/30 transition-all"
+              className="w-full pl-10 pr-10 py-2.5 bg-[#0a0c10] border border-white/10 rounded-lg text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#B99762] focus:ring-1 focus:ring-[#B99762]/30 transition-all"
             />
             {search && (
               <button
@@ -138,7 +138,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full sm:w-auto px-3.5 py-2.5 bg-[#0a0c10] border border-white/10 rounded-lg text-xs font-semibold text-slate-200 focus:outline-none focus:border-amber-400/70 cursor-pointer"
+              className="w-full sm:w-auto px-3.5 py-2.5 bg-[#0a0c10] border border-white/10 rounded-lg text-xs font-semibold text-slate-200 focus:outline-none focus:border-[#B99762] cursor-pointer"
             >
               <option value="newest" className="bg-[#0a0c10] text-slate-200">
                 ✨ Terbaru
@@ -175,7 +175,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
                   onClick={() => setStatusFilter(s.key)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? "bg-amber-400/15 text-amber-300 border border-amber-400/30"
+                      ? "bg-[#B99762]/15 text-[#e6ca91] border border-[#B99762]/30"
                       : "bg-[#0a0c10] text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-white/5"
                   }`}
                 >
@@ -184,7 +184,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
                     <span
                       className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                         isSelected
-                          ? "bg-amber-400/20 text-amber-200"
+                          ? "bg-[#B99762]/25 text-[#f3e7c4]"
                           : "bg-white/10 text-slate-300"
                       }`}
                     >
@@ -201,7 +201,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
             <select
               value={genreFilter}
               onChange={(e) => setGenreFilter(e.target.value)}
-              className="px-3 py-1.5 bg-[#0a0c10] border border-white/10 rounded-lg text-xs font-semibold text-slate-300 focus:outline-none focus:border-amber-400/70 cursor-pointer max-w-[180px]"
+              className="px-3 py-1.5 bg-[#0a0c10] border border-white/10 rounded-lg text-xs font-semibold text-slate-300 focus:outline-none focus:border-[#B99762] cursor-pointer max-w-[180px]"
             >
               <option value="all" className="bg-[#0a0c10]">
                 Semua Genre
@@ -228,7 +228,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
           </div>
 
           <div className="text-xs font-medium text-slate-400">
-            Menampilkan <span className="text-amber-300 font-bold font-mono">{filtered.length}</span> novel
+            Menampilkan <span className="text-[#D4A843] font-bold font-mono">{filtered.length}</span> novel
           </div>
         </div>
       </div>
@@ -247,7 +247,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
                 setStatusFilter("all");
                 setGenreFilter("all");
               }}
-              className="text-amber-400 text-xs font-semibold mt-3 hover:underline"
+              className="text-[#D4A843] text-xs font-semibold mt-3 hover:underline"
             >
               Reset Filter Pencarian →
             </button>
@@ -263,7 +263,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
               <Link
                 key={novel.id}
                 href={`/admin/novels/${novel.nu_slug}`}
-                className="group bg-[#12151b] border border-white/5 hover:border-amber-400/30 rounded-xl overflow-hidden hover:shadow-lg transition-all flex flex-col relative"
+                className="group bg-[#12151b] border border-white/5 hover:border-[#B99762]/30 rounded-xl overflow-hidden hover:shadow-lg transition-all flex flex-col relative"
               >
                 {/* Cover Image Container */}
                 <div className="aspect-[3/4.2] relative overflow-hidden bg-slate-900">
@@ -292,7 +292,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
 
                   {/* Rating Badge */}
                   {novel.rating && (
-                    <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-bold text-amber-300 border border-amber-500/30 flex items-center gap-0.5">
+                    <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-bold text-[#D4A843] border border-[#B99762]/30 flex items-center gap-0.5">
                       <span>★</span>
                       <span className="font-mono">{novel.rating}</span>
                     </div>
@@ -311,7 +311,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
 
                   {/* Draft Watermark */}
                   {isDraft && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-400 px-2.5 py-0.5 rounded text-[10px] font-extrabold text-slate-950 rotate-[-12deg]">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#B99762] px-2.5 py-0.5 rounded text-[10px] font-extrabold text-black rotate-[-12deg]">
                       DRAFT
                     </div>
                   )}
@@ -339,7 +339,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
                 {/* Card Info */}
                 <div className="p-3 space-y-2 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-semibold text-xs text-slate-100 leading-snug line-clamp-2 group-hover:text-amber-300 transition-colors">
+                    <h3 className="font-semibold text-xs text-slate-100 leading-snug line-clamp-2 group-hover:text-[#D4A843] transition-colors">
                       {novel.title}
                     </h3>
                     <p className="text-[11px] text-slate-400 font-mono mt-1">

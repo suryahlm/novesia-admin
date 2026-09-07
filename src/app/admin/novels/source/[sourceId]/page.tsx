@@ -44,7 +44,7 @@ export default async function SourceNovelsPage({ params }: { params: Promise<{ s
         </div>
         <Link
           href="/admin/novels/new"
-          className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 text-sm font-semibold rounded-lg shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all"
+          className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black text-sm font-bold rounded-lg shadow-lg shadow-[#B99762]/20 transition-all"
         >
           + Tambah Novel
         </Link>
@@ -62,7 +62,7 @@ export default async function SourceNovelsPage({ params }: { params: Promise<{ s
             <Link
               key={novel.id}
               href={`/admin/novels/${novel.nu_slug}`}
-              className="group bg-[#12151b] border border-white/5 hover:border-amber-400/30 rounded-xl overflow-hidden hover:shadow-lg transition-all flex flex-col"
+              className="group bg-[#12151b] border border-white/5 hover:border-[#B99762]/40 rounded-xl overflow-hidden hover:shadow-lg transition-all flex flex-col"
             >
               <div className="aspect-[3/4.2] relative overflow-hidden bg-slate-900">
                 {novel.cover_url ? (
@@ -73,7 +73,7 @@ export default async function SourceNovelsPage({ params }: { params: Promise<{ s
                   </div>
                 )}
                 {novel.rating && (
-                  <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-bold text-amber-300 border border-amber-500/30 font-mono">
+                  <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-bold text-[#D4A843] border border-[#B99762]/30 font-mono">
                     ★ {novel.rating}
                   </div>
                 )}
@@ -88,7 +88,7 @@ export default async function SourceNovelsPage({ params }: { params: Promise<{ s
                 )}
               </div>
               <div className="p-3 space-y-1.5">
-                <h3 className="font-semibold text-xs leading-snug line-clamp-2 text-slate-100 group-hover:text-amber-300 transition-colors">
+                <h3 className="font-semibold text-xs leading-snug line-clamp-2 text-slate-100 group-hover:text-[#D4A843] transition-colors">
                   {novel.title}
                 </h3>
                 <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">

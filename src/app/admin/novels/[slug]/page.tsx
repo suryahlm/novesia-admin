@@ -25,7 +25,7 @@ export default async function NovelDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-4">
       {/* Back */}
-      <Link href="/admin/novels" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-300 transition-colors">
+      <Link href="/admin/novels" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-[#D4A843] transition-colors">
         <ArrowLeft className="w-3.5 h-3.5" /> Kembali ke Daftar
       </Link>
 

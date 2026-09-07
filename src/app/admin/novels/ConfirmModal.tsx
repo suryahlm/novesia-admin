@@ -47,7 +47,7 @@ export default function ConfirmModal({
         <div className="p-6 space-y-5">
           {/* Icon + Title */}
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDanger ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-amber-400/10 text-amber-400 border border-amber-400/20'}`}>
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDanger ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-[#B99762]/10 text-[#D4A843] border border-[#B99762]/30'}`}>
               {isDanger ? <AlertTriangle className="w-6 h-6" /> : <X className="w-6 h-6" />}
             </div>
             <div className="space-y-1">
@@ -73,7 +73,7 @@ export default function ConfirmModal({
               className={`flex-1 px-4 py-2 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 ${
                 isDanger 
                   ? 'bg-red-950/60 hover:bg-red-900/60 text-red-300 border border-red-900/60' 
-                  : 'bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold'
+                  : 'bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black font-bold shadow-lg shadow-[#B99762]/20'
               }`}
             >
               {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

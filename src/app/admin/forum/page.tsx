@@ -192,7 +192,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
             resetForm();
             setAdding(true);
           }}
-          className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)] transition-all"
+          className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black font-bold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#B99762]/20 transition-all"
         >
           <Plus size={15} />
           <span>Kategori Baru</span>
@@ -201,7 +201,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
 
       {loading ? (
         <div className="bg-[#12151b] border border-white/5 rounded-xl p-12 text-center text-slate-400 space-y-3">
-          <RefreshCw className="w-6 h-6 text-amber-400 animate-spin mx-auto" />
+          <RefreshCw className="w-6 h-6 text-[#D4A843] animate-spin mx-auto" />
           <p className="text-xs">Memuat kategori forum...</p>
         </div>
       ) : error ? (
@@ -233,7 +233,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
                     <td className="py-3 px-4 font-semibold text-slate-100">{c.name}</td>
                     <td className="py-3 px-4 text-slate-400 max-w-xs truncate">{c.description || "-"}</td>
                     <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-300 border border-amber-400/20">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B99762]/15 text-[#e6ca91] border border-[#B99762]/30">
                         {c.threadCount} Thread
                       </span>
                     </td>
@@ -269,7 +269,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
           <div className="bg-[#12151b] border border-white/10 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <FolderPlus size={16} className="text-amber-400" />
+                <FolderPlus size={16} className="text-[#D4A843]" />
                 <span>Kategori Forum Baru</span>
               </h3>
               <button onClick={() => setAdding(false)} className="text-slate-400 hover:text-white cursor-pointer">
@@ -287,7 +287,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
                   placeholder="Mis. Diskusi Teori & Plot"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all"
                   autoFocus
                 />
               </div>
@@ -299,7 +299,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all resize-y"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all resize-y"
                 />
               </div>
 
@@ -309,7 +309,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
                   type="number"
                   value={order}
                   onChange={(e) => setOrder(e.target.value)}
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all font-mono"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all font-mono"
                 />
               </div>
             </div>
@@ -324,7 +324,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
               <button
                 onClick={handleAdd}
                 disabled={busy || !name.trim()}
-                className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 text-xs font-bold rounded-lg cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)] disabled:opacity-50"
+                className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black text-xs font-bold rounded-lg cursor-pointer transition-all shadow-lg shadow-[#B99762]/20 disabled:opacity-50"
               >
                 {busy ? "Membuat..." : "Buat Kategori"}
               </button>
@@ -339,7 +339,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
           <div className="bg-[#12151b] border border-white/10 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <Pencil size={16} className="text-amber-400" />
+                <Pencil size={16} className="text-[#D4A843]" />
                 <span>Edit Kategori Forum</span>
               </h3>
               <button onClick={() => setEditing(null)} className="text-slate-400 hover:text-white cursor-pointer">
@@ -356,7 +356,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all"
                   autoFocus
                 />
               </div>
@@ -367,7 +367,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all resize-y"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all resize-y"
                 />
               </div>
 
@@ -377,7 +377,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
                   type="number"
                   value={order}
                   onChange={(e) => setOrder(e.target.value)}
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all font-mono"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all font-mono"
                 />
               </div>
             </div>
@@ -392,7 +392,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string) => void }) {
               <button
                 onClick={handleSaveEdit}
                 disabled={busy || !name.trim()}
-                className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 text-xs font-bold rounded-lg cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)] disabled:opacity-50"
+                className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black text-xs font-bold rounded-lg cursor-pointer transition-all shadow-lg shadow-[#B99762]/20 disabled:opacity-50"
               >
                 {busy ? "Menyimpan..." : "Simpan Perubahan"}
               </button>
@@ -586,14 +586,14 @@ function ThreadsSection({ onToast }: { onToast: (msg: string) => void }) {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && search()}
-              className="w-full bg-[#0a0c10] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all"
+              className="w-full bg-[#0a0c10] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all"
             />
           </div>
 
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all cursor-pointer min-w-[160px]"
+            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-[#B99762] focus:outline-none transition-all cursor-pointer min-w-[160px]"
           >
             <option value="">Semua Kategori</option>
             {categories.map((c) => (
@@ -605,7 +605,7 @@ function ThreadsSection({ onToast }: { onToast: (msg: string) => void }) {
 
           <button
             onClick={search}
-            className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold rounded-lg text-xs cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)]"
+            className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black font-bold rounded-lg text-xs cursor-pointer transition-all shadow-lg shadow-[#B99762]/20"
           >
             Cari
           </button>
@@ -616,7 +616,7 @@ function ThreadsSection({ onToast }: { onToast: (msg: string) => void }) {
       <div className="bg-[#12151b] border border-white/5 rounded-xl overflow-hidden">
         {loading ? (
           <div className="py-16 text-center space-y-3">
-            <RefreshCw className="w-6 h-6 text-amber-400 animate-spin mx-auto" />
+            <RefreshCw className="w-6 h-6 text-[#D4A843] animate-spin mx-auto" />
             <p className="text-xs text-slate-400">Memuat thread forum...</p>
           </div>
         ) : error ? (
@@ -646,7 +646,7 @@ function ThreadsSection({ onToast }: { onToast: (msg: string) => void }) {
                   <tr key={t.id} className="hover:bg-white/5 transition-colors">
                     <td className="py-2.5 px-4 max-w-xs">
                       <div className="flex items-center gap-1.5">
-                        {t.pinned && <Pin size={13} className="text-amber-400 shrink-0" />}
+                        {t.pinned && <Pin size={13} className="text-[#D4A843] shrink-0" />}
                         {t.locked && <Lock size={13} className="text-slate-400 shrink-0" />}
                         <span className="font-semibold text-slate-100 truncate">{t.title}</span>
                       </div>
@@ -660,7 +660,7 @@ function ThreadsSection({ onToast }: { onToast: (msg: string) => void }) {
                       <div className="text-slate-200 font-medium">{t.user.name}</div>
                     </td>
                     <td className="py-2.5 px-4 text-slate-300 font-mono">
-                      <span className="px-2 py-0.5 rounded bg-amber-400/10 text-amber-300 border border-amber-400/20 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded bg-[#B99762]/15 text-[#e6ca91] border border-[#B99762]/30 text-[10px] font-bold">
                         {t.postCount}
                       </span>
                     </td>
@@ -686,8 +686,8 @@ function ThreadsSection({ onToast }: { onToast: (msg: string) => void }) {
                           onClick={() => toggleFlag(t, "pinned")}
                           className={`p-1.5 rounded transition-colors cursor-pointer ${
                             t.pinned
-                              ? "bg-amber-400/20 text-amber-300 hover:bg-amber-400/30"
-                              : "bg-[#0a0c10] hover:bg-white/10 text-slate-400 hover:text-amber-400"
+                              ? "bg-[#B99762]/20 text-[#e6ca91] hover:bg-[#B99762]/30"
+                              : "bg-[#0a0c10] hover:bg-white/10 text-slate-400 hover:text-[#D4A843]"
                           }`}
                           title={t.pinned ? "Lepas Pin" : "Pin Thread ke Atas"}
                         >
@@ -763,7 +763,7 @@ function ThreadsSection({ onToast }: { onToast: (msg: string) => void }) {
 
             {detailLoading ? (
               <div className="py-16 text-center">
-                <RefreshCw className="w-6 h-6 text-amber-400 animate-spin mx-auto" />
+                <RefreshCw className="w-6 h-6 text-[#D4A843] animate-spin mx-auto" />
                 <p className="text-xs text-slate-400 mt-2">Memuat isi thread dan balasan...</p>
               </div>
             ) : detail ? (
@@ -774,7 +774,7 @@ function ThreadsSection({ onToast }: { onToast: (msg: string) => void }) {
                     {detail.category?.name}
                   </span>
                   {detail.pinned && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B99762]/20 text-[#e6ca91] border border-[#B99762]/30 flex items-center gap-1">
                       <Pin size={10} /> Pinned
                     </span>
                   )}
@@ -912,7 +912,7 @@ export default function ForumPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2.5">
-          <MessagesSquare className="w-6 h-6 text-amber-400" />
+          <MessagesSquare className="w-6 h-6 text-[#D4A843]" />
           <span>Forum Komunitas</span>
         </h1>
         <p className="text-slate-400 text-xs mt-1">
@@ -926,7 +926,7 @@ export default function ForumPage() {
           onClick={() => setActiveTab("threads")}
           className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${
             activeTab === "threads"
-              ? "bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 text-slate-950 shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)]"
+              ? "bg-gradient-to-r from-[#B99762] to-[#8C6D3B] text-black shadow-lg shadow-[#B99762]/20"
               : "bg-[#12151b] hover:bg-white/5 text-slate-300 border border-white/5"
           }`}
         >
@@ -936,7 +936,7 @@ export default function ForumPage() {
           onClick={() => setActiveTab("categories")}
           className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${
             activeTab === "categories"
-              ? "bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 text-slate-950 shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)]"
+              ? "bg-gradient-to-r from-[#B99762] to-[#8C6D3B] text-black shadow-lg shadow-[#B99762]/20"
               : "bg-[#12151b] hover:bg-white/5 text-slate-300 border border-white/5"
           }`}
         >

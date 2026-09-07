@@ -68,8 +68,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Logo Header */}
         <div className="px-5 py-5 hidden md:block">
           <Link href="/admin" className="flex items-center gap-1.5 group">
-            <Sparkles size={16} className="text-amber-400 group-hover:rotate-12 transition-transform" />
-            <span className="font-bold text-xl bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 bg-clip-text text-transparent">
+            <Sparkles size={16} className="text-[#D4A843] group-hover:rotate-12 transition-transform" />
+            <span className="font-bold text-xl bg-gradient-to-r from-[#f3e7c4] via-[#D4A843] to-[#8C6D3B] bg-clip-text text-transparent">
               Novesia
             </span>
           </Link>
@@ -78,7 +78,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        <div className="px-4 py-3 font-bold text-amber-400 text-lg md:hidden">
+        <div className="px-4 py-3 font-bold text-[#D4A843] text-lg md:hidden">
           Novesia Admin
         </div>
 
@@ -97,11 +97,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={item.href}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left whitespace-nowrap transition-colors ${
                   isActive
-                    ? "bg-amber-400/10 text-amber-300 border border-amber-400/20 font-medium"
+                    ? "bg-[#B99762]/10 text-[#e6ca91] border border-[#B99762]/30 font-medium"
                     : "text-slate-300 hover:bg-white/5 border border-transparent"
                 }`}
               >
-                <Icon size={17} className={isActive ? "text-amber-400" : "text-slate-400"} />
+                <Icon size={17} className={isActive ? "text-[#D4A843]" : "text-slate-400"} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -127,7 +127,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <h1 className="text-lg md:text-xl font-bold text-slate-100">{pageTitle}</h1>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-[#12151b] border border-white/5">
-              <ShieldCheck size={15} className="text-amber-400" />
+              <ShieldCheck size={15} className="text-[#D4A843]" />
               <span className="text-xs text-slate-300">Admin</span>
             </div>
             <button

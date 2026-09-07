@@ -289,7 +289,7 @@ export default function BlacklistPage() {
           onClick={() => setActiveTab("judul")}
           className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
             activeTab === "judul"
-              ? "bg-[#dca54c] text-slate-950 shadow-md"
+              ? "bg-[#B99762] text-black shadow-md"
               : "bg-[#161a22] text-slate-300 hover:bg-[#1e232e] hover:text-white"
           }`}
         >
@@ -300,7 +300,7 @@ export default function BlacklistPage() {
           onClick={() => setActiveTab("chapter")}
           className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
             activeTab === "chapter"
-              ? "bg-[#dca54c] text-slate-950 shadow-md"
+              ? "bg-[#B99762] text-black shadow-md"
               : "bg-[#161a22] text-slate-300 hover:bg-[#1e232e] hover:text-white"
           }`}
         >
@@ -315,7 +315,7 @@ export default function BlacklistPage() {
               : "bg-[#161a22] text-slate-300 hover:bg-[#1e232e] hover:text-white"
           }`}
         >
-          <Sparkles size={14} className={activeTab === "rekomendasi" ? "text-amber-300" : "text-amber-400"} />
+          <Sparkles size={14} className={activeTab === "rekomendasi" ? "text-white" : "text-[#D4A843]"} />
           <span>Rekomendasi Novel Mati</span>
           {dormantNovels.length > 0 && (
             <span className="text-xs px-1.5 py-0.2 rounded-full bg-black/40 text-red-200">
@@ -337,7 +337,7 @@ export default function BlacklistPage() {
 
             <button
               onClick={() => setSearchOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#dca54c] hover:bg-[#e6b35d] text-slate-950 font-semibold text-xs shadow-md transition-all cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black font-bold text-xs shadow-lg shadow-[#B99762]/20 transition-all cursor-pointer shrink-0"
             >
               <Ban size={14} />
               <span>Tambah ke Blacklist</span>
@@ -364,7 +364,7 @@ export default function BlacklistPage() {
           {/* Table (Komiku Style Minimalist & Compact) */}
           {loading ? (
             <div className="py-16 text-center text-slate-400 text-xs">
-              <div className="w-6 h-6 border-2 border-[#dca54c]/30 border-t-[#dca54c] rounded-full animate-spin mx-auto mb-2" />
+              <div className="w-6 h-6 border-2 border-[#B99762]/30 border-t-[#B99762] rounded-full animate-spin mx-auto mb-2" />
               Memuat data blacklist...
             </div>
           ) : filteredNovelItems.length === 0 ? (
@@ -392,7 +392,7 @@ export default function BlacklistPage() {
                         <td className="py-2.5 px-4 font-medium text-slate-100">
                           <Link
                             href={`/admin/novels/${c.nu_slug}`}
-                            className="hover:text-[#dca54c] hover:underline line-clamp-1"
+                            className="hover:text-[#D4A843] hover:underline line-clamp-1"
                           >
                             {c.title}
                           </Link>
@@ -466,7 +466,7 @@ export default function BlacklistPage() {
                       <td className="py-2.5 px-4 font-medium text-slate-100">
                         <Link
                           href={`/admin/novels/${ch.nu_slug}`}
-                          className="hover:text-[#dca54c] hover:underline"
+                          className="hover:text-[#D4A843] hover:underline"
                         >
                           {ch.title}
                         </Link>
@@ -594,7 +594,7 @@ export default function BlacklistPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#dca54c]/50 flex-1"
+                  className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#B99762] flex-1"
                   autoFocus
                 />
                 <button
@@ -608,7 +608,7 @@ export default function BlacklistPage() {
 
               {searching ? (
                 <div className="py-6 text-center text-slate-400 text-xs">
-                  <div className="w-5 h-5 border-2 border-[#dca54c]/30 border-t-[#dca54c] rounded-full animate-spin mx-auto mb-1.5" />
+                  <div className="w-5 h-5 border-2 border-[#B99762]/30 border-t-[#B99762] rounded-full animate-spin mx-auto mb-1.5" />
                   Mencari novel...
                 </div>
               ) : searchResults.length > 0 ? (

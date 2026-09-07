@@ -150,7 +150,7 @@ export default function ManualNovelPage() {
             </h3>
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-white/10 hover:border-amber-400/50 rounded-xl h-64 flex flex-col items-center justify-center cursor-pointer hover:bg-white/[0.02] transition-all overflow-hidden relative group bg-[#0a0c10]"
+              className="border-2 border-dashed border-white/10 hover:border-[#B99762]/50 rounded-xl h-64 flex flex-col items-center justify-center cursor-pointer hover:bg-white/[0.02] transition-all overflow-hidden relative group bg-[#0a0c10]"
             >
               {coverPreview ? (
                 <img
@@ -160,7 +160,7 @@ export default function ManualNovelPage() {
                 />
               ) : (
                 <div className="text-center p-4 space-y-2">
-                  <div className="w-10 h-10 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 mx-auto">
+                  <div className="w-10 h-10 rounded-lg bg-[#B99762]/10 border border-[#B99762]/20 flex items-center justify-center text-[#D4A843] mx-auto">
                     <ImageIcon className="w-5 h-5" />
                   </div>
                   <p className="text-xs font-semibold text-slate-300">Upload Cover</p>
@@ -194,7 +194,7 @@ export default function ManualNovelPage() {
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400/70 transition-colors cursor-pointer"
+                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#B99762] transition-colors cursor-pointer"
               >
                 <option value="active" className="bg-[#0a0c10]">
                   Active (Publik)
@@ -212,7 +212,7 @@ export default function ManualNovelPage() {
               <select
                 value={formData.original_status}
                 onChange={(e) => setFormData({ ...formData, original_status: e.target.value })}
-                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400/70 transition-colors cursor-pointer"
+                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#B99762] transition-colors cursor-pointer"
               >
                 <option value="Ongoing" className="bg-[#0a0c10]">
                   Ongoing
@@ -233,7 +233,7 @@ export default function ManualNovelPage() {
               <select
                 value={formData.novel_type}
                 onChange={(e) => setFormData({ ...formData, novel_type: e.target.value })}
-                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400/70 transition-colors cursor-pointer"
+                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#B99762] transition-colors cursor-pointer"
               >
                 <option value="Web Novel" className="bg-[#0a0c10]">
                   Web Novel
@@ -262,7 +262,7 @@ export default function ManualNovelPage() {
                   value={formData.title}
                   onChange={handleTitleChange}
                   placeholder="Contoh: Rebirth of System Sovereign"
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-amber-400/70 focus:ring-1 focus:ring-amber-400/30 transition-all"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-[#B99762] focus:ring-1 focus:ring-[#B99762]/30 transition-all"
                   required
                 />
               </div>
@@ -276,7 +276,7 @@ export default function ManualNovelPage() {
                   value={formData.nu_slug}
                   onChange={(e) => setFormData({ ...formData, nu_slug: e.target.value })}
                   placeholder="rebirth-of-system-sovereign"
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-amber-400/70"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-[#B99762]"
                 />
               </div>
 
@@ -289,7 +289,7 @@ export default function ManualNovelPage() {
                   value={formData.author}
                   onChange={(e) => setFormData({ ...formData, author: e.target.value })}
                   placeholder="Nama Penulis"
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400/70"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#B99762]"
                 />
               </div>
 
@@ -304,7 +304,7 @@ export default function ManualNovelPage() {
                   max="5"
                   value={formData.rating}
                   onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400/70 font-mono"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#B99762] font-mono"
                 />
               </div>
 
@@ -316,7 +316,7 @@ export default function ManualNovelPage() {
                   type="number"
                   value={formData.total_chapters}
                   onChange={(e) => setFormData({ ...formData, total_chapters: e.target.value })}
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400/70 font-mono"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#B99762] font-mono"
                 />
               </div>
             </div>
@@ -330,7 +330,7 @@ export default function ManualNovelPage() {
                 onChange={(e) => setFormData({ ...formData, synopsis: e.target.value })}
                 rows={5}
                 placeholder="Tulis gambaran cerita lengkap novel ini..."
-                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-amber-400/70 focus:ring-1 focus:ring-amber-400/30 resize-none leading-relaxed"
+                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-[#B99762] focus:ring-1 focus:ring-[#B99762]/30 resize-none leading-relaxed"
               />
             </div>
 
@@ -341,7 +341,7 @@ export default function ManualNovelPage() {
                 <button
                   onClick={autoGenerateGenres}
                   disabled={generatingGenre}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-300 rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-[#B99762]/10 hover:bg-[#B99762]/20 border border-[#B99762]/30 text-[#e6ca91] rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-40"
                 >
                   {generatingGenre ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -356,7 +356,7 @@ export default function ManualNovelPage() {
                 {genres.map((g) => (
                   <span
                     key={g}
-                    className="px-2.5 py-0.5 bg-amber-400/10 border border-amber-400/20 rounded-md text-xs font-medium text-amber-200 flex items-center gap-1.5"
+                    className="px-2.5 py-0.5 bg-[#B99762]/15 border border-[#B99762]/30 rounded-md text-xs font-medium text-[#e6ca91] flex items-center gap-1.5"
                   >
                     <span>{g}</span>
                     <button
@@ -382,7 +382,7 @@ export default function ManualNovelPage() {
                     }
                   }}
                   placeholder="Ketik genre lalu Enter..."
-                  className="flex-1 bg-[#12151b] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-400/70"
+                  className="flex-1 bg-[#12151b] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#B99762]"
                 />
                 <button
                   onClick={() => {
@@ -402,7 +402,7 @@ export default function ManualNovelPage() {
             <button
               onClick={handleSave}
               disabled={loading}
-              className="flex-1 flex justify-center items-center gap-2 px-6 py-3 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-slate-950 font-bold shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all text-sm cursor-pointer"
+              className="flex-1 flex justify-center items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-black font-bold shadow-lg shadow-[#B99762]/20 transition-all text-sm cursor-pointer"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               <span>{loading ? "Menyimpan ke Database..." : "Simpan Novel"}</span>

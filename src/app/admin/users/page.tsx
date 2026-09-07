@@ -253,7 +253,7 @@ export default function UsersPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2.5">
-            <UsersIcon className="w-6 h-6 text-amber-400" />
+            <UsersIcon className="w-6 h-6 text-[#D4A843]" />
             <span>Kelola Pengguna</span>
           </h1>
           <p className="text-slate-400 text-xs mt-1">
@@ -265,7 +265,7 @@ export default function UsersPage() {
           disabled={loading}
           className="px-3.5 py-2 bg-[#12151b] hover:bg-white/5 border border-white/10 rounded-lg text-xs font-medium text-slate-300 flex items-center gap-2 cursor-pointer transition-colors"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-[#D4A843] ${loading ? "animate-spin" : ""}`} />
           <span>Segarkan</span>
         </button>
       </div>
@@ -273,7 +273,7 @@ export default function UsersPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-[#12151b] border border-white/5 rounded-xl p-4 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#B99762]/10 border border-[#B99762]/30 flex items-center justify-center text-[#D4A843] shrink-0">
             <UsersIcon size={20} />
           </div>
           <div>
@@ -314,8 +314,8 @@ export default function UsersPage() {
       </div>
 
       {filterActive && (
-        <div className="bg-[#12151b] border border-amber-400/20 rounded-xl p-3 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2 text-amber-300 font-medium">
+        <div className="bg-[#12151b] border border-[#B99762]/30 rounded-xl p-3 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2 text-[#e6ca91] font-medium">
             <Search size={14} />
             <span>Hasil filter: <strong>{total}</strong> dari <strong>{grandTotal}</strong> total pengguna</span>
           </div>
@@ -345,14 +345,14 @@ export default function UsersPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && search()}
-              className="w-full bg-[#0a0c10] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all"
+              className="w-full bg-[#0a0c10] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all"
             />
           </div>
 
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all cursor-pointer"
+            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-[#B99762] focus:outline-none transition-all cursor-pointer"
           >
             <option value="ALL">Semua Platform</option>
             <option value="WEB">🌐 Web Browser</option>
@@ -362,7 +362,7 @@ export default function UsersPage() {
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all cursor-pointer"
+            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-[#B99762] focus:outline-none transition-all cursor-pointer"
           >
             <option value="ALL">Semua Role</option>
             <option value="USER">User Biasa</option>
@@ -372,7 +372,7 @@ export default function UsersPage() {
           <select
             value={frozen}
             onChange={(e) => setFrozen(e.target.value)}
-            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all cursor-pointer"
+            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-[#B99762] focus:outline-none transition-all cursor-pointer"
           >
             <option value="ALL">Semua Status Beku</option>
             <option value="false">Tidak Dibekukan</option>
@@ -382,7 +382,7 @@ export default function UsersPage() {
           <select
             value={banned}
             onChange={(e) => setBanned(e.target.value)}
-            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all cursor-pointer"
+            className="bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-[#B99762] focus:outline-none transition-all cursor-pointer"
           >
             <option value="ALL">Semua Status Ban</option>
             <option value="false">Aktif</option>
@@ -391,7 +391,7 @@ export default function UsersPage() {
 
           <button
             onClick={search}
-            className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold rounded-lg text-xs cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)]"
+            className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black font-bold rounded-lg text-xs cursor-pointer transition-all shadow-lg shadow-[#B99762]/20"
           >
             Cari
           </button>
@@ -400,9 +400,9 @@ export default function UsersPage() {
 
       {/* Bulk Action Toolbar */}
       {selected.size > 0 && (
-        <div className="bg-[#12151b] border border-amber-400/30 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 animate-in fade-in">
+        <div className="bg-[#12151b] border border-[#B99762]/30 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 animate-in fade-in">
           <div className="text-xs font-semibold text-slate-200 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="w-2 h-2 rounded-full bg-[#B99762]" />
             <span>{selected.size} pengguna dipilih</span>
           </div>
 
@@ -410,7 +410,7 @@ export default function UsersPage() {
             <button
               disabled={busy}
               onClick={() => setVipTarget("bulk")}
-              className="px-3 py-1.5 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-[#B99762]/10 hover:bg-[#B99762]/20 text-[#e6ca91] border border-[#B99762]/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Crown size={13} />
               <span>Jadikan VIP</span>
@@ -468,7 +468,7 @@ export default function UsersPage() {
       <div className="bg-[#12151b] border border-white/5 rounded-xl overflow-hidden">
         {loading ? (
           <div className="py-16 text-center space-y-3">
-            <RefreshCw className="w-6 h-6 text-amber-400 animate-spin mx-auto" />
+            <RefreshCw className="w-6 h-6 text-[#D4A843] animate-spin mx-auto" />
             <p className="text-xs text-slate-400">Memuat data pengguna...</p>
           </div>
         ) : error ? (
@@ -490,7 +490,7 @@ export default function UsersPage() {
                       type="checkbox"
                       checked={rows.length > 0 && selected.size === rows.length}
                       onChange={toggleSelectAll}
-                      className="accent-amber-400 rounded cursor-pointer"
+                      className="accent-[#B99762] rounded cursor-pointer"
                     />
                   </th>
                   <th className="py-3 px-3 font-semibold w-12">No</th>
@@ -512,7 +512,7 @@ export default function UsersPage() {
                           type="checkbox"
                           checked={selected.has(u.id)}
                           onChange={() => toggleSelect(u.id)}
-                          className="accent-amber-400 rounded cursor-pointer"
+                          className="accent-[#B99762] rounded cursor-pointer"
                         />
                       </td>
                       <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">
@@ -549,11 +549,11 @@ export default function UsersPage() {
                       <td className="py-2.5 px-4">
                         <div className="flex flex-col gap-1 items-start">
                           {vip === "active" ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 inline-flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B99762]/20 text-[#e6ca91] border border-[#B99762]/35 inline-flex items-center gap-1">
                               <Crown size={10} /> VIP
                             </span>
                           ) : vip === "expired" ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400/80 border border-amber-500/20">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#B99762]/5 text-[#e6ca91]/60 border border-[#B99762]/15">
                               VIP Kedaluwarsa
                             </span>
                           ) : (
@@ -594,8 +594,8 @@ export default function UsersPage() {
                             onClick={() => (u.role === "VIP" ? revokeVip(u) : setVipTarget(u))}
                             className={`p-1.5 rounded transition-colors cursor-pointer ${
                               vip === "active"
-                                ? "bg-amber-400/20 text-amber-300 hover:bg-amber-400/30"
-                                : "bg-[#0a0c10] hover:bg-white/10 text-slate-400 hover:text-amber-400"
+                                ? "bg-[#B99762]/20 text-[#e6ca91] hover:bg-[#B99762]/30"
+                                : "bg-[#0a0c10] hover:bg-white/10 text-slate-400 hover:text-[#D4A843]"
                             }`}
                             title={u.role === "VIP" ? "Cabut VIP" : "Jadikan VIP"}
                           >
@@ -619,7 +619,7 @@ export default function UsersPage() {
                             className={`p-1.5 rounded transition-colors cursor-pointer ${
                               u.banned
                                 ? "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
-                                : "bg-[#0a0c10] hover:bg-white/10 text-slate-400 hover:text-amber-400"
+                                : "bg-[#0a0c10] hover:bg-white/10 text-slate-400 hover:text-[#D4A843]"
                             }`}
                             title={u.banned ? "UnBan akun" : "Ban akun"}
                           >
@@ -736,9 +736,9 @@ export default function UsersPage() {
       {/* Modal Grant VIP */}
       {vipTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#12151b] border border-amber-400/40 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+          <div className="bg-[#12151b] border border-[#B99762]/40 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <div className="flex items-center gap-2 text-amber-400">
+              <div className="flex items-center gap-2 text-[#D4A843]">
                 <Crown className="w-5 h-5" />
                 <h3 className="text-sm font-bold text-slate-100">Berikan Status VIP</h3>
               </div>
@@ -760,7 +760,7 @@ export default function UsersPage() {
                 min={1}
                 value={vipDays}
                 onChange={(e) => setVipDays(Number(e.target.value))}
-                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all font-mono"
+                className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all font-mono"
                 autoFocus
               />
             </div>
@@ -775,7 +775,7 @@ export default function UsersPage() {
               <button
                 onClick={submitVip}
                 disabled={busy}
-                className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 text-xs font-bold rounded-lg cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)] disabled:opacity-50"
+                className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black text-xs font-bold rounded-lg cursor-pointer transition-all shadow-lg shadow-[#B99762]/20 disabled:opacity-50"
               >
                 {busy ? "Memproses..." : "Aktifkan VIP"}
               </button>

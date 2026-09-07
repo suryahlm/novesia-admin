@@ -129,10 +129,10 @@ export default function NotificationsPage() {
 
       {/* Active Notification Preview Card */}
       {activeNotif && (
-        <div className="rounded-xl p-4 bg-amber-400/10 border border-amber-400/25 space-y-2">
+        <div className="rounded-xl p-4 bg-[#B99762]/10 border border-[#B99762]/30 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-300 uppercase flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-amber-400 rounded-full animate-ping" />
+            <span className="text-xs font-bold text-[#e6ca91] uppercase flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-[#B99762] rounded-full animate-ping" />
               Notifikasi Aktif Saat Ini
             </span>
             <button
@@ -154,7 +154,7 @@ export default function NotificationsPage() {
             <span
               className={`px-1.5 py-0.2 rounded font-bold uppercase ${
                 activeNotif.type === "info"
-                  ? "bg-amber-400/20 text-amber-300"
+                  ? "bg-[#B99762]/20 text-[#e6ca91]"
                   : activeNotif.type === "warning"
                   ? "bg-amber-500/20 text-amber-300"
                   : "bg-blue-500/20 text-blue-300"
@@ -188,7 +188,7 @@ export default function NotificationsPage() {
       <div className="bg-[#12151b] border border-white/5 rounded-xl p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
           <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-            <Radio className="w-4 h-4 text-amber-400" />
+            <Radio className="w-4 h-4 text-[#D4A843]" />
             <span>Buat Broadcast Baru</span>
           </h2>
 
@@ -199,7 +199,7 @@ export default function NotificationsPage() {
               onClick={() => setTarget("app")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                 target === "app"
-                  ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold shadow-[0_2px_10px_rgba(251,191,36,0.3)]"
+                  ? "bg-gradient-to-r from-[#B99762] to-[#8C6D3B] text-black font-bold shadow-lg shadow-[#B99762]/20"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
               }`}
             >
@@ -212,7 +212,7 @@ export default function NotificationsPage() {
               onClick={() => setTarget("web")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                 target === "web"
-                  ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold shadow-[0_2px_10px_rgba(251,191,36,0.3)]"
+                  ? "bg-gradient-to-r from-[#B99762] to-[#8C6D3B] text-black font-bold shadow-lg shadow-[#B99762]/20"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
               }`}
             >
@@ -225,7 +225,7 @@ export default function NotificationsPage() {
               onClick={() => setTarget("all")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                 target === "all"
-                  ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold shadow-[0_2px_10px_rgba(251,191,36,0.3)]"
+                  ? "bg-gradient-to-r from-[#B99762] to-[#8C6D3B] text-black font-bold shadow-lg shadow-[#B99762]/20"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
               }`}
             >
@@ -244,7 +244,7 @@ export default function NotificationsPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Contoh: Jadwal Maintenance Server Tengah Malam"
-            className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs sm:text-sm text-white focus:border-amber-400/70 focus:outline-none transition-all"
+            className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs sm:text-sm text-white focus:border-[#B99762] focus:outline-none transition-all"
           />
         </div>
 
@@ -257,7 +257,7 @@ export default function NotificationsPage() {
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Tulis pesan lengkap yang akan dibaca oleh seluruh pembaca..."
             rows={3}
-            className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs sm:text-sm text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all resize-y leading-relaxed"
+            className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs sm:text-sm text-slate-200 focus:border-[#B99762] focus:outline-none transition-all resize-y leading-relaxed"
           />
         </div>
 
@@ -268,7 +268,7 @@ export default function NotificationsPage() {
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-amber-400/70 focus:outline-none transition-all cursor-pointer"
+            className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-[#B99762] focus:outline-none transition-all cursor-pointer"
           >
             {TYPES.map((t) => (
               <option key={t.value} value={t.value} className="bg-[#0a0c10]">
@@ -281,7 +281,7 @@ export default function NotificationsPage() {
         <button
           onClick={handleSend}
           disabled={sending || !title.trim() || !message.trim()}
-          className="px-5 py-2.5 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 rounded-lg text-xs font-bold shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-40"
+          className="px-5 py-2.5 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black rounded-lg text-xs font-bold shadow-lg shadow-[#B99762]/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-40"
         >
           <Send className="w-4 h-4" />
           <span>{sending ? "Mengirim Broadcast..." : "Kirim Notifikasi"}</span>
@@ -348,7 +348,7 @@ export default function NotificationsPage() {
                         {n.is_active ? (
                           <button
                             onClick={() => handleToggle(n.id, false)}
-                            className="p-1.5 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 rounded transition-colors cursor-pointer"
+                            className="p-1.5 bg-[#B99762]/10 text-[#e6ca91] hover:bg-[#B99762]/20 rounded transition-colors cursor-pointer"
                             title="Nonaktifkan"
                           >
                             <PowerOff className="w-3.5 h-3.5" />

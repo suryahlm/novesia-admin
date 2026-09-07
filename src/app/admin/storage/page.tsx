@@ -174,11 +174,11 @@ export default function StoragePage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2.5">
-            <Database className="w-6 h-6 text-amber-400" />
+            <Database className="w-6 h-6 text-[#D4A843]" />
             <span>Cloudflare Storage R2</span>
           </h1>
           <p className="text-slate-400 text-xs mt-1">
-            Jelajahi bucket <code className="text-amber-300 font-mono">novesia-assets</code>, periksa file cover/banner, unduh atau hapus berkas secara batch.
+            Jelajahi bucket <code className="text-[#e6ca91] font-mono">novesia-assets</code>, periksa file cover/banner, unduh atau hapus berkas secara batch.
           </p>
         </div>
         <button
@@ -186,7 +186,7 @@ export default function StoragePage() {
           disabled={loading}
           className="px-3.5 py-2 bg-[#12151b] hover:bg-white/5 border border-white/10 rounded-lg text-xs font-medium text-slate-300 flex items-center gap-2 cursor-pointer transition-colors"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-[#D4A843] ${loading ? "animate-spin" : ""}`} />
           <span>Segarkan</span>
         </button>
       </div>
@@ -217,12 +217,12 @@ export default function StoragePage() {
               value={inputPrefix}
               onChange={(e) => setInputPrefix(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleApplyPrefix()}
-              className="w-full bg-[#0a0c10] border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all font-mono"
+              className="w-full bg-[#0a0c10] border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all font-mono"
             />
           </div>
           <button
             onClick={handleApplyPrefix}
-            className="px-4 py-1.5 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold rounded-lg text-xs cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)]"
+            className="px-4 py-1.5 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black font-bold rounded-lg text-xs cursor-pointer transition-all shadow-lg shadow-[#B99762]/20"
           >
             Buka
           </button>
@@ -231,7 +231,7 @@ export default function StoragePage() {
         {prefix && (
           <div className="text-xs text-slate-400 flex items-center gap-1.5 pt-1">
             <span>Path aktif:</span>
-            <span className="px-2 py-0.5 rounded bg-amber-400/10 text-amber-300 font-mono text-[11px] border border-amber-400/20">
+            <span className="px-2 py-0.5 rounded bg-[#B99762]/15 text-[#e6ca91] font-mono text-[11px] border border-[#B99762]/30">
               {prefix}
             </span>
           </div>
@@ -240,9 +240,9 @@ export default function StoragePage() {
 
       {/* Selected Action Bar */}
       {checked.size > 0 && (
-        <div className="bg-[#12151b] border border-amber-400/30 rounded-xl p-3.5 flex items-center justify-between gap-3 animate-in fade-in">
+        <div className="bg-[#12151b] border border-[#B99762]/30 rounded-xl p-3.5 flex items-center justify-between gap-3 animate-in fade-in">
           <div className="text-xs font-semibold text-slate-200 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="w-2 h-2 rounded-full bg-[#B99762]" />
             <span>{checked.size} berkas dipilih</span>
           </div>
           <button
@@ -263,7 +263,7 @@ export default function StoragePage() {
         </div>
       ) : loading ? (
         <div className="bg-[#12151b] border border-white/5 rounded-xl p-12 text-center text-slate-400 space-y-3">
-          <RefreshCw className="w-6 h-6 text-amber-400 animate-spin mx-auto" />
+          <RefreshCw className="w-6 h-6 text-[#D4A843] animate-spin mx-auto" />
           <p className="text-xs">Memuat berkas dari Cloudflare R2...</p>
         </div>
       ) : !data ? null : (
@@ -272,7 +272,7 @@ export default function StoragePage() {
           {data.folders.length > 0 && (
             <div className="bg-[#12151b] border border-white/5 rounded-xl p-4 space-y-3">
               <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Folder size={14} className="text-amber-400" />
+                <Folder size={14} className="text-[#D4A843]" />
                 <span>Folder Direktori ({data.folders.length})</span>
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
@@ -280,9 +280,9 @@ export default function StoragePage() {
                   <button
                     key={f}
                     onClick={() => enterFolder(f)}
-                    className="flex items-center gap-2 text-left px-3 py-2.5 bg-[#0a0c10] border border-white/5 rounded-lg hover:border-amber-400/40 hover:bg-white/5 text-xs text-slate-200 truncate transition-all cursor-pointer group"
+                    className="flex items-center gap-2 text-left px-3 py-2.5 bg-[#0a0c10] border border-white/5 rounded-lg hover:border-[#B99762]/40 hover:bg-white/5 text-xs text-slate-200 truncate transition-all cursor-pointer group"
                   >
-                    <Folder size={16} className="text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+                    <Folder size={16} className="text-[#D4A843] shrink-0 group-hover:scale-110 transition-transform" />
                     <span className="truncate font-mono">{f.replace(prefix, "")}</span>
                   </button>
                 ))}
@@ -299,7 +299,7 @@ export default function StoragePage() {
                 </h2>
                 <button
                   onClick={toggleAll}
-                  className="text-xs font-medium text-amber-400 hover:underline cursor-pointer flex items-center gap-1.5"
+                  className="text-xs font-medium text-[#D4A843] hover:underline cursor-pointer flex items-center gap-1.5"
                 >
                   {checked.size === data.objects.length ? (
                     <>
@@ -334,13 +334,13 @@ export default function StoragePage() {
                             type="checkbox"
                             checked={checked.has(o.key)}
                             onChange={() => toggle(o.key)}
-                            className="accent-amber-400 rounded cursor-pointer"
+                            className="accent-[#B99762] rounded cursor-pointer"
                           />
                         </td>
                         <td className="py-2.5 px-4 font-mono text-slate-200 max-w-md break-all">
                           <span className="inline-flex items-center gap-2">
                             {isImage(o.key) ? (
-                              <ImageIcon size={14} className="text-amber-400 shrink-0" />
+                              <ImageIcon size={14} className="text-[#D4A843] shrink-0" />
                             ) : (
                               <FileText size={14} className="text-slate-400 shrink-0" />
                             )}
@@ -376,7 +376,7 @@ export default function StoragePage() {
                 <div className="p-4 text-center border-t border-white/5">
                   <button
                     onClick={() => load(prefix, data.nextToken || "")}
-                    className="px-4 py-2 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 text-xs font-bold rounded-lg border border-amber-400/20 cursor-pointer transition-colors"
+                    className="px-4 py-2 bg-[#B99762]/10 hover:bg-[#B99762]/20 text-[#e6ca91] text-xs font-bold rounded-lg border border-[#B99762]/30 cursor-pointer transition-colors"
                   >
                     Muat lebih banyak berkas →
                   </button>
@@ -411,7 +411,7 @@ export default function StoragePage() {
 
             {previewLoading ? (
               <div className="py-12 text-center">
-                <RefreshCw className="w-6 h-6 text-amber-400 animate-spin mx-auto" />
+                <RefreshCw className="w-6 h-6 text-[#D4A843] animate-spin mx-auto" />
                 <p className="text-xs text-slate-400 mt-2">Membuat URL pratinjau...</p>
               </div>
             ) : previewUrl ? (
@@ -433,7 +433,7 @@ export default function StoragePage() {
                     href={previewUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs font-semibold text-amber-400 hover:underline inline-flex items-center gap-1.5"
+                    className="text-xs font-semibold text-[#D4A843] hover:underline inline-flex items-center gap-1.5"
                   >
                     <span>Buka langsung di tab baru</span>
                     <ExternalLink size={12} />

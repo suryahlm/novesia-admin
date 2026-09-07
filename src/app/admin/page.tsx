@@ -128,8 +128,8 @@ function StatCard({
 }) {
   return (
     <div className="bg-[#12151b] border border-white/5 rounded-xl p-4 flex items-center gap-3.5 hover:border-white/10 transition-colors">
-      <div className="shrink-0 rounded-lg bg-amber-400/10 border border-amber-400/20 w-10 h-10 flex items-center justify-center">
-        <Icon size={18} className="text-amber-400" />
+      <div className="shrink-0 rounded-lg bg-[#B99762]/10 border border-[#B99762]/30 w-10 h-10 flex items-center justify-center">
+        <Icon size={18} className="text-[#D4A843]" />
       </div>
       <div className="min-w-0">
         <span className="text-xs sm:text-sm text-slate-400 font-medium">{label}</span>
@@ -248,7 +248,7 @@ export default async function DashboardPage() {
                   href={`/admin/novels/${novel.nu_slug}`}
                   className="flex justify-between items-center text-sm py-2.5 px-3 rounded-lg hover:bg-white/5 transition-colors group"
                 >
-                  <span className="text-slate-200 group-hover:text-amber-300 transition-colors font-medium truncate max-w-[65%]">
+                  <span className="text-slate-200 group-hover:text-[#D4A843] transition-colors font-medium truncate max-w-[65%]">
                     {novel.title}
                   </span>
                   <span className="flex items-center gap-1.5 text-slate-400 text-xs shrink-0 font-mono">
@@ -262,7 +262,7 @@ export default async function DashboardPage() {
                     })}
                     <ChevronRight
                       size={14}
-                      className="text-slate-600 group-hover:text-amber-400 transition-colors ml-1"
+                      className="text-slate-600 group-hover:text-[#D4A843] transition-colors ml-1"
                     />
                   </span>
                 </Link>

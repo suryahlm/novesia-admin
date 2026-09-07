@@ -74,10 +74,10 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         {/* Logo & Header */}
         <div className="text-center mb-8 space-y-2">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 mb-3 shadow-[0_0_30px_rgba(251,191,36,0.15)]">
+          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-[#B99762]/10 border border-[#B99762]/30 text-[#D4A843] mb-3 shadow-[0_0_30px_rgba(185,151,98,0.2)]">
             <Sparkles size={28} className="animate-pulse" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-[#f3e7c4] via-[#D4A843] to-[#8C6D3B] bg-clip-text text-transparent">
             Novesia Admin Studio
           </h1>
           <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
@@ -89,7 +89,7 @@ export default function AdminLoginPage() {
         <div className="bg-[#0e1117]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/80 space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-white/5 text-xs text-slate-400">
             <span className="font-semibold text-slate-300">Akses Terkunci</span>
-            <div className="flex items-center gap-1.5 text-amber-400/90 font-medium">
+            <div className="flex items-center gap-1.5 text-[#D4A843] font-medium">
               <ShieldCheck size={14} />
               <span>Verifikasi Sandi</span>
             </div>
@@ -119,7 +119,7 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan kata sandi..."
-                  className="w-full bg-[#07090e] border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder:text-slate-600 focus:border-amber-400/70 focus:outline-none transition-all shadow-inner"
+                  className="w-full bg-[#07090e] border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder:text-slate-600 focus:border-[#B99762] focus:outline-none transition-all shadow-inner"
                 />
                 <button
                   type="button"
@@ -134,7 +134,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:brightness-110 active:scale-[0.99] text-slate-950 font-bold rounded-xl text-sm transition-all shadow-[0_4px_20px_-4px_rgba(245,158,11,0.4)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full py-3 px-4 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 active:scale-[0.99] text-black font-bold rounded-xl text-sm transition-all shadow-lg shadow-[#B99762]/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {loading ? (
                 <>

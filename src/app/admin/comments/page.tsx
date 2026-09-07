@@ -114,7 +114,7 @@ export default function CommentsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2.5">
-            <MessageSquare className="w-6 h-6 text-amber-400" />
+            <MessageSquare className="w-6 h-6 text-[#D4A843]" />
             <span>Moderasi Komentar</span>
           </h1>
           <p className="text-slate-400 text-xs mt-1">
@@ -126,7 +126,7 @@ export default function CommentsPage() {
           disabled={loading}
           className="px-3.5 py-2 bg-[#12151b] hover:bg-white/5 border border-white/10 rounded-lg text-xs font-medium text-slate-300 flex items-center gap-2 cursor-pointer transition-colors"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-[#D4A843] ${loading ? "animate-spin" : ""}`} />
           <span>Segarkan</span>
         </button>
       </div>
@@ -142,12 +142,12 @@ export default function CommentsPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && search()}
-              className="w-full bg-[#0a0c10] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all"
+              className="w-full bg-[#0a0c10] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all"
             />
           </div>
           <button
             onClick={search}
-            className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold rounded-lg text-xs cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)]"
+            className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black font-bold rounded-lg text-xs cursor-pointer transition-all shadow-lg shadow-[#B99762]/20"
           >
             Cari
           </button>
@@ -158,7 +158,7 @@ export default function CommentsPage() {
       <div className="bg-[#12151b] border border-white/5 rounded-xl overflow-hidden">
         {loading ? (
           <div className="py-16 text-center space-y-3">
-            <RefreshCw className="w-6 h-6 text-amber-400 animate-spin mx-auto" />
+            <RefreshCw className="w-6 h-6 text-[#D4A843] animate-spin mx-auto" />
             <p className="text-xs text-slate-400">Memuat komentar...</p>
           </div>
         ) : error ? (
@@ -205,7 +205,7 @@ export default function CommentsPage() {
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-semibold inline-flex items-center gap-1 ${
                           c.target === "NOVEL"
-                            ? "bg-amber-400/10 text-amber-300 border border-amber-400/20"
+                            ? "bg-[#B99762]/15 text-[#e6ca91] border border-[#B99762]/30"
                             : "bg-blue-500/10 text-blue-300 border border-blue-500/20"
                         }`}
                       >

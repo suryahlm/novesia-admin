@@ -436,7 +436,7 @@ export default function EditNovelPage() {
             <button
               onClick={handleBulkGenerate}
               disabled={bulkGenerating || bulkDeleting || bulkTranslating}
-              className="px-3.5 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 rounded-lg text-xs font-semibold shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black rounded-lg text-xs font-semibold shadow-lg shadow-[#B99762]/20 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               {bulkGenerating ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -475,14 +475,14 @@ export default function EditNovelPage() {
               onClick={() => setActiveSource(src.id)}
               className={`p-2.5 rounded-xl border text-left transition-colors cursor-pointer ${
                 isActive
-                  ? "bg-amber-400/15 border-amber-400/30 text-amber-300"
+                  ? "bg-[#B99762]/15 border-[#B99762]/30 text-[#e6ca91]"
                   : "bg-[#12151b] border-white/5 hover:border-white/10 text-slate-300"
               }`}
             >
               <div className="flex items-center gap-2">
                 <span className="text-base">{src.icon}</span>
                 <div className="min-w-0 flex-1">
-                  <p className={`text-xs font-semibold truncate ${isActive ? "text-amber-200" : "text-slate-200"}`}>
+                  <p className={`text-xs font-semibold truncate ${isActive ? "text-[#f3e7c4]" : "text-slate-200"}`}>
                     {src.label}
                   </p>
                   <p className="text-[10px] text-slate-400 font-mono">{count} novel</p>
@@ -502,7 +502,7 @@ export default function EditNovelPage() {
             placeholder="Cari novel berdasarkan judul, slug, atau author..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-9 py-2 bg-[#0a0c10] border border-white/10 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400/70 transition-all"
+            className="w-full pl-9 pr-9 py-2 bg-[#0a0c10] border border-white/10 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#B99762] transition-all"
           />
           {search && (
             <button
@@ -531,11 +531,11 @@ export default function EditNovelPage() {
             onClick={selectAll}
             className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
               allSelected
-                ? "bg-amber-400/20 text-amber-300 border border-amber-400/30"
+                ? "bg-[#B99762]/20 text-[#e6ca91] border border-[#B99762]/30"
                 : "bg-[#0a0c10] text-slate-300 border border-white/10 hover:bg-white/5"
             }`}
           >
-            {allSelected ? <CheckSquare className="w-4 h-4 text-amber-400" /> : <Square className="w-4 h-4" />}
+            {allSelected ? <CheckSquare className="w-4 h-4 text-[#D4A843]" /> : <Square className="w-4 h-4" />}
             <span>{allSelected ? "Batal Pilih" : "Pilih Semua"}</span>
           </button>
         </div>
@@ -594,7 +594,7 @@ export default function EditNovelPage() {
                     <Loader2 className="w-3 h-3 animate-spin text-cyan-400 shrink-0" />
                     <span className="truncate">
                       Sinopsis — <span className="text-cyan-300 font-medium">{translateProgress.currentNovelTitle}</span>
-                      {translateProgress.attempt > 1 && <span className="text-amber-400 ml-1">(Retry {translateProgress.attempt})</span>}
+                      {translateProgress.attempt > 1 && <span className="text-[#D4A843] ml-1">(Retry {translateProgress.attempt})</span>}
                     </span>
                   </>
                 ) : translateProgress.phase === "chapter" && translateProgress.currentChapterNumber > 0 ? (
@@ -603,7 +603,7 @@ export default function EditNovelPage() {
                     <span className="truncate">
                       Ch.{translateProgress.currentChapterNumber} ({translateProgress.currentChapterIndex}/{translateProgress.currentChapterTotal})
                       — <span className="text-cyan-300 font-medium">{translateProgress.currentNovelTitle}</span>
-                      {translateProgress.attempt > 1 && <span className="text-amber-400 ml-1">(Retry {translateProgress.attempt})</span>}
+                      {translateProgress.attempt > 1 && <span className="text-[#D4A843] ml-1">(Retry {translateProgress.attempt})</span>}
                     </span>
                   </>
                 ) : (
@@ -632,7 +632,7 @@ export default function EditNovelPage() {
                   ) : entry.failed === 0 ? (
                     <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
                   ) : (
-                    <XCircle className="w-3 h-3 text-amber-400 shrink-0" />
+                    <XCircle className="w-3 h-3 text-[#D4A843] shrink-0" />
                   )}
                   <span className="text-slate-300 truncate flex-1">{entry.novelTitle}</span>
                   <span className="text-slate-500 font-mono text-[10px] shrink-0">
@@ -650,7 +650,7 @@ export default function EditNovelPage() {
       <div className="bg-[#12151b] border border-white/5 rounded-xl overflow-hidden w-full min-w-0">
         {loading ? (
           <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-400">
-            <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#D4A843]" />
             <span className="text-xs">Memuat koleksi novel...</span>
           </div>
         ) : filtered.length === 0 ? (
@@ -671,7 +671,7 @@ export default function EditNovelPage() {
                   key={novel.id}
                   className={`flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-4 py-3 transition-colors min-w-0 ${
                     isSelected
-                      ? "bg-amber-400/5 border-l-2 border-l-amber-400"
+                      ? "bg-[#B99762]/5 border-l-2 border-l-[#B99762]"
                       : "hover:bg-white/5 border-l-2 border-l-transparent"
                   }`}
                 >
@@ -680,7 +680,7 @@ export default function EditNovelPage() {
                     <button
                       onClick={() => toggleSelect(novel.id)}
                       className={`shrink-0 transition-colors cursor-pointer p-1 ${
-                        isSelected ? "text-amber-400" : "text-slate-600 hover:text-slate-400"
+                        isSelected ? "text-[#D4A843]" : "text-slate-600 hover:text-slate-400"
                       }`}
                     >
                       {isSelected ? (
@@ -724,7 +724,7 @@ export default function EditNovelPage() {
                             novel.status === "active"
                               ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/20"
                               : novel.status === "draft"
-                              ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
+                              ? "bg-[#B99762]/15 text-[#e6ca91] border border-[#B99762]/25"
                               : "bg-slate-500/15 text-slate-400 border border-slate-500/20"
                           }`}
                         >
@@ -779,7 +779,7 @@ export default function EditNovelPage() {
                     <div className="flex items-center gap-1.5">
                       <Link
                         href={`/admin/novels/${novel.nu_slug}`}
-                        className="p-1.5 rounded-lg bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 border border-amber-400/20 transition-all cursor-pointer"
+                        className="p-1.5 rounded-lg bg-[#B99762]/10 text-[#e6ca91] hover:bg-[#B99762]/20 border border-[#B99762]/25 transition-all cursor-pointer"
                         title="Edit Studio Novel"
                       >
                         <Edit3 className="w-3.5 h-3.5" />

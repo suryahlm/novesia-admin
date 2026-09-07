@@ -58,7 +58,7 @@ export default async function NovelsListPage() {
         <div className="flex gap-3">
           <Link
             href="/admin/novels/new"
-            className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 text-sm font-semibold rounded-lg shadow-[0_2px_12px_-2px_rgba(221,168,58,0.45)] transition-all"
+            className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black text-sm font-bold rounded-lg shadow-lg shadow-[#B99762]/20 transition-all"
           >
             + Tambah Novel
           </Link>
@@ -73,13 +73,13 @@ export default async function NovelsListPage() {
             <Link
               key={src.id}
               href={`/admin/novels/source/${src.id}`}
-              className="bg-[#12151b] border border-white/5 hover:border-amber-400/30 rounded-xl p-3 flex items-center gap-3 transition-colors group"
+              className="bg-[#12151b] border border-white/5 hover:border-[#B99762]/30 rounded-xl p-3 flex items-center gap-3 transition-colors group"
             >
-              <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-base shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#B99762]/10 border border-[#B99762]/20 flex items-center justify-center text-base shrink-0">
                 {src.icon}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-200 group-hover:text-amber-300 transition-colors truncate">
+                <p className="text-xs font-semibold text-slate-200 group-hover:text-[#D4A843] transition-colors truncate">
                   {src.label}
                 </p>
                 <p className="text-[10px] text-slate-400 font-mono mt-0.5">{count} novel</p>

@@ -433,10 +433,10 @@ export default function BannersPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2.5">
-              <Rocket className="w-6 h-6 text-amber-400" />
+              <Rocket className="w-6 h-6 text-[#D4A843]" />
               <span>Banner Beranda</span>
             </h1>
-            <span className="text-[10px] uppercase font-extrabold tracking-wider bg-sky-400/10 text-sky-400 border border-sky-400/20 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] uppercase font-extrabold tracking-wider bg-[#B99762]/15 text-[#e6ca91] border border-[#B99762]/30 px-2.5 py-0.5 rounded-full">
               Khusus App
             </span>
           </div>
@@ -449,14 +449,14 @@ export default function BannersPage() {
           disabled={loading}
           className="px-3.5 py-2 bg-[#12151b] hover:bg-white/5 border border-white/10 rounded-lg text-xs font-medium text-slate-300 flex items-center gap-2 cursor-pointer transition-colors"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-[#D4A843] ${loading ? "animate-spin" : ""}`} />
           <span>Segarkan</span>
         </button>
       </div>
 
       {/* Information Banner */}
-      <div className="bg-[#12151b] border border-amber-400/20 rounded-xl p-4 flex items-start gap-3.5">
-        <div className="w-9 h-9 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+      <div className="bg-[#12151b] border border-[#B99762]/20 rounded-xl p-4 flex items-start gap-3.5">
+        <div className="w-9 h-9 rounded-xl bg-[#B99762]/10 border border-[#B99762]/20 flex items-center justify-center text-[#D4A843] shrink-0 mt-0.5">
           <Rocket size={18} />
         </div>
         <div className="text-xs text-slate-300 space-y-1 leading-relaxed">
@@ -465,7 +465,7 @@ export default function BannersPage() {
           </p>
           <p className="text-slate-400">
             Rekomendasi gambar creative:{" "}
-            <strong className="text-amber-300 font-mono">1200 × 480 px</strong> (rasio 2.5:1), format JPG/PNG/WebP, maksimal 5MB. Slide kosong atau nonaktif akan otomatis dilewati oleh aplikasi.
+            <strong className="text-[#e6ca91] font-mono">1200 × 480 px</strong> (rasio 2.5:1), format JPG/PNG/WebP, maksimal 5MB. Slide kosong atau nonaktif akan otomatis dilewati oleh aplikasi.
           </p>
         </div>
       </div>
@@ -473,7 +473,7 @@ export default function BannersPage() {
       {/* 3 Slots Grid */}
       {loading ? (
         <div className="bg-[#12151b] border border-white/5 rounded-xl p-16 text-center text-slate-400 space-y-3">
-          <RefreshCw className="w-6 h-6 text-amber-400 animate-spin mx-auto" />
+          <RefreshCw className="w-6 h-6 text-[#D4A843] animate-spin mx-auto" />
           <p className="text-xs">Memuat banner beranda...</p>
         </div>
       ) : error ? (
@@ -540,7 +540,7 @@ export default function BannersPage() {
                             href={a.targetUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[11px] text-amber-400 hover:underline inline-flex items-center gap-1 truncate max-w-full"
+                            className="text-[11px] text-[#D4A843] hover:underline inline-flex items-center gap-1 truncate max-w-full"
                           >
                             <ExternalLink size={10} className="shrink-0" />
                             <span className="truncate">{a.targetUrl}</span>
@@ -585,7 +585,7 @@ export default function BannersPage() {
                             onClick={() => toggleActive(a)}
                             className={`p-1.5 rounded border transition-colors cursor-pointer ${
                               a.active
-                                ? "bg-[#0a0c10] border-emerald-500/30 text-emerald-400 hover:bg-amber-950/40 hover:border-amber-500/40 hover:text-amber-300"
+                                ? "bg-[#0a0c10] border-emerald-500/30 text-emerald-400 hover:bg-[#B99762]/20 hover:border-[#B99762]/40 hover:text-[#e6ca91]"
                                 : "bg-[#0a0c10] border-white/10 text-slate-500 hover:bg-emerald-950/40 hover:border-emerald-500/40 hover:text-emerald-400"
                             }`}
                             title={a.active ? "Nonaktifkan sementara (Matikan banner)" : "Aktifkan kembali banner"}
@@ -595,7 +595,7 @@ export default function BannersPage() {
                           <button
                             disabled={busy}
                             onClick={() => openSlot(slot)}
-                            className="p-1.5 bg-[#0a0c10] hover:bg-white/10 text-slate-300 rounded border border-white/5 hover:border-white/10 transition-colors cursor-pointer"
+                            className="p-1.5 bg-[#0a0c10] hover:bg-white/10 text-slate-300 rounded border border-white/5 hover:border-white/20 transition-colors cursor-pointer"
                             title="Edit banner"
                           >
                             <Pencil size={13} />
@@ -614,7 +614,7 @@ export default function BannersPage() {
                   ) : (
                     <button
                       onClick={() => openSlot(slot)}
-                      className="mt-auto w-full py-2.5 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)]"
+                      className="mt-auto w-full py-2.5 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-lg shadow-[#B99762]/20"
                     >
                       <Plus size={14} />
                       <span>Buat Banner Slide {slot}</span>
@@ -635,7 +635,7 @@ export default function BannersPage() {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <Megaphone className="w-5 h-5 text-amber-400" />
+              <Megaphone className="w-5 h-5 text-[#D4A843]" />
               <span>Iklan Sedang Tren (Partner Ad Carousel)</span>
             </h2>
             <span className="text-[10px] uppercase font-extrabold tracking-wider bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 px-2.5 py-0.5 rounded-full">
@@ -658,17 +658,17 @@ export default function BannersPage() {
       </div>
 
       {/* Information Banner Iklan Sedang Tren */}
-      <div className="bg-[#12151b] border border-amber-400/20 rounded-xl p-4 flex items-start gap-3.5 mb-6">
-        <div className="w-9 h-9 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+      <div className="bg-[#12151b] border border-[#B99762]/20 rounded-xl p-4 flex items-start gap-3.5 mb-6">
+        <div className="w-9 h-9 rounded-xl bg-[#B99762]/10 border border-[#B99762]/20 flex items-center justify-center text-[#D4A843] shrink-0 mt-0.5">
           <Megaphone size={18} />
         </div>
         <div className="text-xs text-slate-300 space-y-1.5 leading-relaxed">
           <p className="font-semibold text-slate-100 flex items-center gap-2">
             <span>Panduan Ukuran & Format Iklan Sedang Tren (Slot 7 Carousel)</span>
-            <span className="text-[10px] bg-amber-400/15 text-amber-300 px-2 py-0.5 rounded-full font-mono font-bold">Auto-Slide 3.5 Detik</span>
+            <span className="text-[10px] bg-[#B99762]/15 text-[#e6ca91] px-2 py-0.5 rounded-full font-mono font-bold">Auto-Slide 3.5 Detik</span>
           </p>
           <p className="text-slate-300">
-            • <strong>Ukuran & Rasio Gambar</strong>: Wajib rasio <strong className="text-amber-300 font-mono">1:1 (Persegi / Kotak)</strong>, ukuran rekomendasi <strong className="text-amber-300 font-mono">800 × 800 px</strong> hingga <strong className="text-amber-300 font-mono">1080 × 1080 px</strong> (maksimal 5MB). Format file: <strong className="text-slate-200">JPG, PNG, atau WebP</strong>.
+            • <strong>Ukuran & Rasio Gambar</strong>: Wajib rasio <strong className="text-[#e6ca91] font-mono">1:1 (Persegi / Kotak)</strong>, ukuran rekomendasi <strong className="text-[#e6ca91] font-mono">800 × 800 px</strong> hingga <strong className="text-[#e6ca91] font-mono">1080 × 1080 px</strong> (maksimal 5MB). Format file: <strong className="text-slate-200">JPG, PNG, atau WebP</strong>.
           </p>
           <p className="text-slate-400">
             • <strong>Tampilan</strong>: Khusus tampil di website NOVESIA pada kartu ke-7 baris &quot;Sedang Tren di NOVESIA&quot; (Desktop &amp; Mobile Web, tidak tampil di mobile app). Jika slot kosong atau belum diisi, web otomatis menampilkan visual kemitraan default.
@@ -685,7 +685,7 @@ export default function BannersPage() {
 
       {adLoading ? (
         <div className="p-12 text-center text-xs text-slate-400">
-          <RefreshCw size={20} className="animate-spin mx-auto mb-2 text-amber-400" />
+          <RefreshCw size={20} className="animate-spin mx-auto mb-2 text-[#D4A843]" />
           <span>Memuat data iklan...</span>
         </div>
       ) : (
@@ -701,7 +701,7 @@ export default function BannersPage() {
                 {/* Header Card */}
                 <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-[#0e1015]">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    <span className="w-2 h-2 rounded-full bg-[#B99762]" />
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
                       Slide {slot}
                     </span>
@@ -731,7 +731,7 @@ export default function BannersPage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       {a.badge && (
-                        <div className="absolute top-2 left-2 bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full shadow flex items-center gap-1">
+                        <div className="absolute top-2 left-2 bg-[#B99762] text-black font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full shadow flex items-center gap-1">
                           <Tag size={10} />
                           <span>{a.badge}</span>
                         </div>
@@ -754,7 +754,7 @@ export default function BannersPage() {
                   {a ? (
                     <>
                       <div>
-                        <div className="text-[10px] uppercase tracking-wider text-amber-400/90 font-bold">
+                        <div className="text-[10px] uppercase tracking-wider text-[#D4A843] font-bold">
                           {a.subtitle || "Partner Resmi"}
                         </div>
                         <h4 className="text-sm font-bold text-slate-100 truncate mt-0.5" title={a.title}>
@@ -769,7 +769,7 @@ export default function BannersPage() {
                             href={a.targetUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-amber-400/90 hover:text-amber-300 inline-flex items-center gap-1 truncate max-w-full font-mono text-[11px]"
+                            className="text-[#D4A843] hover:text-[#e6ca91] inline-flex items-center gap-1 truncate max-w-full font-mono text-[11px]"
                             title={a.targetUrl}
                           >
                             <ExternalLink size={12} className="shrink-0" />
@@ -816,7 +816,7 @@ export default function BannersPage() {
                             onClick={() => toggleAdActive(a)}
                             className={`p-1.5 rounded border transition-colors cursor-pointer ${
                               a.active
-                                ? "bg-[#0a0c10] border-emerald-500/30 text-emerald-400 hover:bg-amber-950/40 hover:border-amber-500/40 hover:text-amber-300"
+                                ? "bg-[#0a0c10] border-emerald-500/30 text-emerald-400 hover:bg-[#B99762]/20 hover:border-[#B99762]/40 hover:text-[#e6ca91]"
                                 : "bg-[#0a0c10] border-white/10 text-slate-500 hover:bg-emerald-950/40 hover:border-emerald-500/40 hover:text-emerald-400"
                             }`}
                             title={a.active ? "Nonaktifkan sementara (Matikan iklan)" : "Aktifkan kembali iklan"}
@@ -845,7 +845,7 @@ export default function BannersPage() {
                   ) : (
                     <button
                       onClick={() => openAdSlot(slot)}
-                      className="mt-auto w-full py-2.5 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)]"
+                      className="mt-auto w-full py-2.5 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-lg shadow-[#B99762]/20"
                     >
                       <Plus size={14} />
                       <span>Buat Iklan Slide {slot}</span>
@@ -864,7 +864,7 @@ export default function BannersPage() {
           <div className="bg-[#12151b] border border-white/10 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <Rocket size={16} className="text-amber-400" />
+                <Rocket size={16} className="text-[#D4A843]" />
                 <span>
                   {bySlot[editingSlot] ? `Edit Banner - Slide ${editingSlot}` : `Buat Banner Baru - Slide ${editingSlot}`}
                 </span>
@@ -889,7 +889,7 @@ export default function BannersPage() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full aspect-[2.5/1] rounded-xl border border-dashed border-white/15 bg-[#0a0c10] flex items-center justify-center overflow-hidden hover:border-amber-400/50 transition-colors cursor-pointer relative group"
+                  className="w-full aspect-[2.5/1] rounded-xl border border-dashed border-white/15 bg-[#0a0c10] flex items-center justify-center overflow-hidden hover:border-[#B99762]/60 transition-colors cursor-pointer relative group"
                 >
                   {imagePreview ? (
                     <>
@@ -900,7 +900,7 @@ export default function BannersPage() {
                     </>
                   ) : (
                     <span className="text-slate-400 text-xs inline-flex items-center gap-2">
-                      <ImageIcon size={18} className="text-amber-400" />
+                      <ImageIcon size={18} className="text-[#D4A843]" />
                       <span>Klik untuk memilih file banner</span>
                     </span>
                   )}
@@ -917,8 +917,8 @@ export default function BannersPage() {
                     * Kosongkan jika tidak ingin mengganti gambar banner yang sudah ada.
                   </p>
                 )}
-                <div className="mt-2.5 p-2.5 bg-amber-400/10 border border-amber-400/20 rounded-xl text-[11px] text-amber-200/90 space-y-1">
-                  <p className="font-bold flex items-center gap-1.5 text-amber-300">
+                <div className="mt-2.5 p-2.5 bg-[#B99762]/10 border border-[#B99762]/20 rounded-xl text-[11px] text-[#e6ca91] space-y-1">
+                  <p className="font-bold flex items-center gap-1.5 text-[#D4A843]">
                     <Info size={13} className="shrink-0" />
                     <span>Catatan Ukuran Banner Beranda:</span>
                   </p>
@@ -938,7 +938,7 @@ export default function BannersPage() {
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="Mis. Rilis Novel Populer Q4 / Promo VIP"
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all"
                 />
               </div>
 
@@ -952,7 +952,7 @@ export default function BannersPage() {
                   value={form.targetUrl || ""}
                   onChange={(e) => setForm({ ...form, targetUrl: e.target.value || null })}
                   placeholder="https://... atau /novel/slug-novel"
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all font-mono"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all font-mono"
                 />
               </div>
 
@@ -962,7 +962,7 @@ export default function BannersPage() {
                 <select
                   value={form.active ? "true" : "false"}
                   onChange={(e) => setForm({ ...form, active: e.target.value === "true" })}
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all cursor-pointer"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all cursor-pointer"
                 >
                   <option value="true">Aktif (Tampil di Carousel)</option>
                   <option value="false">Nonaktif (Disembunyikan)</option>
@@ -979,7 +979,7 @@ export default function BannersPage() {
                     type="datetime-local"
                     value={toLocalInputValue(form.startAt)}
                     onChange={(e) => setForm({ ...form, startAt: fromLocalInputValue(e.target.value) })}
-                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all font-mono"
+                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all font-mono"
                   />
                 </div>
                 <div>
@@ -990,7 +990,7 @@ export default function BannersPage() {
                     type="datetime-local"
                     value={toLocalInputValue(form.expiresAt)}
                     onChange={(e) => setForm({ ...form, expiresAt: fromLocalInputValue(e.target.value) })}
-                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all font-mono"
+                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all font-mono"
                   />
                 </div>
               </div>
@@ -1007,7 +1007,7 @@ export default function BannersPage() {
               <button
                 onClick={submit}
                 disabled={busy}
-                className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 text-xs font-bold rounded-lg cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)] disabled:opacity-50"
+                className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black text-xs font-bold rounded-lg cursor-pointer transition-all shadow-lg shadow-[#B99762]/20 disabled:opacity-50"
               >
                 {busy ? "Menyimpan..." : bySlot[editingSlot] ? "Simpan Perubahan" : "Buat Banner"}
               </button>
@@ -1053,7 +1053,7 @@ export default function BannersPage() {
           <div className="bg-[#12151b] border border-white/10 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <Megaphone size={16} className="text-amber-400" />
+                <Megaphone size={16} className="text-[#D4A843]" />
                 <span>
                   {adBySlot[adEditingSlot] ? `Edit Iklan (Khusus Web) - Slide ${adEditingSlot}` : `Buat Iklan Baru (Khusus Web) - Slide ${adEditingSlot}`}
                 </span>
@@ -1078,7 +1078,7 @@ export default function BannersPage() {
                 <button
                   type="button"
                   onClick={() => adFileInputRef.current?.click()}
-                  className="w-full aspect-square max-w-[220px] mx-auto rounded-xl border border-dashed border-white/15 bg-[#0a0c10] flex items-center justify-center overflow-hidden hover:border-amber-400/50 transition-colors cursor-pointer relative group"
+                  className="w-full aspect-square max-w-[220px] mx-auto rounded-xl border border-dashed border-white/15 bg-[#0a0c10] flex items-center justify-center overflow-hidden hover:border-[#B99762]/60 transition-colors cursor-pointer relative group"
                 >
                   {adImagePreview ? (
                     <>
@@ -1089,7 +1089,7 @@ export default function BannersPage() {
                     </>
                   ) : (
                     <span className="text-slate-400 text-xs inline-flex items-center gap-2">
-                      <ImageIcon size={18} className="text-amber-400" />
+                      <ImageIcon size={18} className="text-[#D4A843]" />
                       <span>Klik untuk memilih file creative iklan</span>
                     </span>
                   )}
@@ -1106,8 +1106,8 @@ export default function BannersPage() {
                     * Kosongkan jika tidak ingin mengganti gambar yang sudah ada.
                   </p>
                 )}
-                <div className="mt-2.5 p-2.5 bg-amber-400/10 border border-amber-400/20 rounded-xl text-[11px] text-amber-200/90 space-y-1">
-                  <p className="font-bold flex items-center gap-1.5 text-amber-300">
+                <div className="mt-2.5 p-2.5 bg-[#B99762]/10 border border-[#B99762]/20 rounded-xl text-[11px] text-[#e6ca91] space-y-1">
+                  <p className="font-bold flex items-center gap-1.5 text-[#D4A843]">
                     <Info size={13} className="shrink-0" />
                     <span>Catatan Ukuran Gambar Iklan:</span>
                   </p>
@@ -1127,7 +1127,7 @@ export default function BannersPage() {
                   value={adForm.title}
                   onChange={(e) => setAdForm({ ...adForm, title: e.target.value })}
                   placeholder="Mis. Jasmin Éclat / Promo Spesial Liburan"
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all"
                 />
               </div>
 
@@ -1142,7 +1142,7 @@ export default function BannersPage() {
                     value={adForm.subtitle}
                     onChange={(e) => setAdForm({ ...adForm, subtitle: e.target.value })}
                     placeholder="Mis. Haru Botanicals Official"
-                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all"
+                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all"
                   />
                 </div>
                 <div>
@@ -1154,7 +1154,7 @@ export default function BannersPage() {
                     value={adForm.badge}
                     onChange={(e) => setAdForm({ ...adForm, badge: e.target.value })}
                     placeholder="Mis. Diskon 40% / NOVESIA40"
-                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all"
+                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -1169,7 +1169,7 @@ export default function BannersPage() {
                   value={adForm.targetUrl || ""}
                   onChange={(e) => setAdForm({ ...adForm, targetUrl: e.target.value || null })}
                   placeholder="https://... atau /event/promo-partner"
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all font-mono"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all font-mono"
                 />
               </div>
 
@@ -1179,7 +1179,7 @@ export default function BannersPage() {
                 <select
                   value={adForm.active ? "true" : "false"}
                   onChange={(e) => setAdForm({ ...adForm, active: e.target.value === "true" })}
-                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all cursor-pointer"
+                  className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all cursor-pointer"
                 >
                   <option value="true">Aktif (Tampil di Carousel)</option>
                   <option value="false">Nonaktif (Disembunyikan)</option>
@@ -1196,7 +1196,7 @@ export default function BannersPage() {
                     type="datetime-local"
                     value={toLocalInputValue(adForm.startAt)}
                     onChange={(e) => setAdForm({ ...adForm, startAt: fromLocalInputValue(e.target.value) })}
-                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all font-mono"
+                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all font-mono"
                   />
                 </div>
                 <div>
@@ -1207,7 +1207,7 @@ export default function BannersPage() {
                     type="datetime-local"
                     value={toLocalInputValue(adForm.expiresAt)}
                     onChange={(e) => setAdForm({ ...adForm, expiresAt: fromLocalInputValue(e.target.value) })}
-                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:border-amber-400/70 focus:outline-none transition-all font-mono"
+                    className="w-full bg-[#0a0c10] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:border-[#B99762] focus:outline-none transition-all font-mono"
                   />
                 </div>
               </div>
@@ -1224,7 +1224,7 @@ export default function BannersPage() {
               <button
                 onClick={submitAd}
                 disabled={busy}
-                className="px-4 py-2 bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 text-xs font-bold rounded-lg cursor-pointer transition-all shadow-[0_2px_10px_-2px_rgba(221,168,58,0.4)] disabled:opacity-50"
+                className="px-4 py-2 bg-gradient-to-r from-[#B99762] to-[#8C6D3B] hover:brightness-110 text-black text-xs font-bold rounded-lg cursor-pointer transition-all shadow-lg shadow-[#B99762]/20 disabled:opacity-50"
               >
                 {busy ? "Menyimpan..." : adBySlot[adEditingSlot] ? "Simpan Perubahan" : "Buat Iklan"}
               </button>

@@ -425,13 +425,13 @@ export default function TranslationRequestsPage() {
           <div className="text-[11px] text-neutral-500 mt-0.5">Seluruh request terdaftar</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-900/30">
+        <div className="p-4 rounded-xl bg-[#B99762]/10 border border-[#B99762]/25">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-amber-400">Menunggu (Pending)</span>
-            <Clock className="w-4 h-4 text-amber-400" />
+            <span className="text-xs font-medium text-[#D4A843]">Menunggu (Pending)</span>
+            <Clock className="w-4 h-4 text-[#D4A843]" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-amber-200">{counts.pending}</div>
-          <div className="text-[11px] text-amber-400/60 mt-0.5">Belum dieksekusi</div>
+          <div className="mt-2 text-2xl font-bold text-[#f3e7c4]">{counts.pending}</div>
+          <div className="text-[11px] text-[#B99762]/70 mt-0.5">Belum dieksekusi</div>
         </div>
 
         <div className="p-4 rounded-xl bg-blue-950/20 border border-blue-900/30">
@@ -652,7 +652,7 @@ export default function TranslationRequestsPage() {
 
                       {/* Request Count */}
                       <td className="py-4 px-3 text-center">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#B99762]/15 text-[#e6ca91] border border-[#B99762]/30">
                           <Users className="w-3 h-3" />
                           {item.request_count}x
                         </span>
@@ -665,7 +665,7 @@ export default function TranslationRequestsPage() {
                           onChange={(e) => handleUpdateStatus(item.id, e.target.value)}
                           className={`text-xs font-semibold px-2.5 py-1 rounded-lg border focus:outline-none transition-colors cursor-pointer ${
                             item.status === "PENDING"
-                              ? "bg-amber-950/40 text-amber-300 border-amber-800/60"
+                              ? "bg-[#B99762]/15 text-[#e6ca91] border-[#B99762]/40"
                               : item.status === "IN_PROGRESS"
                               ? "bg-blue-950/40 text-blue-300 border-blue-800/60"
                               : item.status === "COMPLETED"
@@ -673,7 +673,7 @@ export default function TranslationRequestsPage() {
                               : "bg-rose-950/40 text-rose-300 border-rose-800/60"
                           }`}
                         >
-                          <option value="PENDING" className="bg-neutral-900 text-amber-300">
+                          <option value="PENDING" className="bg-neutral-900 text-[#e6ca91]">
                             PENDING
                           </option>
                           <option value="IN_PROGRESS" className="bg-neutral-900 text-blue-300">
