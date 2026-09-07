@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTranslationJob, startTranslationJob } from "@/lib/translation-job";
+import { getTranslationJob, startTranslationJob, stopTranslationJob } from "@/lib/translation-job";
 
 export const maxDuration = 300;
 
@@ -47,3 +47,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/translate/bulk
+ * Stop / abort current running translation job
+ */
+export async function DELETE() {
+  try {
+    const result = stopTranslationJob();
+    return NextResponse.json(result);
+  } catch (err: any) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+

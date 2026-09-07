@@ -330,6 +330,11 @@ async function runBackgroundLoop(job: TranslationJobState) {
             translation_status: "id_translated",
           }).catch(() => {});
         }
+
+        // Auto-mark translation request for this novel as COMPLETED
+        await apiPatch(`/api/translation-requests/by-novel/${novel.id}`, {
+          status: "COMPLETED",
+        }).catch(() => {});
       }
 
       // Record log for this novel
