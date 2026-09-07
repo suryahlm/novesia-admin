@@ -81,6 +81,7 @@ export default function TranslationRequestsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [clearingHistory, setClearingHistory] = useState(false);
 
   // Translating state
   const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
@@ -358,7 +359,7 @@ export default function TranslationRequestsPage() {
     }
   };
 
-  // Delete Request
+  // Delete Single Request
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Hapus permintaan terjemahan untuk novel "${title}"?`)) return;
 
@@ -372,6 +373,56 @@ export default function TranslationRequestsPage() {
         return next;
       });
       fetchRequests(true);
+    } catch (err: any) {
+      showMsg("err", err.message || "Gagal menghapus permintaan");
+    }
+  };
+
+  // Clear Completed Requests History (membersihkan novel yang sudah selesai)
+  const handleClearHistory = async () => {
+    if (counts.completed === 0) {
+      showMsg("err", "Tidak ada riwayat novel yang sudah selesai untuk dibersihkan.");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Bersihkan ${counts.completed} riwayat novel yang sudah selesai diterjemahkan dari daftar antrean request?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setClearingHistory(true);
+      const res = await fetch("/api/requests?clearCompleted=true", { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal membersihkan riwayat selesai");
+
+      showMsg("ok", data.message || "Riwayat novel yang selesai berhasil dibersihkan.");
+      setSelectedIds(new Set());
+      await fetchRequests();
+    } catch (err: any) {
+      showMsg("err", err.message || "Gagal membersihkan riwayat");
+    } finally {
+      setClearingHistory(false);
+    }
+  };
+
+  // Delete Selected Requests (Multiple)
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Hapus ${selectedIds.size} permintaan terjemahan yang dipilih?`)) return;
+
+    try {
+      const ids = Array.from(selectedIds).join(",");
+      const res = await fetch(`/api/requests?id=${encodeURIComponent(ids)}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus permintaan terpilih");
+
+      showMsg("ok", `${selectedIds.size} permintaan berhasil dihapus.`);
+      setSelectedIds(new Set());
+      await fetchRequests(true);
     } catch (err: any) {
       showMsg("err", err.message || "Gagal menghapus permintaan");
     }
@@ -410,6 +461,25 @@ export default function TranslationRequestsPage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Tombol Clear History (Novel yang sudah selesai diterjemahkan) */}
+          <button
+            onClick={handleClearHistory}
+            disabled={clearingHistory || counts.completed === 0}
+            title="Bersihkan riwayat novel yang sudah 100% selesai diterjemahkan"
+            className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 border ${
+              counts.completed > 0 && !clearingHistory
+                ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/30 hover:border-rose-500/50 cursor-pointer shadow-xs"
+                : "bg-neutral-900 border-neutral-800 text-neutral-500 cursor-not-allowed opacity-50"
+            }`}
+          >
+            {clearingHistory ? (
+              <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
+            ) : (
+              <Trash2 className="w-4 h-4 text-rose-400" />
+            )}
+            <span>Clear History ({counts.completed})</span>
+          </button>
+
           <button
             onClick={handleSyncStatus}
             disabled={syncing || loading}
@@ -428,6 +498,16 @@ export default function TranslationRequestsPage() {
             <RotateCcw className={`w-4 h-4 ${loading ? "animate-spin text-[#B99762]" : ""}`} />
             Refresh
           </button>
+
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              className="px-3.5 py-2 rounded-lg bg-red-950/40 border border-red-800/60 text-red-300 hover:bg-red-900/60 text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              Hapus Terpilih ({selectedIds.size})
+            </button>
+          )}
 
           <button
             onClick={handleTranslateBulk}
@@ -559,13 +639,25 @@ export default function TranslationRequestsPage() {
         </div>
 
         {/* Completed */}
-        <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-900/30">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-emerald-400">Selesai (Completed)</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-900/30 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-emerald-400">Selesai (Completed)</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div className="mt-2 text-2xl font-bold text-emerald-200">{counts.completed}</div>
+            <div className="text-[11px] text-emerald-400/60 mt-0.5">100% Bab sudah diterjemahkan</div>
           </div>
-          <div className="mt-2 text-2xl font-bold text-emerald-200">{counts.completed}</div>
-          <div className="text-[11px] text-emerald-400/60 mt-0.5">100% Bab sudah diterjemahkan</div>
+          {counts.completed > 0 && (
+            <button
+              onClick={handleClearHistory}
+              disabled={clearingHistory}
+              className="mt-3 w-full py-1.5 px-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/40 text-rose-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              <span>Clear History ({counts.completed})</span>
+            </button>
+          )}
         </div>
       </div>
 

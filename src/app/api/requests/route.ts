@@ -100,14 +100,61 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-// DELETE: Hapus request terjemahan
+// DELETE: Hapus request terjemahan (single, clearCompleted, atau multiple)
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const clearCompleted = searchParams.get("clearCompleted") === "true";
+
+    // 1. Bersihkan semua novel yang sudah 100% selesai diterjemahkan
+    if (clearCompleted) {
+      try {
+        const res = await apiDelete<any>("/api/translation-requests/clear-completed");
+        if (res?.success) {
+          return NextResponse.json({
+            success: true,
+            count: res.count ?? 0,
+            message: res.message || "Riwayat novel yang sudah diterjemahkan berhasil dibersihkan",
+          });
+        }
+      } catch {
+        // Fallback jika API belum reload endpoint
+      }
+
+      // Fallback: ambil semua dan hapus item yang COMPLETED / 100%
+      const data = await apiGet<any>("/api/translation-requests?limit=300");
+      let deletedCount = 0;
+      if (data?.items && Array.isArray(data.items)) {
+        const completedItems = data.items.filter(
+          (item: any) =>
+            item.status === "COMPLETED" ||
+            (item.total_chapters > 0 && item.translated_chapters >= item.total_chapters)
+        );
+        for (const item of completedItems) {
+          await apiDelete(`/api/translation-requests/${item.id}`).catch(() => {});
+          deletedCount++;
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        count: deletedCount,
+        message: `${deletedCount} riwayat novel yang sudah selesai diterjemahkan berhasil dibersihkan`,
+      });
+    }
 
     if (!id) {
-      return NextResponse.json({ error: "ID wajib disertakan" }, { status: 400 });
+      return NextResponse.json({ error: "ID atau parameter clearCompleted wajib disertakan" }, { status: 400 });
+    }
+
+    // Support comma-separated IDs e.g. id=1,2,3
+    const ids = id.split(",").map((s) => s.trim()).filter(Boolean);
+    if (ids.length > 1) {
+      for (const singleId of ids) {
+        await apiDelete(`/api/translation-requests/${singleId}`).catch(() => {});
+      }
+      return NextResponse.json({ success: true, count: ids.length, message: `${ids.length} permintaan berhasil dihapus` });
     }
 
     const res = await apiDelete<any>(`/api/translation-requests/${id}`);
