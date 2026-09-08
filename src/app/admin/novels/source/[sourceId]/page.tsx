@@ -14,7 +14,9 @@ const SOURCE_META: Record<string, { label: string; icon: string; color: string }
 async function getNovelsBySource(source: string) {
   try {
     const data = await apiGet<any[]>('/api/novels/all', { source });
-    return data || [];
+    return (data || []).filter(
+      (n: any) => !n.is_blacklisted && !['dropped', 'blacklisted'].includes(n.status)
+    );
   } catch (err) {
     console.error("Failed to load novels by source:", err);
     return [];
