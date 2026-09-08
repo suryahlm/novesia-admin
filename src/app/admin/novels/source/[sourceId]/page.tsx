@@ -7,6 +7,7 @@ const SOURCE_META: Record<string, { label: string; icon: string; color: string }
   talesinthevalley: { label: "TalesInTheValley", icon: "⚔️", color: "text-blue-400" },
   tinytranslation: { label: "TinyTranslation", icon: "🍄", color: "text-purple-400" },
   cuttlefishreads: { label: "CuttlefishReads", icon: "🦑", color: "text-amber-400" },
+  knoxtspace: { label: "KnoxTSpace", icon: "🪐", color: "text-amber-400" },
   transcendentaltls: { label: "TranscendentalTLS", icon: "📖", color: "text-orange-400" },
   general: { label: "General", icon: "🌐", color: "text-gray-400" },
 };

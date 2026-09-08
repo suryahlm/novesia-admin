@@ -16,7 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-type SourceKey = "akknovel" | "talesinthevalley" | "tinytranslation" | "cuttlefishreads";
+type SourceKey = "akknovel" | "talesinthevalley" | "tinytranslation" | "cuttlefishreads" | "knoxtspace";
 
 export default function UpdateScrapingPage() {
   const [isHovered, setIsHovered] = useState<string | null>(null);
@@ -67,6 +67,15 @@ export default function UpdateScrapingPage() {
       shadow: "shadow-fuchsia-500/20",
       border: "hover:border-fuchsia-500/40",
       desc: "Sinkronisasi delta update eksklusif untuk TinyTranslation dengan penghematan bandwidth tinggi.",
+    },
+    {
+      id: "knoxtspace",
+      name: "KnoxT Space Engine",
+      icon: BookOpen,
+      color: "from-amber-500 via-yellow-500 to-amber-400",
+      shadow: "shadow-amber-500/20",
+      border: "hover:border-amber-500/40",
+      desc: "Menangani sumber KnoxT.space. Multi-factor deduplication, cover R2 HD progresif, dan delta sync chapter.",
     },
   ];
 

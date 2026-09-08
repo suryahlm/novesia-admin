@@ -4,7 +4,8 @@ const SCRAPER_NAMES: Record<string, string> = {
   'akknovel': 'AkkNovel',
   'talesinthevalley': 'TalesInTheValley',
   'tinytranslation': 'TinyTranslation',
-  'cuttlefishreads': 'CuttlefishReads'
+  'cuttlefishreads': 'CuttlefishReads',
+  'knoxtspace': 'KnoxTSpace'
 };
 
 const TRIGGER_URL = 'http://141.11.160.187:9898/trigger';
