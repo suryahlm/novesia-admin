@@ -486,10 +486,23 @@ export async function translateText(
 
   const systemPrompt = type === "synopsis" ? SYNOPSIS_SYSTEM_PROMPT : CHAPTER_SYSTEM_PROMPT;
 
-  // Cek apakah Gemini/GutsAI sedang dalam cooldown akibat rate limit baru-baru ini
+  // === 1. JALUR UTAMA SINOPSIS: GROQ (openai/gpt-oss-120b) ===
+  // Sinopsis teksnya pendek, sangat hemat dan selesai dalam 1-2 detik via Groq gratis
+  if (type === "synopsis" && process.env.GROQ_API_KEY) {
+    try {
+      const groqResult = await translateViaGroq(text, systemPrompt);
+      if (groqResult && !isInvalidOrBrokenTranslation(groqResult, text)) {
+        return groqResult.trim();
+      }
+      console.warn("[Groq] Terjemahan sinopsis tidak valid, beralih ke Guts AI...");
+    } catch (groqErr: any) {
+      console.warn("[Groq] Gagal terjemahkan sinopsis via Groq, beralih ke Guts AI:", groqErr?.message || groqErr);
+    }
+  }
+
+  // === 2. JALUR UTAMA BAB NOVEL (ATAU FALLBACK SINOPSIS): GUTS AI (Gemini 3.7 Flash) ===
   const isInGutsCooldown = Date.now() - lastGutsRateLimitTime < GUTS_RATE_LIMIT_COOLDOWN_MS;
 
-  // Coba Guts AI (Gemini 3.7 Flash) jika tidak sedang cooldown
   if (GUTSAI_API_KEY && !isInGutsCooldown) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
@@ -550,15 +563,17 @@ export async function translateText(
     }
   }
 
-  // === FALLBACK KE GROQ (openai/gpt-oss-120b) ===
-  try {
-    const groqResult = await translateViaGroq(text, systemPrompt);
-    if (groqResult && !isInvalidOrBrokenTranslation(groqResult, text)) {
-      return groqResult.trim();
+  // === 3. FALLBACK CADANGAN BAB NOVEL KE GROQ (openai/gpt-oss-120b) ===
+  if (type === "chapter") {
+    try {
+      const groqResult = await translateViaGroq(text, systemPrompt);
+      if (groqResult && !isInvalidOrBrokenTranslation(groqResult, text)) {
+        return groqResult.trim();
+      }
+    } catch (groqErr: any) {
+      console.error("[Groq] Translation fallback failed:", groqErr?.message || groqErr);
     }
-    throw new Error("Hasil terjemahan Groq tidak valid atau terpotong.");
-  } catch (groqErr: any) {
-    console.error("[Groq] Translation fallback failed:", groqErr?.message || groqErr);
-    throw new Error("Gagal menerjemahkan dengan AI (Gemini & Groq fallback gagal).");
   }
+
+  throw new Error("Gagal menerjemahkan dengan AI (Gemini & Groq fallback gagal).");
 }
