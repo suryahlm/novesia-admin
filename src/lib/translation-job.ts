@@ -371,9 +371,16 @@ async function runBackgroundLoop(job: TranslationJobState) {
               }).catch(() => {});
             }
 
-            // Rate limit delay between chapters
+            // Adaptive rate limit delay between chapters based on text length
             if (!job.aborted) {
-              await new Promise((r) => setTimeout(r, DELAY_BETWEEN_CHAPTERS_MS));
+              const chLength = contentOrig.length;
+              let delayMs = 3000;
+              if (chLength > 25000) {
+                delayMs = 8000; // Bab jumbo (>25k char): beri jeda agar jendela TPM Guts AI pulih
+              } else if (chLength > 15000) {
+                delayMs = 4500;
+              }
+              await new Promise((r) => setTimeout(r, delayMs));
             }
           }
         }

@@ -471,7 +471,7 @@ OUTPUT = TEKS NOVEL TERJEMAHAN SAJA.`;
 
 // State for adaptive rate limiting & cooldown
 let lastGutsRateLimitTime = 0;
-const GUTS_RATE_LIMIT_COOLDOWN_MS = 20_000; // 20s cooldown if 429 occurred
+const GUTS_RATE_LIMIT_COOLDOWN_MS = 30_000; // 30s cooldown if 429 occurred
 
 export { isInvalidOrBrokenTranslation } from "./translation-validator";
 import { isInvalidOrBrokenTranslation } from "./translation-validator";
@@ -503,7 +503,7 @@ export async function translateText(
           body: JSON.stringify({
             model: GUTSAI_MODEL,
             temperature: 0.3,
-            max_tokens: 8192,
+            max_tokens: 16384,
             messages: [
               { role: "system", content: systemPrompt },
               {
@@ -515,7 +515,7 @@ export async function translateText(
               },
             ],
           }),
-          signal: AbortSignal.timeout(120_000),
+          signal: AbortSignal.timeout(180_000),
         });
 
         if (response.ok) {
@@ -534,8 +534,8 @@ export async function translateText(
           if (response.status === 429) {
             lastGutsRateLimitTime = Date.now();
             if (attempt === 1) {
-              // Tunggu sejenak sebelum percobaan kedua
-              await new Promise((r) => setTimeout(r, 3000));
+              // Tunggu 15 detik sebelum percobaan kedua agar jendela rate limit pulih
+              await new Promise((r) => setTimeout(r, 15000));
               continue;
             }
           }
@@ -543,16 +543,16 @@ export async function translateText(
       } catch (err) {
         console.warn(`[GutsAI] Attempt ${attempt} error:`, err);
         if (attempt === 1) {
-          await new Promise((r) => setTimeout(r, 2000));
+          await new Promise((r) => setTimeout(r, 4000));
           continue;
         }
       }
     }
   }
 
-  // === FALLBACK KE GROQ (Llama 3.3 70B) ===
+  // === FALLBACK KE GROQ (openai/gpt-oss-120b) ===
   try {
-    const groqResult = await translateViaGroq(text);
+    const groqResult = await translateViaGroq(text, systemPrompt);
     if (groqResult && !isInvalidOrBrokenTranslation(groqResult, text)) {
       return groqResult.trim();
     }

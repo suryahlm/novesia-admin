@@ -40,18 +40,22 @@ Tugasmu: terjemahkan teks novel berikut dari Bahasa Inggris ke Bahasa Indonesia 
 
 /**
  * Terjemahkan teks novel dari English ke Bahasa Indonesia via Groq.
- * Model: llama-3.3-70b-versatile (gratis, sangat cepat).
+ * Model: openai/gpt-oss-120b (sangat cepat, kualitas tinggi).
  */
-export async function translateToIndonesian(text: string): Promise<string> {
+export async function translateToIndonesian(
+  text: string,
+  customSystemPrompt?: string
+): Promise<string> {
   const response = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
-    temperature: 0.4,
+    model: "openai/gpt-oss-120b",
+    temperature: 0.3,
     max_tokens: 8000,
     messages: [
-      { role: "system", content: TRANSLATION_SYSTEM_PROMPT },
+      { role: "system", content: customSystemPrompt || TRANSLATION_SYSTEM_PROMPT },
       { role: "user", content: text },
     ],
   });
 
   return response.choices[0]?.message?.content || "";
 }
+
