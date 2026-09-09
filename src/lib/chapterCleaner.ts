@@ -1,8 +1,10 @@
 /**
  * Chapter Cleaner Utility (Admin & Translation Engine)
  * 
- * Membersihkan sampah navigasi situs sumber (Previous/Next Chapter, TOC, Bab Sebelumnya, dll.)
- * dan duplikasi judul bab/novel di awalan serta akhiran konten chapter.
+ * Membersihkan sampah navigasi situs sumber (Previous/Next Chapter, TOC, Bab Sebelumnya, dll.),
+ * link donasi / media sosial / promosi (Ko-fi, Patreon, Discord, Trakteer, dll.),
+ * catatan penerjemah / credit translator, serta duplikasi judul bab/novel
+ * di awalan dan akhiran konten chapter.
  */
 
 export interface ChapterCleanerMeta {
@@ -29,10 +31,46 @@ const NAVIGATION_PATTERNS: RegExp[] = [
   /^(?:home|homepage)\s*[\|\/]\s*(?:previous|next|toc)/i,
 ];
 
+const PROMO_OR_SOCIAL_PATTERNS: RegExp[] = [
+  /ko-fi(?:\.com)?/i,
+  /buy\s*(?:me\s*)?(?:a\s*)?(?:coffee|ko-fi)/i,
+  /patreon(?:\.com)?/i,
+  /(?:paypal\.(?:me|com)|pay\s*pal|^paypal\b)/i,
+  /(?:discord\.(?:gg|com)|(?:join|gabung|my|our)\s*(?:our|the)?\s*discord|^discord\b)/i,
+  /\b(?:trakteer|saweria)\b/i,
+  /\((?:opens?\s*in\s*(?:a\s*)?new\s*tab|terbuka\s*di\s*tab\s*baru|buka\s*di\s*tab\s*baru)\)/i,
+  /support\s*(?:the\s*)?(?:translator|author|translation)/i,
+  /dukung\s*(?:penerjemah|penulis)/i,
+  /rate\s*(?:this\s*)?(?:novel|chapter)/i,
+  /beri\s*nilai\s*(?:novel|bab)/i,
+  /give\s*(?:the\s*)?novel\s*a\s*(?:decent\s*)?rating/i,
+  /review\s*on\s*novelupdates/i,
+  /read\s*(?:ahead|more)\s*on\s*(?:patreon|ko-fi)/i,
+  /baca\s*lebih\s*cepat\s*di/i,
+  /visit\s*.*scans/i,
+  /kunjungi\s*.*scans/i,
+  /gabung\s*discord/i,
+];
+
+const NOTE_CREDIT_PATTERNS: RegExp[] = [
+  /^(?:catatan|note)\b.*?dari\s+[\w\s.-]{2,50}$/i,
+  /^[\w\s.-]{1,50}?\s*(?:note|catatan)\s+from\s+[\w\s.-]{2,50}$/i,
+  /^(?:tl(?:\/n)?\s*note|tl\/n|tn|translator(?:'s)?\s*note|catatan\s*penerjemah|editor(?:'s)?\s*note|catatan\s*editor|author(?:'s)?\s*note|catatan\s*penulis)\b/i,
+  /^(?:translated\s*by|diterjemahkan\s*oleh|edited\s*by|disunting\s*oleh|proofread\s*by)\b/i,
+  /^(?:translator|penerjemah|editor|proofreader)\s*[:\-–—]/i,
+  /^(?:end\s*of\s*chapter|akhir\s*bab|chapter\s*\d+\s*end|bab\s*\d+\s*selesai)\b/i,
+];
+
 export function isNavigationLine(text: string): boolean {
   const t = text.trim();
   if (!t || t.length > 200) return false;
   return NAVIGATION_PATTERNS.some((p) => p.test(t));
+}
+
+export function isPromoOrNoteLine(text: string): boolean {
+  const t = text.trim();
+  if (!t || t.length > 250) return false;
+  return PROMO_OR_SOCIAL_PATTERNS.some((p) => p.test(t)) || NOTE_CREDIT_PATTERNS.some((p) => p.test(t));
 }
 
 export function isTitleOrHeaderLine(text: string, meta?: ChapterCleanerMeta): boolean {
@@ -44,12 +82,11 @@ export function isTitleOrHeaderLine(text: string, meta?: ChapterCleanerMeta): bo
   const chTitle = meta?.chapterTitle;
 
   // 1. Any line with Chapter/Bab + number + colon/dash/dot (even with novel name prefix without sentence punctuation)
-  // e.g. 'Chapter 16: Exploding Fish', 'Bab 16: Ikan Meledak', 'Forced to take over...Chapter 16: Exploding Fish'
   if (/^(?:.*?\s*)?(?:chapter|bab)\s*\d+\s*[:\.\-·•—]/i.test(t)) {
     if (!/[.!?]$/.test(t) && t.length < 130) return true;
   }
 
-  // 2. Standalone Chapter / Bab number, e.g. 'Chapter 16', 'Bab 16'
+  // 2. Standalone Chapter / Bab number
   if (/^(?:.*?\s*)?(?:chapter|bab)\s*\d+\s*$/i.test(t) && t.length < 80) {
     return true;
   }
@@ -95,11 +132,11 @@ export function cleanChapterParagraphs(
   if (!paragraphs || paragraphs.length === 0) return [];
   const list = [...paragraphs];
 
-  // 1. Clean head (up to first 5 paragraphs)
-  let headCheckLimit = Math.min(5, list.length);
+  // 1. Clean head (up to first 6 paragraphs)
+  let headCheckLimit = Math.min(6, list.length);
   while (list.length > 0 && headCheckLimit > 0) {
     const first = list[0];
-    if (isNavigationLine(first) || isTitleOrHeaderLine(first, meta)) {
+    if (isNavigationLine(first) || isTitleOrHeaderLine(first, meta) || isPromoOrNoteLine(first)) {
       list.shift();
       headCheckLimit--;
     } else {
@@ -107,11 +144,11 @@ export function cleanChapterParagraphs(
     }
   }
 
-  // 2. Clean tail (up to last 5 paragraphs)
-  let tailCheckLimit = Math.min(5, list.length);
+  // 2. Clean tail (up to last 10 paragraphs)
+  let tailCheckLimit = Math.min(10, list.length);
   while (list.length > 0 && tailCheckLimit > 0) {
     const last = list[list.length - 1];
-    if (isNavigationLine(last) || isTitleOrHeaderLine(last, meta)) {
+    if (isNavigationLine(last) || isTitleOrHeaderLine(last, meta) || isPromoOrNoteLine(last)) {
       list.pop();
       tailCheckLimit--;
     } else {
