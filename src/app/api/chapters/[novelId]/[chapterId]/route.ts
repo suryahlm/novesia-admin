@@ -1,6 +1,20 @@
-import { apiPatch } from "@/lib/apiClient";
+import { apiGet, apiPatch } from "@/lib/apiClient";
 import { NextRequest, NextResponse } from "next/server";
 import { isInvalidOrBrokenTranslation } from "@/lib/translation-validator";
+
+// GET: Fetch single chapter detail with content
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ novelId: string; chapterId: string }> }
+) {
+  const { chapterId } = await params;
+  try {
+    const data = await apiGet<any>(`/api/chapters/by-id/${chapterId}`);
+    return NextResponse.json(data);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
 
 // PUT: Update chapter content (original or translated)
 export async function PUT(

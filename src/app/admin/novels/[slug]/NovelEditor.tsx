@@ -60,6 +60,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
   const [editTranslated, setEditTranslated] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [savingChapter, setSavingChapter] = useState(false);
+  const [loadingChapterContent, setLoadingChapterContent] = useState(false);
   const [translatingChapter, setTranslatingChapter] = useState(false);
   const [translatingChapterId, setTranslatingChapterId] = useState<string | null>(null);
   const [chapterSearch, setChapterSearch] = useState("");
@@ -208,9 +209,13 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
     try {
       const res = await fetch(`/api/chapters/${novel.id}`);
       const data = await res.json();
-      setChapters(data.chapters || []);
+      const list = data.chapters || [];
+      setChapters(list);
+      if (list.length > 0 && !selectedChapter) {
+        selectChapter(list[0]);
+      }
     } catch (e) {
-      showMsg("err", "Gagal memuat chapter");
+      showMsg("err", "Gagal memuat daftar chapter");
     } finally {
       setChaptersLoading(false);
     }
@@ -296,11 +301,39 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
   };
 
   // === SELECT CHAPTER ===
-  const selectChapter = (ch: Chapter) => {
+  const selectChapter = async (ch: Chapter) => {
     setSelectedChapter(ch);
-    setEditOriginal(ch.content_original || "");
-    setEditTranslated(ch.content_translated || "");
     setEditTitle(ch.chapter_title || "");
+
+    // Jika konten sudah tersedia di cache client
+    if (ch.content_original !== undefined || ch.content_translated !== undefined) {
+      setEditOriginal(ch.content_original || "");
+      setEditTranslated(ch.content_translated || "");
+      return;
+    }
+
+    // Jika belum ada konten di memori, ambil khusus chapter ini (super cepat & hemat bandwidth)
+    setLoadingChapterContent(true);
+    try {
+      const res = await fetch(`/api/chapters/${novel.id}/${ch.id}`);
+      const data = await res.json();
+      const chData = data.chapter || data;
+      const orig = chData.content_original || chData.contentOriginal || "";
+      const trans = chData.content_translated || chData.contentTranslated || "";
+      setEditOriginal(orig);
+      setEditTranslated(trans);
+      setChapters((prev) =>
+        prev.map((item) =>
+          item.id === ch.id
+            ? { ...item, content_original: orig, content_translated: trans }
+            : item
+        )
+      );
+    } catch {
+      showMsg("err", "Gagal memuat isi chapter.");
+    } finally {
+      setLoadingChapterContent(false);
+    }
   };
 
   // === SAVE CHAPTER ===
@@ -412,20 +445,32 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
   // === TRANSLATE SINGLE CHAPTER FROM LIST ===
   const handleTranslateSingleChapter = async (ch: Chapter, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!ch.content_original || ch.content_original.trim().length < 20) {
+
+    // Pastikan konten original tersedia
+    let orig = ch.content_original;
+    if (!orig) {
+      try {
+        const fetchRes = await fetch(`/api/chapters/${novel.id}/${ch.id}`);
+        const fetchData = await fetchRes.json();
+        const chData = fetchData.chapter || fetchData;
+        orig = chData.content_original || chData.contentOriginal || "";
+      } catch {}
+    }
+
+    if (!orig || orig.trim().length < 20) {
       showMsg("err", `Konten original Ch. ${ch.chapter_number} masih kosong.`);
       return;
     }
 
     setTranslatingChapterId(ch.id);
-    selectChapter(ch);
+    selectChapter({ ...ch, content_original: orig });
 
     try {
       const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: ch.content_original,
+          text: orig,
           type: "chapter",
           meta: {
             novelTitle: novel.title,
@@ -436,7 +481,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
       });
 
       const data = await res.json();
-      if (!res.ok || !data.success || !data.translatedText || isInvalidOrBrokenTranslation(data.translatedText, ch.content_original)) {
+      if (!res.ok || !data.success || !data.translatedText || isInvalidOrBrokenTranslation(data.translatedText, orig)) {
         throw new Error(data.error || "Gagal menerjemahkan chapter (hasil tidak valid atau error)");
       }
 
@@ -526,8 +571,8 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
   const pendingWithContent = chapters.filter(
     (ch) =>
       isChapterPending(ch) &&
-      !!ch.content_original &&
-      ch.content_original.trim().length > 50
+      ((ch.word_count_original && ch.word_count_original > 5) ||
+        (!!ch.content_original && ch.content_original.trim().length > 20))
   ).length;
 
   const isJobRunning = bgJob?.status === "running";
@@ -1013,7 +1058,8 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                       const hasTranslated = !isChapterPending(ch);
                       const isThisTranslating = translatingChapterId === ch.id;
                       const hasOriginal =
-                        !!ch.content_original && ch.content_original.trim().length > 20;
+                        (ch.word_count_original && ch.word_count_original > 5) ||
+                        (!!ch.content_original && ch.content_original.trim().length > 20);
 
                       return (
                         <div
@@ -1144,47 +1190,54 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                       </div>
 
                       {/* Dual Content Panes */}
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/5 min-h-0">
-                        {/* Original (EN) */}
-                        <div className="flex flex-col min-h-0 bg-[#0a0c10]/40">
-                          <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-1.5">
-                              <FileText className="w-3.5 h-3.5 text-slate-400" />
-                              <span className="text-xs font-semibold text-slate-300">Original</span>
-                            </div>
-                            <span className="text-[10px] text-slate-500 font-mono">
-                              {editOriginal.split(/\s+/).filter(Boolean).length} kata
-                            </span>
-                          </div>
-                          <textarea
-                            value={editOriginal}
-                            onChange={(e) => setEditOriginal(e.target.value)}
-                            className="flex-1 w-full bg-transparent p-4 text-xs leading-relaxed text-slate-300 resize-none focus:outline-none placeholder:text-slate-600 font-sans"
-                            placeholder="Isi teks original chapter..."
-                          />
+                      {loadingChapterContent ? (
+                        <div className="flex-1 flex flex-col items-center justify-center gap-3 p-12 text-slate-400 bg-[#0c0e14]">
+                          <Loader2 className="w-6 h-6 animate-spin text-[#D4A843]" />
+                          <span className="text-xs">Memuat konten Chapter {selectedChapter.chapter_number}...</span>
                         </div>
-
-                        {/* Translated (ID) */}
-                        <div className="flex flex-col min-h-0 bg-[#0a0c10]">
-                          <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between shrink-0 bg-[#B99762]/5">
-                            <div className="flex items-center gap-1.5">
-                              <Globe className="w-3.5 h-3.5 text-[#D4A843]" />
-                              <span className="text-xs font-semibold text-[#e6ca91]">
-                                Terjemahan (ID)
+                      ) : (
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/5 min-h-0">
+                          {/* Original (EN) */}
+                          <div className="flex flex-col min-h-0 bg-[#0a0c10]/40">
+                            <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between shrink-0">
+                              <div className="flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5 text-slate-400" />
+                                <span className="text-xs font-semibold text-slate-300">Original</span>
+                              </div>
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                {editOriginal.split(/\s+/).filter(Boolean).length} kata
                               </span>
                             </div>
-                            <span className="text-[10px] text-[#e6ca91]/80 font-mono">
-                              {editTranslated.split(/\s+/).filter(Boolean).length} kata
-                            </span>
+                            <textarea
+                              value={editOriginal}
+                              onChange={(e) => setEditOriginal(e.target.value)}
+                              className="flex-1 w-full bg-transparent p-4 text-xs leading-relaxed text-slate-300 resize-none focus:outline-none placeholder:text-slate-600 font-sans"
+                              placeholder="Isi teks original chapter..."
+                            />
                           </div>
-                          <textarea
-                            value={editTranslated}
-                            onChange={(e) => setEditTranslated(e.target.value)}
-                            className="flex-1 w-full bg-transparent p-4 text-xs leading-relaxed text-slate-100 resize-none focus:outline-none placeholder:text-slate-600 font-sans"
-                            placeholder="Terjemahan Indonesia..."
-                          />
+
+                          {/* Translated (ID) */}
+                          <div className="flex flex-col min-h-0 bg-[#0a0c10]/20">
+                            <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between shrink-0 bg-[#B99762]/[0.02]">
+                              <div className="flex items-center gap-1.5">
+                                <Globe className="w-3.5 h-3.5 text-[#D4A843]" />
+                                <span className="text-xs font-semibold text-[#e6ca91]">
+                                  Terjemahan (Indonesia)
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-[#e6ca91]/80 font-mono">
+                                {editTranslated.split(/\s+/).filter(Boolean).length} kata
+                              </span>
+                            </div>
+                            <textarea
+                              value={editTranslated}
+                              onChange={(e) => setEditTranslated(e.target.value)}
+                              className="flex-1 w-full bg-transparent p-4 text-xs leading-relaxed text-slate-100 resize-none focus:outline-none placeholder:text-slate-600 font-sans"
+                              placeholder="Terjemahan Indonesia..."
+                            />
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </>
                   ) : (
                     <div className="flex-1 flex items-center justify-center text-slate-500 p-8">
