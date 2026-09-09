@@ -475,12 +475,20 @@ const GUTS_RATE_LIMIT_COOLDOWN_MS = 30_000; // 30s cooldown if 429 occurred
 
 export { isInvalidOrBrokenTranslation } from "./translation-validator";
 import { isInvalidOrBrokenTranslation } from "./translation-validator";
+import { cleanChapterText, ChapterCleanerMeta } from "./chapterCleaner";
 
 export async function translateText(
   text: string,
-  type: "synopsis" | "chapter" = "chapter"
+  type: "synopsis" | "chapter" = "chapter",
+  meta?: ChapterCleanerMeta
 ): Promise<string> {
   if (!text || !text.trim()) {
+    return "";
+  }
+
+  // Pre-clean chapter text to strip navigation links and duplicate header lines
+  const inputToTranslate = type === "chapter" ? cleanChapterText(text, meta) : text.trim();
+  if (!inputToTranslate || !inputToTranslate.trim()) {
     return "";
   }
 
@@ -523,8 +531,8 @@ export async function translateText(
                 role: "user",
                 content:
                   type === "synopsis"
-                    ? `Terjemahkan sinopsis berikut ke Bahasa Indonesia:\n\n${text.trim()}`
-                    : `Terjemahkan teks novel berikut ke Bahasa Indonesia:\n\n${text.trim()}`,
+                    ? `Terjemahkan sinopsis berikut ke Bahasa Indonesia:\n\n${inputToTranslate}`
+                    : `Terjemahkan teks novel berikut ke Bahasa Indonesia:\n\n${inputToTranslate}`,
               },
             ],
           }),
@@ -533,10 +541,11 @@ export async function translateText(
 
         if (response.ok) {
           const data = await response.json();
-          const content = data.choices?.[0]?.message?.content?.trim();
+          const rawContent = data.choices?.[0]?.message?.content?.trim();
 
-          if (content && !isInvalidOrBrokenTranslation(content, text)) {
-            return content;
+          if (rawContent && !isInvalidOrBrokenTranslation(rawContent, inputToTranslate)) {
+            const finalCleaned = type === "chapter" ? cleanChapterText(rawContent, meta) : rawContent;
+            return finalCleaned.trim();
           }
 
           console.warn(`[GutsAI] Attempt ${attempt} menghasilkan output rusak/HTML error. Mengabaikan...`);
@@ -566,9 +575,10 @@ export async function translateText(
   // === 3. FALLBACK CADANGAN BAB NOVEL KE GROQ (openai/gpt-oss-120b) ===
   if (type === "chapter") {
     try {
-      const groqResult = await translateViaGroq(text, systemPrompt);
-      if (groqResult && !isInvalidOrBrokenTranslation(groqResult, text)) {
-        return groqResult.trim();
+      const groqResult = await translateViaGroq(inputToTranslate, systemPrompt);
+      if (groqResult && !isInvalidOrBrokenTranslation(groqResult, inputToTranslate)) {
+        const finalCleaned = cleanChapterText(groqResult, meta);
+        return finalCleaned.trim();
       }
     } catch (groqErr: any) {
       console.error("[Groq] Translation fallback failed:", groqErr?.message || groqErr);

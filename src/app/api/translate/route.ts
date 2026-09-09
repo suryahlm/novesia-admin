@@ -6,7 +6,7 @@ export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, type = "chapter" } = await req.json();
+    const { text, type = "chapter", meta } = await req.json();
 
     if (!text || typeof text !== "string" || !text.trim()) {
       return NextResponse.json(
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const translatedText = await translateText(text, type);
+    const translatedText = await translateText(text, type, meta);
 
     if (!translatedText || isInvalidOrBrokenTranslation(translatedText, text)) {
       return NextResponse.json(

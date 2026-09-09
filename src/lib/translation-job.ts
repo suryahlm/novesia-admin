@@ -337,7 +337,11 @@ async function runBackgroundLoop(job: TranslationJobState) {
               job.attempt = attempt;
 
               try {
-                const translated = await translateText(contentOrig, "chapter");
+                const translated = await translateText(contentOrig, "chapter", {
+                  novelTitle: novel.title,
+                  chapterNumber: chNumber,
+                  chapterTitle: ch.chapter_title ?? ch.chapterTitle,
+                });
                 const isBroken = isInvalidOrBrokenTranslation(translated, contentOrig);
 
                 if (translated?.trim() && !isBroken) {

@@ -389,6 +389,11 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
         body: JSON.stringify({
           text: editOriginal,
           type: "chapter",
+          meta: {
+            novelTitle: novel.title,
+            chapterNumber: selectedChapter?.chapter_number,
+            chapterTitle: selectedChapter?.chapter_title,
+          },
         }),
       });
       const data = await res.json();
@@ -422,6 +427,11 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
         body: JSON.stringify({
           text: ch.content_original,
           type: "chapter",
+          meta: {
+            novelTitle: novel.title,
+            chapterNumber: ch.chapter_number,
+            chapterTitle: ch.chapter_title,
+          },
         }),
       });
 
