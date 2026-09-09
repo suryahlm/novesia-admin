@@ -15,6 +15,7 @@ export interface TranslationJobState {
   id: string;
   status: "idle" | "running" | "completed" | "stopped" | "error";
   novelIds: string[];
+  novelId?: string; // novel tunggal yang sedang diproses (untuk NovelEditor)
   sourceLabel?: string;
   startTime: number;
   endTime?: number;
@@ -128,6 +129,11 @@ export async function startTranslationJob(
 
   globalThis.__bgTranslationJob = newJob;
 
+  // Jika hanya 1 novel, set novelId untuk NovelEditor bisa polling per-novel
+  if (novelIds.length === 1) {
+    newJob.novelId = novelIds[0];
+  }
+
   // Run in background WITHOUT awaiting
   runBackgroundLoop(newJob).catch((err) => {
     console.error("[BackgroundTranslation] Fatal error:", err);
@@ -177,7 +183,7 @@ async function runBackgroundLoop(job: TranslationJobState) {
         totalPendingSynopsis++;
       }
 
-      const novelSlug = novel.nu_slug || novel.nuSlug;
+      const novelSlug = novel.nu_slug || novel.nuSlug || novel.id;
       let pending = 0;
       try {
         const chaptersRes = await apiGet<any>(`/api/chapters/${novelSlug}`, { pending: true, limit: 1 });
@@ -212,7 +218,7 @@ async function runBackgroundLoop(job: TranslationJobState) {
     for (const novel of novels) {
       if (job.aborted) break;
 
-      const novelSlug = novel.nu_slug || novel.nuSlug;
+      const novelSlug = novel.nu_slug || novel.nuSlug || novel.id;
       let pendingChapterCount = novelPendingMap.get(novel.id) || 0;
       const synopsis = novel.synopsis;
       const synopsisTrans = novel.synopsis_translated || novel.synopsisTranslated;

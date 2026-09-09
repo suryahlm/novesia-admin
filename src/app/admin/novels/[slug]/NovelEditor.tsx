@@ -64,15 +64,11 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
   const [translatingChapterId, setTranslatingChapterId] = useState<string | null>(null);
   const [chapterSearch, setChapterSearch] = useState("");
 
-  // Batch Translation State
-  const [batchTranslating, setBatchTranslating] = useState(false);
-  const [batchProgress, setBatchProgress] = useState<{
-    current: number;
-    total: number;
-    chNum: number;
-    statusText?: string;
-  } | null>(null);
-  const abortBatchRef = useRef(false);
+  // Background Translate State (server-side job — polling)
+  const [bgJob, setBgJob] = useState<any>(null);
+  const bgPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const bgJobWasRunning = useRef(false);
+  const bgJobLastCompleted = useRef(0);
 
   const showMsg = (type: "ok" | "err", text: string) => {
     setMessage({ type, text });
@@ -219,6 +215,79 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
       setChaptersLoading(false);
     }
   };
+
+  // === RELOAD CHAPTERS (untuk refresh setelah background job selesai / progress) ===
+  const reloadChapters = async () => {
+    try {
+      const res = await fetch(`/api/chapters/${novel.id}`);
+      const data = await res.json();
+      const freshChapters = data.chapters || [];
+      setChapters(freshChapters);
+      setSelectedChapter((curr) => {
+        if (!curr) return null;
+        const fresh = freshChapters.find((c: Chapter) => c.id === curr.id);
+        if (fresh && fresh.content_translated !== curr.content_translated) {
+          setEditTranslated(fresh.content_translated || "");
+          return fresh;
+        }
+        return curr;
+      });
+    } catch {
+      // silent
+    }
+  };
+
+  // === POLLING BACKGROUND JOB ===
+  useEffect(() => {
+    const pollJob = async () => {
+      try {
+        const res = await fetch("/api/translate/bulk");
+        if (!res.ok) return;
+        const data = await res.json();
+        const job = data?.job;
+        setBgJob(job ?? null);
+
+        const isThisNovel = job?.novelId === novel.id || job?.novelIds?.includes(novel.id);
+        const isRunning = job?.status === "running" && isThisNovel;
+
+        if (isRunning) {
+          bgJobWasRunning.current = true;
+          // Real-time update chapter list jika ada chapter baru yang selesai
+          if ((job.completedChapters || 0) > bgJobLastCompleted.current) {
+            bgJobLastCompleted.current = job.completedChapters || 0;
+            reloadChapters();
+          }
+        }
+
+        // Job selesai / berhenti setelah sebelumnya running
+        if (bgJobWasRunning.current && job?.status !== "running") {
+          bgJobWasRunning.current = false;
+          bgJobLastCompleted.current = 0;
+          // Reload chapters untuk update status terjemahan final
+          await reloadChapters();
+          if (job?.status === "completed") {
+            showMsg("ok", `🎉 Background translate selesai! (${job.completedChapters} chapter berhasil)`);
+          } else if (job?.status === "stopped") {
+            showMsg("ok", `⏹ Translate dihentikan (${job.completedChapters} chapter selesai).`);
+          } else if (job?.status === "error") {
+            showMsg("err", `❌ Background translate error: ${job.error || "unknown"}`);
+          }
+        }
+      } catch {
+        // network error, abaikan
+      }
+    };
+
+    // Poll segera saat mount
+    pollJob();
+
+    // Lanjut poll setiap 3 detik
+    bgPollRef.current = setInterval(pollJob, 3000);
+    return () => {
+      if (bgPollRef.current) clearInterval(bgPollRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [novel.id]);
 
   const toggleChapters = () => {
     const next = !chaptersExpanded;
@@ -395,141 +464,42 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
     }
   };
 
-  // === BATCH TRANSLATE PENDING CHAPTERS ===
+  // === BATCH TRANSLATE → BACKGROUND JOB DI SERVER ===
   const handleBatchTranslate = async () => {
-    // Cari chapter yang belum diterjemahkan atau rusak (HTML error) tapi punya konten original
-    const pendingList = chapters.filter(
-      (ch) =>
-        isChapterPending(ch) &&
-        ch.content_original &&
-        ch.content_original.trim().length > 50
-    );
-
-    if (pendingList.length === 0) {
+    if (pendingWithContent === 0) {
       showMsg("ok", "Semua chapter dengan konten sudah diterjemahkan!");
       return;
     }
 
-    setBatchTranslating(true);
-    abortBatchRef.current = false;
-    let completedCount = 0;
-    const failedList: number[] = [];
-    const MAX_RETRIES = 3;
+    try {
+      const res = await fetch("/api/translate/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ novelIds: [novel.id] }),
+      });
+      const data = await res.json();
 
-    for (let i = 0; i < pendingList.length; i++) {
-      if (abortBatchRef.current) {
-        showMsg("ok", `Batch translation dihentikan (${completedCount} selesai).`);
-        break;
+      if (!res.ok) {
+        showMsg("err", data?.error || "Gagal memulai background translate.");
+        return;
       }
 
-      const ch = pendingList[i];
-      let chapterSuccess = false;
-
-      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        if (abortBatchRef.current) break;
-
-        setBatchProgress({
-          current: i + 1,
-          total: pendingList.length,
-          chNum: ch.chapter_number,
-          statusText: attempt > 1 ? `Retry ${attempt}/${MAX_RETRIES}...` : undefined,
-        });
-
-        try {
-          const res = await fetch("/api/translate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text: ch.content_original,
-              type: "chapter",
-            }),
-          });
-          const data = await res.json();
-
-          if (res.ok && data.success && data.translatedText && !isInvalidOrBrokenTranslation(data.translatedText, ch.content_original)) {
-            const trans = data.translatedText;
-            // Save directly to DB
-            await fetch(`/api/chapters/${novel.id}/${ch.id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                content_translated: trans,
-              }),
-            });
-
-            // Update local state in chapter list
-            setChapters((prev) =>
-              prev.map((item) =>
-                item.id === ch.id
-                  ? {
-                      ...item,
-                      content_translated: trans,
-                      word_count_translated: trans.split(/\s+/).filter(Boolean).length,
-                      translation_status: "done",
-                    }
-                  : item
-              )
-            );
-
-            if (selectedChapter?.id === ch.id) {
-              setEditTranslated(trans);
-            }
-
-            completedCount++;
-            chapterSuccess = true;
-            break; // Success, exit retry loop
-          } else {
-            console.warn(`Chapter ${ch.chapter_number} attempt ${attempt} failed or returned broken output`);
-            if (attempt < MAX_RETRIES && !abortBatchRef.current) {
-              const waitSec = attempt * 3;
-              setBatchProgress({
-                current: i + 1,
-                total: pendingList.length,
-                chNum: ch.chapter_number,
-                statusText: `Cooldown ${waitSec}s (Retry ${attempt + 1})...`,
-              });
-              await new Promise((r) => setTimeout(r, waitSec * 1000));
-            }
-          }
-        } catch (err) {
-          console.error(`Error translating chapter ${ch.chapter_number} attempt ${attempt}:`, err);
-          if (attempt < MAX_RETRIES && !abortBatchRef.current) {
-            const waitSec = attempt * 3;
-            setBatchProgress({
-              current: i + 1,
-              total: pendingList.length,
-              chNum: ch.chapter_number,
-              statusText: `Cooldown ${waitSec}s (Retry ${attempt + 1})...`,
-            });
-            await new Promise((r) => setTimeout(r, waitSec * 1000));
-          }
-        }
-      }
-
-      if (!chapterSuccess && !abortBatchRef.current) {
-        failedList.push(ch.chapter_number);
-      }
-
-      // Safe 1.85s delay between chapters (strictly under 35 RPM limit)
-      await new Promise((r) => setTimeout(r, 1850));
-    }
-
-    setBatchTranslating(false);
-    setBatchProgress(null);
-    if (!abortBatchRef.current) {
-      if (failedList.length === 0) {
-        showMsg("ok", `🎉 Sukses! Semua ${completedCount} chapter berhasil diterjemahkan!`);
-      } else {
-        showMsg(
-          "err",
-          `Selesai: ${completedCount} berhasil, ${failedList.length} gagal (Ch: ${failedList.slice(0, 5).join(", ")}${failedList.length > 5 ? "..." : ""})`
-        );
-      }
+      setBgJob(data.job);
+      bgJobWasRunning.current = true;
+      showMsg("ok", "🚀 Background translate diluncurkan! Aman tutup atau refresh tab.");
+    } catch (err: any) {
+      showMsg("err", err?.message || "Gagal terhubung ke server.");
     }
   };
 
-  const handleStopBatch = () => {
-    abortBatchRef.current = true;
+  const handleStopBatch = async () => {
+    try {
+      const res = await fetch("/api/translate/bulk", { method: "DELETE" });
+      const data = await res.json();
+      setBgJob(data.job ?? null);
+    } catch {
+      // abaikan
+    }
   };
 
   const filteredChapters = chapters.filter((ch) => {
@@ -549,6 +519,15 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
       !!ch.content_original &&
       ch.content_original.trim().length > 50
   ).length;
+
+  const isJobRunning = bgJob?.status === "running";
+  const isThisNovelRunning =
+    isJobRunning && (bgJob?.novelId === novel.id || bgJob?.novelIds?.includes(novel.id));
+  const isOtherJobRunning = isJobRunning && !isThisNovelRunning;
+
+  const jobCurrent = bgJob?.completedChapters || bgJob?.currentChapterIndex || 0;
+  const jobTotal = bgJob?.totalChapters || bgJob?.currentChapterTotal || pendingWithContent || 1;
+  const progressPercent = Math.min(100, Math.round((jobCurrent / (jobTotal || 1)) * 100));
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-12">
@@ -891,9 +870,16 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
             <div className="text-left">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold text-slate-100">Chapter Studio & Translator</h2>
-                <span className="px-2 py-0.2 rounded text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/20 text-emerald-300">
-                  {translatedCount} Selesai
-                </span>
+                {isThisNovelRunning ? (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#B99762]/20 border border-[#B99762]/40 text-[#e6ca91] flex items-center gap-1 animate-pulse">
+                    <Loader2 className="w-3 h-3 animate-spin text-[#D4A843]" />
+                    <span>Background Aktif</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.2 rounded text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/20 text-emerald-300">
+                    {translatedCount} Selesai
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
                 {chapters.length > 0
@@ -942,44 +928,67 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                     </div>
 
                     {/* Batch Translate Button / Progress */}
-                    {batchTranslating ? (
+                    {isThisNovelRunning ? (
                       <div className="bg-[#B99762]/10 border border-[#B99762]/30 rounded-lg p-2.5 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="text-[#e6ca91] flex items-center gap-1.5 font-semibold">
                             <Loader2 className="w-3 h-3 animate-spin text-[#D4A843]" />
                             <span>
-                              Ch {batchProgress?.chNum} ({batchProgress?.current}/{batchProgress?.total})
+                              {bgJob?.phase === "synopsis"
+                                ? "Menerjemahkan Sinopsis..."
+                                : bgJob?.currentChapterNumber
+                                ? `Ch ${bgJob.currentChapterNumber} (${jobCurrent}/${jobTotal})`
+                                : "Menyiapkan Terjemahan..."}
                             </span>
                           </span>
                           <button
                             type="button"
                             onClick={handleStopBatch}
                             className="text-[10px] font-bold bg-red-950/60 hover:bg-red-900/60 text-red-300 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                            title="Hentikan background translate"
                           >
                             Stop
                           </button>
                         </div>
-                        {batchProgress?.statusText && (
-                          <div className="text-[10px] text-[#e6ca91] font-mono flex items-center gap-1">
+                        <div className="text-[10px] text-[#e6ca91] font-mono flex items-center justify-between">
+                          <span className="flex items-center gap-1 truncate max-w-[170px]">
                             <span>⏳</span>
-                            <span>{batchProgress.statusText}</span>
-                          </div>
-                        )}
+                            <span className="truncate">
+                              {bgJob?.phase === "synopsis"
+                                ? "AI Sinopsis"
+                                : bgJob?.currentChapterNumber
+                                ? `Sedang translate Ch. ${bgJob.currentChapterNumber}`
+                                : "Server Background"}
+                            </span>
+                          </span>
+                          <span className="text-slate-400 text-[9px]">{progressPercent}%</span>
+                        </div>
                         <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                           <div
                             className="bg-[#B99762] h-1.5 rounded-full transition-all duration-300"
-                            style={{
-                              width: `${((batchProgress?.current || 0) / (batchProgress?.total || 1)) * 100}%`,
-                            }}
+                            style={{ width: `${progressPercent}%` }}
                           />
                         </div>
+                        <p className="text-[9px] text-slate-400 italic">
+                          Aman ditutup atau refresh, proses jalan di server.
+                        </p>
+                      </div>
+                    ) : isOtherJobRunning ? (
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 text-[10px] text-amber-300/90 space-y-1">
+                        <div className="flex items-center gap-1 font-semibold">
+                          <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
+                          <span>Translate Background Aktif</span>
+                        </div>
+                        <p className="text-[9px] text-slate-400 truncate">
+                          Novel lain: {bgJob?.currentNovelTitle || "Sedang berjalan..."}
+                        </p>
                       </div>
                     ) : pendingWithContent > 0 ? (
                       <button
                         type="button"
                         onClick={handleBatchTranslate}
                         className="w-full px-2.5 py-1.5 bg-[#B99762]/10 hover:bg-[#B99762]/20 border border-[#B99762]/30 text-[#e6ca91] rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                        title="Translate semua chapter yang belum diterjemahkan secara otomatis"
+                        title="Translate semua chapter yang belum diterjemahkan secara otomatis di background server"
                       >
                         <Zap className="w-3.5 h-3.5 text-[#D4A843]" />
                         <span>Translate Semua ({pendingWithContent} pending)</span>
@@ -1028,7 +1037,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
 
                           {/* Quick Action Button */}
                           <div className="shrink-0 flex items-center gap-1">
-                            {isThisTranslating ? (
+                            {isThisTranslating || (isThisNovelRunning && bgJob?.currentChapterNumber === ch.chapter_number) ? (
                               <div className="flex items-center gap-1 px-1.5 py-0.5 bg-[#B99762]/10 border border-[#B99762]/30 rounded text-[10px] text-[#e6ca91] font-semibold">
                                 <Loader2 className="w-3 h-3 animate-spin" />
                                 <span>AI...</span>
@@ -1041,7 +1050,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                                 <button
                                   type="button"
                                   onClick={(e) => handleTranslateSingleChapter(ch, e)}
-                                  disabled={batchTranslating || !!translatingChapterId}
+                                  disabled={isThisNovelRunning || isOtherJobRunning || !!translatingChapterId}
                                   className="p-1 hover:bg-white/5 text-slate-400 hover:text-[#D4A843] rounded transition-colors cursor-pointer"
                                   title={`Re-translate Ch. ${ch.chapter_number}`}
                                 >
@@ -1052,7 +1061,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                               <button
                                 type="button"
                                 onClick={(e) => handleTranslateSingleChapter(ch, e)}
-                                disabled={batchTranslating || !!translatingChapterId || !hasOriginal}
+                                disabled={isThisNovelRunning || isOtherJobRunning || !!translatingChapterId || !hasOriginal}
                                 className="px-2 py-0.5 bg-[#B99762]/10 hover:bg-[#B99762]/20 border border-[#B99762]/30 text-[#e6ca91] rounded text-[10px] font-semibold transition-all flex items-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                                 title={
                                   hasOriginal
