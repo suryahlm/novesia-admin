@@ -580,9 +580,9 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
     isJobRunning && (bgJob?.novelId === novel.id || bgJob?.novelIds?.includes(novel.id));
   const isOtherJobRunning = isJobRunning && !isThisNovelRunning;
 
-  const jobCurrent = bgJob?.completedChapters || bgJob?.currentChapterIndex || 0;
+  const jobCompleted = (bgJob?.completedChapters || 0) + (bgJob?.failedChapters || 0);
   const jobTotal = bgJob?.totalChapters || bgJob?.currentChapterTotal || pendingWithContent || 1;
-  const progressPercent = Math.min(100, Math.round((jobCurrent / (jobTotal || 1)) * 100));
+  const progressPercent = Math.min(100, Math.round((jobCompleted / (jobTotal || 1)) * 100));
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-12">
@@ -992,7 +992,7 @@ export default function NovelEditor({ novel: initialNovel }: NovelEditorProps) {
                               {bgJob?.phase === "synopsis"
                                 ? "Menerjemahkan Sinopsis..."
                                 : bgJob?.currentChapterNumber
-                                ? `Ch ${bgJob.currentChapterNumber} (${jobCurrent}/${jobTotal})`
+                                ? `Ch ${bgJob.currentChapterNumber} (${bgJob.currentChapterIndex || 1}/${jobTotal})`
                                 : "Menyiapkan Terjemahan..."}
                             </span>
                           </span>

@@ -80,25 +80,24 @@ export function isChapterPending(chapter: {
   const wordCount = chapter.word_count_translated ?? chapter.wordCountTranslated ?? 0;
   const orig = chapter.content_original ?? chapter.contentOriginal;
 
-  // Jika status secara eksplisit pending / failed / error
+  // 1. Jika status secara eksplisit pending / failed / error
   if (status === "pending" || status === "failed" || status === "error") {
     return true;
   }
 
-  // Jika belum ada terjemahan
-  if (!trans || !trans.trim()) {
-    return true;
+  // 2. Jika konten terjemahan ada di memori objek (sudah di-fetch)
+  if (trans !== undefined) {
+    if (!trans || !trans.trim()) return true;
+    if (isInvalidOrBrokenTranslation(trans, orig)) return true;
+    if (wordCount === 0 && (!orig || orig.length > 50)) return true;
+    return false;
   }
 
-  // Jika terjemahan rusak / berupa halaman error HTML
-  if (isInvalidOrBrokenTranslation(trans, orig)) {
-    return true;
+  // 3. Jika hanya metadata (konten teks belum di-load ke memori):
+  // Andalkan translation_status dan word_count_translated dari database
+  if (status === "done" && wordCount > 0) {
+    return false;
   }
 
-  // Jika kata terjemahan 0 padahal ada konten
-  if (wordCount === 0 && (!orig || orig.length > 50)) {
-    return true;
-  }
-
-  return false;
+  return wordCount === 0;
 }

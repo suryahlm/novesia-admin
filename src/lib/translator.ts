@@ -477,29 +477,59 @@ export { isInvalidOrBrokenTranslation } from "./translation-validator";
 import { isInvalidOrBrokenTranslation } from "./translation-validator";
 import { cleanChapterText, ChapterCleanerMeta } from "./chapterCleaner";
 
-export async function translateText(
-  text: string,
-  type: "synopsis" | "chapter" = "chapter",
+function chunkTextByParagraphs(text: string, maxChunkLength: number = 9500): string[] {
+  const paragraphs = text.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+  if (paragraphs.length <= 1) {
+    if (text.length <= maxChunkLength) return [text];
+    const sentences = text.match(/[^.!?]+[.!?]+(\s+|$)/g) || [text];
+    const chunks: string[] = [];
+    let current = "";
+    for (const s of sentences) {
+      if ((current + s).length > maxChunkLength && current.length > 0) {
+        chunks.push(current.trim());
+        current = s;
+      } else {
+        current += s;
+      }
+    }
+    if (current.trim()) chunks.push(current.trim());
+    return chunks;
+  }
+
+  const chunks: string[] = [];
+  let currentChunk: string[] = [];
+  let currentLen = 0;
+
+  for (const p of paragraphs) {
+    if (currentLen + p.length > maxChunkLength && currentChunk.length > 0) {
+      chunks.push(currentChunk.join("\n\n"));
+      currentChunk = [p];
+      currentLen = p.length;
+    } else {
+      currentChunk.push(p);
+      currentLen += p.length + 2;
+    }
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk.join("\n\n"));
+  }
+
+  return chunks;
+}
+
+async function translateSingleChunk(
+  chunk: string,
+  type: "synopsis" | "chapter",
   meta?: ChapterCleanerMeta
 ): Promise<string> {
-  if (!text || !text.trim()) {
-    return "";
-  }
-
-  // Pre-clean chapter text to strip navigation links and duplicate header lines
-  const inputToTranslate = type === "chapter" ? cleanChapterText(text, meta) : text.trim();
-  if (!inputToTranslate || !inputToTranslate.trim()) {
-    return "";
-  }
-
   const systemPrompt = type === "synopsis" ? SYNOPSIS_SYSTEM_PROMPT : CHAPTER_SYSTEM_PROMPT;
 
   // === 1. JALUR UTAMA SINOPSIS: GROQ (openai/gpt-oss-120b) ===
-  // Sinopsis teksnya pendek, sangat hemat dan selesai dalam 1-2 detik via Groq gratis
   if (type === "synopsis" && process.env.GROQ_API_KEY) {
     try {
-      const groqResult = await translateViaGroq(text, systemPrompt);
-      if (groqResult && !isInvalidOrBrokenTranslation(groqResult, text)) {
+      const groqResult = await translateViaGroq(chunk, systemPrompt);
+      if (groqResult && !isInvalidOrBrokenTranslation(groqResult, chunk)) {
         return groqResult.trim();
       }
       console.warn("[Groq] Terjemahan sinopsis tidak valid, beralih ke Guts AI...");
@@ -524,28 +554,27 @@ export async function translateText(
           body: JSON.stringify({
             model: GUTSAI_MODEL,
             temperature: 0.3,
-            max_tokens: 16384,
+            max_tokens: 8192,
             messages: [
               { role: "system", content: systemPrompt },
               {
                 role: "user",
                 content:
                   type === "synopsis"
-                    ? `Terjemahkan sinopsis berikut ke Bahasa Indonesia:\n\n${inputToTranslate}`
-                    : `Terjemahkan teks novel berikut ke Bahasa Indonesia:\n\n${inputToTranslate}`,
+                    ? `Terjemahkan sinopsis berikut ke Bahasa Indonesia:\n\n${chunk}`
+                    : `Terjemahkan teks novel berikut ke Bahasa Indonesia:\n\n${chunk}`,
               },
             ],
           }),
-          signal: AbortSignal.timeout(180_000),
+          signal: AbortSignal.timeout(90_000),
         });
 
         if (response.ok) {
           const data = await response.json();
           const rawContent = data.choices?.[0]?.message?.content?.trim();
 
-          if (rawContent && !isInvalidOrBrokenTranslation(rawContent, inputToTranslate)) {
-            const finalCleaned = type === "chapter" ? cleanChapterText(rawContent, meta) : rawContent;
-            return finalCleaned.trim();
+          if (rawContent && !isInvalidOrBrokenTranslation(rawContent, chunk)) {
+            return rawContent.trim();
           }
 
           console.warn(`[GutsAI] Attempt ${attempt} menghasilkan output rusak/HTML error. Mengabaikan...`);
@@ -556,8 +585,7 @@ export async function translateText(
           if (response.status === 429) {
             lastGutsRateLimitTime = Date.now();
             if (attempt === 1) {
-              // Tunggu 15 detik sebelum percobaan kedua agar jendela rate limit pulih
-              await new Promise((r) => setTimeout(r, 15000));
+              await new Promise((r) => setTimeout(r, 12000));
               continue;
             }
           }
@@ -565,7 +593,7 @@ export async function translateText(
       } catch (err) {
         console.warn(`[GutsAI] Attempt ${attempt} error:`, err);
         if (attempt === 1) {
-          await new Promise((r) => setTimeout(r, 4000));
+          await new Promise((r) => setTimeout(r, 3000));
           continue;
         }
       }
@@ -575,15 +603,54 @@ export async function translateText(
   // === 3. FALLBACK CADANGAN BAB NOVEL KE GROQ (openai/gpt-oss-120b) ===
   if (type === "chapter") {
     try {
-      const groqResult = await translateViaGroq(inputToTranslate, systemPrompt);
-      if (groqResult && !isInvalidOrBrokenTranslation(groqResult, inputToTranslate)) {
-        const finalCleaned = cleanChapterText(groqResult, meta);
-        return finalCleaned.trim();
+      const groqResult = await translateViaGroq(chunk, systemPrompt);
+      if (groqResult && !isInvalidOrBrokenTranslation(groqResult, chunk)) {
+        return groqResult.trim();
       }
     } catch (groqErr: any) {
       console.error("[Groq] Translation fallback failed:", groqErr?.message || groqErr);
     }
   }
 
-  throw new Error("Gagal menerjemahkan dengan AI (Gemini & Groq fallback gagal).");
+  throw new Error("Gagal menerjemahkan chunk dengan AI (Gemini & Groq fallback gagal).");
+}
+
+export async function translateText(
+  text: string,
+  type: "synopsis" | "chapter" = "chapter",
+  meta?: ChapterCleanerMeta
+): Promise<string> {
+  if (!text || !text.trim()) {
+    return "";
+  }
+
+  // Pre-clean chapter text to strip navigation links and duplicate header lines
+  const inputToTranslate = type === "chapter" ? cleanChapterText(text, meta) : text.trim();
+  if (!inputToTranslate || !inputToTranslate.trim()) {
+    return "";
+  }
+
+  // Untuk chapter panjang (>11.000 karakter atau ~1.800 kata), pecah per paragraf agar tidak kena token limit / timeout
+  if (type === "chapter" && inputToTranslate.length > 11000) {
+    const chunks = chunkTextByParagraphs(inputToTranslate, 9500);
+    const translatedParts: string[] = [];
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const part = await translateSingleChunk(chunk, type, meta);
+      translatedParts.push(part);
+
+      // Jeda kecil antar chunk agar rate limit TPM aman
+      if (i < chunks.length - 1) {
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+    }
+
+    const combined = translatedParts.join("\n\n");
+    return cleanChapterText(combined, meta).trim();
+  }
+
+  // Teks normal (<11.000 karakter): terjemahkan langsung dalam 1 kali request
+  const rawResult = await translateSingleChunk(inputToTranslate, type, meta);
+  return (type === "chapter" ? cleanChapterText(rawResult, meta) : rawResult).trim();
 }
