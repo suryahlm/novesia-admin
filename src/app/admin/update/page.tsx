@@ -19,6 +19,10 @@ import {
   XCircle,
   Languages,
   Clock,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
 interface Novel {
@@ -79,6 +83,19 @@ const SOURCE_TABS = [
   { id: "general", label: "General", icon: "🌐", color: "from-gray-600 to-slate-600", shadow: "shadow-gray-500/20" },
 ];
 
+function getPageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, "...", total];
+  }
+  if (current >= total - 3) {
+    return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total];
+}
+
 export default function EditNovelPage() {
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +105,15 @@ export default function EditNovelPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkGenerating, setBulkGenerating] = useState(false);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(30); // 30 per halaman untuk rendering instan
+
+  // Reset page saat filter/search berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, activeSource]);
   const [confirmModal, setConfirmModal] = useState<{
     type: "single" | "bulk" | "translate" | "translate-source";
     novelId?: string;
@@ -241,6 +267,32 @@ export default function EditNovelPage() {
     const src = n.source || "general";
     sourceCounts[src] = (sourceCounts[src] || 0) + 1;
   });
+
+  // Pagination derived data
+  const totalPages = Math.max(1, Math.ceil(filtered.length / (pageSize === -1 ? (filtered.length || 1) : pageSize)));
+
+  const paginatedNovels = useMemo(() => {
+    if (pageSize === -1) return filtered;
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
+  const isPageAllSelected =
+    paginatedNovels.length > 0 &&
+    paginatedNovels.every((n) => selectedIds.has(n.id));
+
+  const toggleSelectCurrentPage = () => {
+    const pageIds = paginatedNovels.map((n) => n.id);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (isPageAllSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
 
   // Selection handlers
   const toggleSelect = (id: string) => {
@@ -585,7 +637,7 @@ export default function EditNovelPage() {
             }`}
           >
             {allSelected ? <CheckSquare className="w-4 h-4 text-[#D4A843]" /> : <Square className="w-4 h-4 text-slate-400" />}
-            <span>{allSelected ? "Batal Pilih" : "Pilih Semua"}</span>
+            <span>{allSelected ? "Batal Pilih" : `Pilih Semua (${filtered.length})`}</span>
           </button>
         </div>
       </div>
@@ -701,7 +753,17 @@ export default function EditNovelPage() {
         {!loading && filtered.length > 0 && (
           <div className="hidden lg:flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-black/20 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <span className="w-5 text-center">#</span>
+              <button
+                onClick={toggleSelectCurrentPage}
+                className="w-5 text-center p-0.5 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                title={isPageAllSelected ? "Batalkan pilihan halaman ini" : "Pilih semua novel di halaman ini"}
+              >
+                {isPageAllSelected ? (
+                  <CheckSquare className="w-4 h-4 text-[#D4A843] mx-auto" />
+                ) : (
+                  <Square className="w-4 h-4 mx-auto" />
+                )}
+              </button>
               <span>Novel & Metadata</span>
             </div>
             <div className="flex items-center gap-6 shrink-0">
@@ -735,7 +797,7 @@ export default function EditNovelPage() {
           </div>
         ) : (
           <div className="divide-y divide-white/[0.04]">
-            {filtered.map((novel) => {
+            {paginatedNovels.map((novel) => {
               const isSelected = selectedIds.has(novel.id);
               const isDeleting = deletingId === novel.id;
               const totalCh = novel.total_with_content || novel.total_chapters || 0;
@@ -769,6 +831,8 @@ export default function EditNovelPage() {
                         <img
                           src={novel.cover_url}
                           alt={novel.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover group-hover/row:scale-105 transition-transform duration-300"
                         />
                       ) : (
@@ -908,6 +972,119 @@ export default function EditNovelPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {!loading && filtered.length > 0 && (
+          <div className="px-4 sm:px-6 py-4 border-t border-white/[0.06] bg-black/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Info & Page Size */}
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+              <span>
+                Menampilkan{" "}
+                <strong className="text-slate-200">
+                  {pageSize === -1
+                    ? `1 - ${filtered.length}`
+                    : `${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, filtered.length)}`}
+                </strong>{" "}
+                dari <strong className="text-slate-200">{filtered.length}</strong> novel
+              </span>
+              <span className="text-slate-600 hidden sm:inline">•</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-slate-500">Per hal:</span>
+                {[20, 30, 50, 100].map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => {
+                      setPageSize(size);
+                      setCurrentPage(1);
+                    }}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold transition-all cursor-pointer ${
+                      pageSize === size
+                        ? "bg-[#B99762] text-black font-bold shadow-sm"
+                        : "bg-white/[0.04] text-slate-400 hover:text-slate-200 hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    setPageSize(-1);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                    pageSize === -1
+                      ? "bg-[#B99762] text-black font-bold shadow-sm"
+                      : "bg-white/[0.04] text-slate-400 hover:text-slate-200 hover:bg-white/[0.08]"
+                  }`}
+                >
+                  Semua
+                </button>
+              </div>
+            </div>
+
+            {/* Page Navigation Buttons */}
+            {totalPages > 1 && pageSize !== -1 && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-slate-100 hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  title="Halaman Pertama"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-slate-100 hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  title="Halaman Sebelumnya"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {/* Numbered Buttons */}
+                <div className="flex items-center gap-1">
+                  {getPageNumbers(currentPage, totalPages).map((p, idx) =>
+                    p === "..." ? (
+                      <span key={`dots-${idx}`} className="px-1.5 text-xs text-slate-600 font-mono">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={`page-${p}`}
+                        onClick={() => setCurrentPage(Number(p))}
+                        className={`min-w-[32px] h-8 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                          currentPage === p
+                            ? "bg-[#B99762] text-black font-bold shadow-sm"
+                            : "bg-white/[0.03] border border-white/[0.06] text-slate-300 hover:bg-white/[0.08] hover:text-white"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-slate-100 hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  title="Halaman Selanjutnya"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-slate-100 hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  title="Halaman Terakhir"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
