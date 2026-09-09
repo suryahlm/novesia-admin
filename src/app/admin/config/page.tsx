@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save, Share2, Loader2, Sparkles } from 'lucide-react';
+import { Save, Share2, Loader2, Sparkles, Megaphone, Clock } from 'lucide-react';
 
 interface AppConfig {
   telegram_link: string;
+  ad_cooldown_minutes?: number;
+  ad_interstitial_enabled?: boolean;
 }
 
 const DEFAULT: AppConfig = {
   telegram_link: 'https://t.me/novesiaforum',
+  ad_cooldown_minutes: 30,
+  ad_interstitial_enabled: true,
 };
 
 export default function ConfigPage() {
@@ -23,6 +27,8 @@ export default function ConfigPage() {
       .then((data) => {
         setConfig({
           telegram_link: data.telegram_link || DEFAULT.telegram_link,
+          ad_cooldown_minutes: typeof data.ad_cooldown_minutes === 'number' ? data.ad_cooldown_minutes : 30,
+          ad_interstitial_enabled: data.ad_interstitial_enabled !== undefined ? Boolean(data.ad_interstitial_enabled) : true,
         });
         setLoading(false);
       })
@@ -119,6 +125,87 @@ export default function ConfigPage() {
           />
           <p className="text-[11px] text-neutral-500">
             Tautan ini akan dibuka saat pembaca mengklik menu Komunitas Telegram di tab Profil aplikasi.
+          </p>
+        </div>
+      </div>
+
+      {/* ═══ ADMOB & MONETIZATION SETTINGS ═══ */}
+      <div className="bg-neutral-900/70 border border-neutral-800 rounded-xl p-5 space-y-5 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <Megaphone className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-white">Iklan & Monetisasi (AdMob)</h2>
+              <p className="text-xs text-neutral-400">Atur jeda dan frekuensi tampil iklan interstitial di aplikasi mobile</p>
+            </div>
+          </div>
+
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.ad_interstitial_enabled ?? true}
+              onChange={(e) => setConfig({ ...config, ad_interstitial_enabled: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#B99762]"></div>
+            <span className="ml-2.5 text-xs font-semibold text-neutral-300">
+              {config.ad_interstitial_enabled ? 'Aktif' : 'Nonaktif'}
+            </span>
+          </label>
+        </div>
+
+        <div className="space-y-3 pt-1 border-t border-neutral-800/80">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
+              Interval Cooldown Iklan (Menit)
+            </label>
+            <span className="text-xs font-mono font-bold text-[#B99762] bg-[#B99762]/10 px-2.5 py-1 rounded-md border border-[#B99762]/20">
+              Tampil setiap {config.ad_cooldown_minutes || 30} Menit
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min={1}
+              max={180}
+              value={config.ad_cooldown_minutes || 30}
+              onChange={(e) => {
+                const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                setConfig({ ...config, ad_cooldown_minutes: val });
+              }}
+              className="w-32 bg-[#0a0c10] border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-[#B99762] font-mono transition-colors"
+            />
+            <span className="text-xs text-neutral-400">menit sekali saat pembaca membuka bab baru</span>
+          </div>
+
+          {/* Quick Preset Pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <span className="text-[11px] text-neutral-500 mr-1">Pilihan Cepat:</span>
+            {[15, 20, 30, 45, 60].map((mins) => {
+              const isActive = (config.ad_cooldown_minutes || 30) === mins;
+              return (
+                <button
+                  key={mins}
+                  type="button"
+                  onClick={() => setConfig({ ...config, ad_cooldown_minutes: mins })}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[#B99762] text-black font-bold shadow-md shadow-[#B99762]/20'
+                      : 'bg-neutral-800/80 text-neutral-300 hover:bg-neutral-800 border border-neutral-700/50'
+                  }`}
+                >
+                  {mins} Menit
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="text-[11px] text-neutral-500 leading-relaxed pt-1">
+            Iklan interstitial hanya akan tayang maksimal 1 kali per interval yang ditentukan per perangkat pembaca saat membuka bab baru. Pembaca akan melihat notifikasi <i>&quot;Next ad will appear in {config.ad_cooldown_minutes || 30} minutes&quot;</i>.
           </p>
         </div>
       </div>
