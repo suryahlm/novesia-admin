@@ -29,6 +29,7 @@ const navItems = [
   { href: "/admin/novels/new", label: "Tambah Novel", icon: BookPlus },
   { href: "/admin/update", label: "Edit Novel", icon: FileEdit },
   { href: "/admin/requests", label: "Request Terjemahan", icon: Languages },
+  { href: "/admin/novel-requests", label: "Permintaan Novel", icon: Sparkles },
   { href: "/admin/storage", label: "Storage R2", icon: Database },
   { href: "/admin/users", label: "Pengguna", icon: Users },
   { href: "/admin/comments", label: "Komentar", icon: MessageSquare },
