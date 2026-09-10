@@ -20,6 +20,7 @@ import {
   MessagesSquare,
   Rocket,
   Languages,
+  BellRing,
 } from "lucide-react";
 
 const navItems = [
@@ -33,6 +34,7 @@ const navItems = [
   { href: "/admin/comments", label: "Komentar", icon: MessageSquare },
   { href: "/admin/forum", label: "Forum", icon: MessagesSquare },
   { href: "/admin/notifications", label: "Notifikasi", icon: Bell },
+  { href: "/admin/push-notifications", label: "Push Notifikasi", icon: BellRing },
   { href: "/admin/banners", label: "Banner Beranda", icon: Rocket },
   { href: "/admin/blacklist", label: "Blacklist", icon: Ban },
   { href: "/admin/logs", label: "Scraping & Logs", icon: ScrollText },
