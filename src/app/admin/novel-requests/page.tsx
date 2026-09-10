@@ -18,7 +18,7 @@ import {
   Edit3,
   Globe,
   MessageSquare,
-  Sparkles,
+  Users,
   Copy,
   Check,
 } from "lucide-react";
@@ -435,7 +435,7 @@ export default function NovelRequestsPage() {
                     {/* Permohonan Count */}
                     <td className="px-4 py-3.5 text-center">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-[#B99762]/15 text-[#D4A843] border border-[#B99762]/30 text-xs">
-                        <Sparkles size={11} />
+                        <Users size={11} />
                         {item.request_count || item.requestCount || 1}x
                       </span>
                     </td>
