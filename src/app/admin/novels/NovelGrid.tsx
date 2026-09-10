@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { BookOpen, Search, X, Trash2, Loader2 } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
 
-interface Novel {
+export interface Novel {
   id: string;
   title: string;
   nu_slug: string;
@@ -19,20 +19,181 @@ interface Novel {
   status: string;
 }
 
-export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }) {
-  const [novels, setNovels] = useState(initialNovels);
+interface NovelGridProps {
+  novels?: Novel[];
+  initialNovels?: Novel[];
+  initialTotal?: number;
+  initialDraftCount?: number;
+  initialNoCoverCount?: number;
+  initialGenres?: string[];
+  source?: string;
+}
+
+export default function NovelGrid({
+  novels: legacyNovels,
+  initialNovels,
+  initialTotal,
+  initialDraftCount = 0,
+  initialNoCoverCount = 0,
+  initialGenres = [],
+  source,
+}: NovelGridProps) {
+  const startItems = initialNovels || legacyNovels || [];
+  const startTotal = initialTotal ?? startItems.length;
+
+  const [novels, setNovels] = useState<Novel[]>(startItems);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(startTotal);
+  const [hasMore, setHasMore] = useState(startItems.length < startTotal);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [isFilterLoading, setIsFilterLoading] = useState(false);
+
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "ongoing" | "completed" | "no_cover">("all");
   const [genreFilter, setGenreFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"newest" | "chapters" | "title">("newest");
+
+  const [draftCount, setDraftCount] = useState(initialDraftCount);
+  const [noCoverCount, setNoCoverCount] = useState(initialNoCoverCount);
+
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [targetNovel, setTargetNovel] = useState<Novel | null>(null);
 
-  const noCoverCount = useMemo(() => {
-    return novels.filter((n) => !n.cover_url || n.cover_url.trim() === "").length;
-  }, [novels]);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isFirstRender = useRef(true);
 
+  // Debounce search input (350ms)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Extract combined unique genres
+  const allGenres = useMemo(() => {
+    const genreSet = new Set<string>(initialGenres);
+    novels.forEach((n) => (n.genres || []).forEach((g) => genreSet.add(g)));
+    return [...genreSet].sort();
+  }, [initialGenres, novels]);
+
+  // Fetch filtered batch (page 1) when filters or search change
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setIsFilterLoading(true);
+
+    const fetchFiltered = async () => {
+      try {
+        const params = new URLSearchParams();
+        params.set("page", "1");
+        params.set("limit", "24");
+        params.set("sortBy", sortBy);
+        if (source) params.set("source", source);
+        if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+        if (statusFilter !== "all") params.set("status", statusFilter);
+        if (genreFilter !== "all") params.set("genre", genreFilter);
+
+        const res = await fetch(`/api/novels?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error("Gagal mengambil novel");
+        const data = await res.json();
+
+        const fetchedNovels: Novel[] = data.novels || [];
+        const fetchedTotal = Number(data.total ?? fetchedNovels.length);
+
+        setNovels(fetchedNovels);
+        setTotal(fetchedTotal);
+        setPage(1);
+        setHasMore(data.hasMore ?? (fetchedNovels.length < fetchedTotal));
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("Filter fetch error:", err);
+        }
+      } finally {
+        setIsFilterLoading(false);
+      }
+    };
+
+    fetchFiltered();
+
+    return () => {
+      controller.abort();
+    };
+  }, [debouncedSearch, statusFilter, genreFilter, sortBy, source]);
+
+  // Load next page on scroll
+  const loadMore = useCallback(async () => {
+    if (loadingMore || isFilterLoading || !hasMore) return;
+
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(nextPage));
+      params.set("limit", "24");
+      params.set("sortBy", sortBy);
+      if (source) params.set("source", source);
+      if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (genreFilter !== "all") params.set("genre", genreFilter);
+
+      const res = await fetch(`/api/novels?${params.toString()}`);
+      if (!res.ok) throw new Error("Gagal memuat batch berikutnya");
+      const data = await res.json();
+
+      const newItems: Novel[] = data.novels || [];
+      setNovels((prev) => {
+        const existingIds = new Set(prev.map((n) => n.id));
+        const filteredNew = newItems.filter((n) => !existingIds.has(n.id));
+        const combined = [...prev, ...filteredNew];
+        setHasMore(data.hasMore ?? (combined.length < (data.total || total)));
+        return combined;
+      });
+
+      setPage(nextPage);
+      if (data.total !== undefined) {
+        setTotal(Number(data.total));
+      }
+    } catch (err) {
+      console.error("Load more error:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, isFilterLoading, hasMore, page, sortBy, source, debouncedSearch, statusFilter, genreFilter, total]);
+
+  // IntersectionObserver for bottom sentinel
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !isFilterLoading) {
+          loadMore();
+        }
+      },
+      { rootMargin: "400px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore, hasMore, loadingMore, isFilterLoading]);
+
+  // Delete handlers
   const handleDelete = (e: React.MouseEvent, novel: Novel) => {
     e.preventDefault();
     e.stopPropagation();
@@ -47,8 +208,15 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
     try {
       const res = await fetch(`/api/novels/${targetNovel.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Gagal menghapus novel.");
-      
-      setNovels(prev => prev.filter(n => n.id !== targetNovel.id));
+
+      setNovels((prev) => prev.filter((n) => n.id !== targetNovel.id));
+      setTotal((prev) => Math.max(0, prev - 1));
+      if (targetNovel.status === "draft") {
+        setDraftCount((prev) => Math.max(0, prev - 1));
+      }
+      if (!targetNovel.cover_url || targetNovel.cover_url.trim() === "") {
+        setNoCoverCount((prev) => Math.max(0, prev - 1));
+      }
       setIsModalOpen(false);
     } catch (err: any) {
       alert(err.message);
@@ -57,57 +225,14 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
     }
   };
 
-  // Extract unique genres
-  const allGenres = useMemo(() => {
-    const genreSet = new Set<string>();
-    novels.forEach((n) => (n.genres || []).forEach((g) => genreSet.add(g)));
-    return [...genreSet].sort();
-  }, [novels]);
+  const hasFilters = Boolean(search || statusFilter !== "all" || genreFilter !== "all");
 
-  // Filter & sort
-  const filtered = useMemo(() => {
-    let result = novels;
-
-    // Search
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (n) =>
-          n.title.toLowerCase().includes(q) ||
-          (n.nu_slug && n.nu_slug.toLowerCase().includes(q))
-      );
-    }
-
-    // Status & Cover
-    if (statusFilter !== "all") {
-      result = result.filter((n) => {
-        if (statusFilter === "no_cover") {
-          return !n.cover_url || n.cover_url.trim() === "";
-        }
-        if (statusFilter === "draft") return n.status === "draft";
-        const s = (n.original_status || "").toLowerCase();
-        if (statusFilter === "completed") return s.includes("completed");
-        return !s.includes("completed") && n.status !== "draft";
-      });
-    }
-
-    // Genre
-    if (genreFilter !== "all") {
-      result = result.filter((n) => (n.genres || []).includes(genreFilter));
-    }
-
-    // Sort
-    if (sortBy === "chapters") {
-      result = [...result].sort((a, b) => (b.total_chapters || 0) - (a.total_chapters || 0));
-    } else if (sortBy === "title") {
-      result = [...result].sort((a, b) => a.title.localeCompare(b.title));
-    }
-
-    return result;
-  }, [novels, search, statusFilter, genreFilter, sortBy]);
-
-  const hasFilters = search || statusFilter !== "all" || genreFilter !== "all";
-
+  const resetFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setGenreFilter("all");
+    setSortBy("newest");
+  };
 
   return (
     <div className="space-y-4">
@@ -158,15 +283,12 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
           {/* Status Pills */}
           <div className="flex flex-wrap items-center gap-1.5">
             {[
-              { key: "all" as const, label: "Semua" },
-              { key: "draft" as const, label: "Draft" },
-              { key: "ongoing" as const, label: "Ongoing" },
-              { key: "completed" as const, label: "Completed" },
-              { key: "no_cover" as const, label: "🖼️ Tanpa Cover" },
+              { key: "all" as const, label: "Semua", badge: 0 },
+              { key: "draft" as const, label: "Draft", badge: draftCount },
+              { key: "ongoing" as const, label: "Ongoing", badge: 0 },
+              { key: "completed" as const, label: "Completed", badge: 0 },
+              { key: "no_cover" as const, label: "🖼️ Tanpa Cover", badge: noCoverCount },
             ].map((s) => {
-              let count = 0;
-              if (s.key === "draft") count = novels.filter((n) => n.status === "draft").length;
-              if (s.key === "no_cover") count = noCoverCount;
               const isSelected = statusFilter === s.key;
 
               return (
@@ -180,7 +302,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
                   }`}
                 >
                   <span>{s.label}</span>
-                  {count > 0 && (s.key === "draft" || s.key === "no_cover") && (
+                  {s.badge > 0 && (
                     <span
                       className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                         isSelected
@@ -188,7 +310,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
                           : "bg-white/10 text-slate-300"
                       }`}
                     >
-                      {count}
+                      {s.badge}
                     </span>
                   )}
                 </button>
@@ -215,11 +337,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
 
             {hasFilters && (
               <button
-                onClick={() => {
-                  setSearch("");
-                  setStatusFilter("all");
-                  setGenreFilter("all");
-                }}
+                onClick={resetFilters}
                 className="px-3 py-1.5 text-xs font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-all cursor-pointer"
               >
                 ✕ Reset
@@ -228,13 +346,37 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
           </div>
 
           <div className="text-xs font-medium text-slate-400">
-            Menampilkan <span className="text-[#D4A843] font-bold font-mono">{filtered.length}</span> novel
+            Menampilkan <span className="text-[#D4A843] font-bold font-mono">{novels.length}</span>{" "}
+            {total > novels.length && (
+              <>
+                dari <span className="text-slate-300 font-bold font-mono">{total}</span>{" "}
+              </>
+            )}
+            novel
           </div>
         </div>
       </div>
 
-      {/* ═══ Novel Grid ═══ */}
-      {filtered.length === 0 ? (
+      {/* ═══ Novel Grid or Skeletons ═══ */}
+      {isFilterLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-[#12151b] border border-white/5 rounded-xl overflow-hidden animate-pulse flex flex-col"
+            >
+              <div className="aspect-[3/4.2] bg-slate-800/50" />
+              <div className="p-3 space-y-2 flex-1 flex flex-col justify-between">
+                <div className="space-y-1.5">
+                  <div className="h-3.5 bg-slate-800 rounded w-4/5" />
+                  <div className="h-2.5 bg-slate-800/60 rounded w-1/2" />
+                </div>
+                <div className="h-4 bg-slate-800/40 rounded w-2/3 mt-2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : novels.length === 0 ? (
         <div className="bg-[#12151b] border border-white/5 rounded-xl p-16 text-center">
           <BookOpen className="w-12 h-12 text-slate-600 mx-auto" />
           <p className="text-slate-400 mt-4 text-sm">
@@ -242,12 +384,8 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
           </p>
           {hasFilters && (
             <button
-              onClick={() => {
-                setSearch("");
-                setStatusFilter("all");
-                setGenreFilter("all");
-              }}
-              className="text-[#D4A843] text-xs font-semibold mt-3 hover:underline"
+              onClick={resetFilters}
+              className="text-[#D4A843] text-xs font-semibold mt-3 hover:underline cursor-pointer"
             >
               Reset Filter Pencarian →
             </button>
@@ -255,7 +393,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {filtered.map((novel) => {
+          {novels.map((novel) => {
             const isDraft = novel.status === "draft";
             const isCompleted = (novel.original_status || "").toLowerCase().includes("completed");
 
@@ -291,12 +429,12 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
                   <div className="absolute inset-0 bg-gradient-to-t from-[#12151b] via-transparent to-black/30 opacity-70 group-hover:opacity-85 transition-opacity" />
 
                   {/* Rating Badge */}
-                  {novel.rating && (
-                    <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-bold text-[#D4A843] border border-[#B99762]/30 flex items-center gap-0.5">
+                  {novel.rating && Number(novel.rating) > 0 ? (
+                    <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-bold text-[#D4A843] border border-[#B99762]/30 flex items-center gap-0.5 font-mono">
                       <span>★</span>
-                      <span className="font-mono">{novel.rating}</span>
+                      <span>{novel.rating}</span>
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Status Badge */}
                   <div
@@ -311,7 +449,7 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
 
                   {/* Draft Watermark */}
                   {isDraft && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#B99762] px-2.5 py-0.5 rounded text-[10px] font-extrabold text-black rotate-[-12deg]">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#B99762] px-2.5 py-0.5 rounded text-[10px] font-extrabold text-black rotate-[-12deg] shadow-lg">
                       DRAFT
                     </div>
                   )}
@@ -363,6 +501,26 @@ export default function NovelGrid({ novels: initialNovels }: { novels: Novel[] }
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {/* ═══ Sentinel for Infinite Scroll ═══ */}
+      <div ref={sentinelRef} className="h-6 w-full pointer-events-none" />
+
+      {/* ═══ Loading Indicator when Scrolling ═══ */}
+      {loadingMore && (
+        <div className="py-8 flex flex-col items-center justify-center gap-2 text-slate-400">
+          <Loader2 className="w-6 h-6 animate-spin text-[#B99762]" />
+          <span className="text-xs font-medium tracking-wide">Memuat novel lainnya...</span>
+        </div>
+      )}
+
+      {/* ═══ End of Results Indicator ═══ */}
+      {!hasMore && novels.length > 0 && !loadingMore && !isFilterLoading && (
+        <div className="py-8 text-center border-t border-white/5 mt-4">
+          <p className="text-xs text-slate-500 font-mono">
+            ✓ Semua novel telah dimuat ({novels.length} novel)
+          </p>
         </div>
       )}
 

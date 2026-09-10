@@ -14,37 +14,40 @@ const NOVEL_SOURCES = [
   { id: "general", label: "General", icon: "🌐", color: "from-gray-600 to-slate-600", shadow: "shadow-gray-500/20" },
 ];
 
-async function getNovels() {
+async function getInitialData() {
   try {
-    const data = await apiGet<any[]>('/api/novels/all');
-    return (data || []).filter(
-      (n: any) => !n.is_blacklisted && ["active", "completed", "ongoing", "published", "draft"].includes(n.status)
-    );
-  } catch (err) {
-    console.error("Failed to load novels:", err);
-    return [];
-  }
-}
+    const [stats, initialNovelsRes] = await Promise.all([
+      apiGet<any>('/api/novels/stats').catch(() => ({})),
+      apiGet<any>('/api/novels', { page: 1, limit: 24, sortBy: 'newest' }).catch(() => ({})),
+    ]);
 
-async function getSourceCounts() {
-  try {
-    const stats = await apiGet<any>('/api/novels/stats');
-    if (stats?.sourceCounts) return stats.sourceCounts;
-    const novels = await getNovels();
-    const counts: Record<string, number> = {};
-    novels.forEach((n: any) => {
-      const src = n.source;
-      if (src) counts[src] = (counts[src] || 0) + 1;
-    });
-    return counts;
-  } catch {
-    return {};
+    const novelsList = initialNovelsRes?.novels || initialNovelsRes?.data || [];
+    const total = Number(initialNovelsRes?.total ?? stats?.totalNovels ?? novelsList.length);
+    const genres = stats?.genreMap ? Object.keys(stats.genreMap).sort() : [];
+
+    return {
+      novels: novelsList,
+      total,
+      draftCount: Number(stats?.draftCount || 0),
+      noCoverCount: Number(stats?.noCoverCount || 0),
+      sourceCounts: stats?.sourceCounts || {},
+      genres,
+    };
+  } catch (err) {
+    console.error("Failed to load initial novels:", err);
+    return {
+      novels: [],
+      total: 0,
+      draftCount: 0,
+      noCoverCount: 0,
+      sourceCounts: {},
+      genres: [],
+    };
   }
 }
 
 export default async function NovelsListPage() {
-  const novels = await getNovels();
-  const sourceCounts = await getSourceCounts();
+  const { novels, total, draftCount, noCoverCount, sourceCounts, genres } = await getInitialData();
 
   return (
     <div className="space-y-6">
@@ -54,7 +57,7 @@ export default async function NovelsListPage() {
           <h1 className="text-2xl font-bold text-slate-100">
             Daftar Novel
           </h1>
-          <p className="text-slate-400 text-xs mt-1">{novels.length} novel tersimpan</p>
+          <p className="text-slate-400 text-xs mt-1">{total} novel tersimpan</p>
         </div>
         <div className="flex gap-3">
           <Link
@@ -90,8 +93,14 @@ export default async function NovelsListPage() {
         })}
       </div>
 
-      {/* Filter + Novel Grid (Client Component) */}
-      <NovelGrid novels={novels} />
+      {/* Filter + Novel Grid with Infinite Scroll */}
+      <NovelGrid
+        initialNovels={novels}
+        initialTotal={total}
+        initialDraftCount={draftCount}
+        initialNoCoverCount={noCoverCount}
+        initialGenres={genres}
+      />
     </div>
   );
 }

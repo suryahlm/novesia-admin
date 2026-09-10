@@ -2,6 +2,48 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiGet, apiPost } from "@/lib/apiClient";
 import { uploadCoverToR2 } from "@/lib/r2";
 
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(Number(searchParams.get("page")) || 1, 1);
+    const limit = Math.min(Math.max(Number(searchParams.get("limit")) || 24, 1), 100);
+    const q = (searchParams.get("q") || "").trim();
+    const status = (searchParams.get("status") || "").trim();
+    const genre = (searchParams.get("genre") || "").trim();
+    const source = (searchParams.get("source") || "").trim();
+    const sortBy = (searchParams.get("sortBy") || searchParams.get("sort") || "newest").trim();
+
+    const queryParams: Record<string, string | number> = {
+      page,
+      limit,
+      sortBy,
+    };
+
+    if (q) queryParams.q = q;
+    if (status && status !== "all") queryParams.status = status;
+    if (genre && genre !== "all") queryParams.genre = genre;
+    if (source && source !== "all") queryParams.source = source;
+
+    const data = await apiGet<any>("/api/novels", queryParams);
+
+    const novelsList = data?.novels || data?.data || (Array.isArray(data) ? data : []);
+    const total = Number(data?.total ?? data?.count ?? novelsList.length);
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      novels: novelsList,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasMore: page < totalPages,
+    });
+  } catch (error: any) {
+    console.error("Fetch novels error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

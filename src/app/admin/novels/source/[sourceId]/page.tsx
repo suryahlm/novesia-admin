@@ -1,6 +1,9 @@
 import { apiGet } from "@/lib/apiClient";
 import Link from "next/link";
-import { BookOpen, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import NovelGrid from "../../NovelGrid";
+
+export const dynamic = 'force-dynamic';
 
 const SOURCE_META: Record<string, { label: string; icon: string; color: string }> = {
   akknovel: { label: "AkkNovel", icon: "✨", color: "text-rose-400" },
@@ -12,22 +15,40 @@ const SOURCE_META: Record<string, { label: string; icon: string; color: string }
   general: { label: "General", icon: "🌐", color: "text-gray-400" },
 };
 
-async function getNovelsBySource(source: string) {
+async function getInitialSourceData(sourceId: string) {
   try {
-    const data = await apiGet<any[]>('/api/novels/all', { source });
-    return (data || []).filter(
-      (n: any) => !n.is_blacklisted && !['dropped', 'blacklisted'].includes(n.status)
-    );
+    const [stats, initialNovelsRes] = await Promise.all([
+      apiGet<any>('/api/novels/stats', { source: sourceId }).catch(() => ({})),
+      apiGet<any>('/api/novels', { source: sourceId, page: 1, limit: 24, sortBy: 'newest' }).catch(() => ({})),
+    ]);
+
+    const novelsList = initialNovelsRes?.novels || initialNovelsRes?.data || [];
+    const total = Number(initialNovelsRes?.total ?? stats?.totalNovels ?? novelsList.length);
+    const genres = stats?.genreMap ? Object.keys(stats.genreMap).sort() : [];
+
+    return {
+      novels: novelsList,
+      total,
+      draftCount: Number(stats?.draftCount || 0),
+      noCoverCount: Number(stats?.noCoverCount || 0),
+      genres,
+    };
   } catch (err) {
-    console.error("Failed to load novels by source:", err);
-    return [];
+    console.error("Failed to load source novels:", err);
+    return {
+      novels: [],
+      total: 0,
+      draftCount: 0,
+      noCoverCount: 0,
+      genres: [],
+    };
   }
 }
 
 export default async function SourceNovelsPage({ params }: { params: Promise<{ sourceId: string }> }) {
   const { sourceId } = await params;
-  const novels = await getNovelsBySource(sourceId);
   const meta = SOURCE_META[sourceId] || { label: sourceId, icon: "📖", color: "text-gray-400" };
+  const { novels, total, draftCount, noCoverCount, genres } = await getInitialSourceData(sourceId);
 
   return (
     <div className="space-y-6">
@@ -42,7 +63,7 @@ export default async function SourceNovelsPage({ params }: { params: Promise<{ s
               <span>{meta.icon}</span>
               <span>{meta.label}</span>
             </h1>
-            <p className="text-slate-400 text-xs mt-0.5">{novels.length} novel dari {meta.label}</p>
+            <p className="text-slate-400 text-xs mt-0.5">{total} novel dari {meta.label}</p>
           </div>
         </div>
         <Link
@@ -53,56 +74,15 @@ export default async function SourceNovelsPage({ params }: { params: Promise<{ s
         </Link>
       </div>
 
-      {/* Novel Grid */}
-      {novels.length === 0 ? (
-        <div className="bg-[#12151b] border border-white/5 rounded-xl p-12 text-center">
-          <BookOpen className="w-10 h-10 text-slate-600 mx-auto" />
-          <p className="text-slate-400 mt-3 text-sm">Belum ada novel dari {meta.label}.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {novels.map((novel) => (
-            <Link
-              key={novel.id}
-              href={`/admin/novels/${novel.nu_slug}`}
-              className="group bg-[#12151b] border border-white/5 hover:border-[#B99762]/40 rounded-xl overflow-hidden hover:shadow-lg transition-all flex flex-col"
-            >
-              <div className="aspect-[3/4.2] relative overflow-hidden bg-slate-900">
-                {novel.cover_url ? (
-                  <img src={novel.cover_url} alt={novel.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <BookOpen className="w-8 h-8 text-slate-700" />
-                  </div>
-                )}
-                {novel.rating && (
-                  <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-bold text-[#D4A843] border border-[#B99762]/30 font-mono">
-                    ★ {novel.rating}
-                  </div>
-                )}
-                {novel.original_status && (
-                  <div className={`absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                    novel.original_status.toLowerCase().includes("completed")
-                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                      : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                  }`}>
-                    {novel.original_status.toLowerCase().includes("completed") ? "Tamat" : "Ongoing"}
-                  </div>
-                )}
-              </div>
-              <div className="p-3 space-y-1.5">
-                <h3 className="font-semibold text-xs leading-snug line-clamp-2 text-slate-100 group-hover:text-[#D4A843] transition-colors">
-                  {novel.title}
-                </h3>
-                <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
-                  <span>{novel.total_chapters || 0} ch</span>
-                  <span>{novel.novel_type || "Novel"}</span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      {/* Filter + Novel Grid with Infinite Scroll */}
+      <NovelGrid
+        source={sourceId}
+        initialNovels={novels}
+        initialTotal={total}
+        initialDraftCount={draftCount}
+        initialNoCoverCount={noCoverCount}
+        initialGenres={genres}
+      />
     </div>
   );
 }
