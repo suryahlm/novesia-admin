@@ -66,11 +66,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#0a0c10]">
+    <div className="h-screen md:h-dvh flex flex-col md:flex-row bg-[#0a0c10] overflow-hidden">
       {/* ═══ Komiku Style Sidebar ═══ */}
-      <aside className="md:w-60 bg-[#0e1117] border-b md:border-b-0 md:border-r border-white/5 flex md:flex-col shrink-0">
+      <aside className="md:w-60 md:h-full bg-[#0e1117] border-b md:border-b-0 md:border-r border-white/5 flex flex-col shrink-0 md:overflow-hidden">
         {/* Logo Header */}
-        <div className="px-5 py-5 hidden md:block">
+        <div className="px-5 py-5 hidden md:block shrink-0">
           <Link href="/admin" className="flex items-center gap-1.5 group">
             <Sparkles size={16} className="text-[#D4A843] group-hover:rotate-12 transition-transform" />
             <span className="font-bold text-xl bg-gradient-to-r from-[#f3e7c4] via-[#D4A843] to-[#8C6D3B] bg-clip-text text-transparent">
@@ -82,12 +82,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        <div className="px-4 py-3 font-bold text-[#D4A843] text-lg md:hidden">
+        <div className="px-4 py-3 font-bold text-[#D4A843] text-lg md:hidden shrink-0">
           Novesia Admin
         </div>
 
-        {/* Navigation List */}
-        <nav className="flex md:flex-col gap-1 px-2 md:px-3 pb-2 md:pb-4 overflow-x-auto flex-1">
+        {/* Navigation List — Scrolls independently */}
+        <nav className="flex md:flex-col gap-1 px-2 md:px-3 py-2 md:py-3 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto flex-1">
           {navItems.map((item) => {
             const isActive =
               item.href === "/admin"
@@ -112,8 +112,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Logout at bottom of sidebar */}
-        <div className="p-3 border-t border-white/5 hidden md:block">
+        {/* Logout at bottom of sidebar — Pinned at bottom */}
+        <div className="p-3 border-t border-white/5 hidden md:block shrink-0">
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left text-slate-400 hover:text-red-400 hover:bg-red-950/20 transition-colors cursor-pointer"
@@ -125,9 +125,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ═══ Main Content Viewport ═══ */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header Bar */}
-        <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-white/5 bg-[#0a0c10]/80 backdrop-blur-sm sticky top-0 z-10">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        {/* Top Header Bar — Pinned at top */}
+        <header className="shrink-0 flex items-center justify-between px-4 md:px-6 py-4 border-b border-white/5 bg-[#0a0c10]/80 backdrop-blur-sm z-10">
           <h1 className="text-lg md:text-xl font-bold text-slate-100">{pageTitle}</h1>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-[#12151b] border border-white/5">
@@ -145,8 +145,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 overflow-auto">{children}</main>
+        {/* Page Content — Scrolls independently */}
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden">{children}</main>
       </div>
     </div>
   );
