@@ -10,6 +10,15 @@ import {
   ExternalLink,
   Users,
   RefreshCw,
+  Trash2,
+  Bookmark,
+  BookmarkPlus,
+  RotateCcw,
+  Plus,
+  Layers,
+  Sparkles,
+  X,
+  FileText,
 } from "lucide-react";
 
 interface PushLog {
@@ -22,8 +31,19 @@ interface PushLog {
   createdAt: string;
 }
 
+interface PushTemplate {
+  id: string;
+  name: string;
+  title: string;
+  message: string;
+  target: string;
+  deepLinkSlug?: string | null;
+  createdAt?: string;
+}
+
 export default function PushNotificationsPage() {
   const [logs, setLogs] = useState<PushLog[]>([]);
+  const [templates, setTemplates] = useState<PushTemplate[]>([]);
   const [totalDevices, setTotalDevices] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
@@ -34,6 +54,20 @@ export default function PushNotificationsPage() {
   const [deepLinkSlug, setDeepLinkSlug] = useState("");
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // Modal State for Saving Template
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [targetTemplateData, setTargetTemplateData] = useState<{
+    title: string;
+    message: string;
+    target: string;
+    deepLinkSlug?: string;
+  } | null>(null);
+
+  // Confirm Clear History Modal State
+  const [confirmClearHistory, setConfirmClearHistory] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const fetchPushData = async () => {
     try {
@@ -51,8 +85,21 @@ export default function PushNotificationsPage() {
     }
   };
 
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch("/api/admin/push-notifications/templates");
+      const data = await res.json();
+      if (data && Array.isArray(data.templates)) {
+        setTemplates(data.templates);
+      }
+    } catch (err: unknown) {
+      console.error("Gagal mengambil template notifikasi:", err);
+    }
+  };
+
   useEffect(() => {
     fetchPushData();
+    fetchTemplates();
   }, []);
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
@@ -60,6 +107,7 @@ export default function PushNotificationsPage() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Kirim dari form utama
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !message.trim()) {
@@ -104,6 +152,179 @@ export default function PushNotificationsPage() {
     }
   };
 
+  // Kirim langsung dari template atau riwayat
+  const handleDirectSend = async (payload: {
+    title: string;
+    message: string;
+    target: string;
+    deepLinkSlug?: string | null;
+  }) => {
+    if (sending) return;
+    const confirmed = window.confirm(
+      `Kirim notifikasi sekarang ke target "${payload.target === "ALL" ? "Semua Device" : payload.target}"?\n\nJudul: ${payload.title}\nPesan: ${payload.message}`
+    );
+    if (!confirmed) return;
+
+    setSending(true);
+    try {
+      const res = await fetch("/api/admin/push-notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: payload.title.trim(),
+          message: payload.message.trim(),
+          target: payload.target.trim() || "ALL",
+          deepLinkSlug: payload.deepLinkSlug?.trim() || undefined,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result?.error || "Gagal mengirim notifikasi");
+      }
+
+      if (result.warning) {
+        showToast(`⚠️ ${result.warning}`, "error");
+      } else {
+        showToast(`✅ Notifikasi terkirim ke ${result.sentCount ?? 0} perangkat!`);
+      }
+      fetchPushData();
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Gagal mengirim notifikasi";
+      showToast(errMsg, "error");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Gunakan template ke dalam form
+  const handleApplyTemplate = (tpl: PushTemplate) => {
+    setTitle(tpl.title);
+    setMessage(tpl.message);
+    setTarget(tpl.target || "ALL");
+    setDeepLinkSlug(tpl.deepLinkSlug || "");
+    showToast(`📋 Template "${tpl.name}" dimuat ke formulir!`);
+    window.scrollTo({ top: 320, behavior: "smooth" });
+  };
+
+  // Buka modal simpan template dari form aktif
+  const openSaveFromForm = () => {
+    if (!title.trim() || !message.trim()) {
+      showToast("Tulis judul dan pesan terlebih dahulu untuk disimpan jadi template", "error");
+      return;
+    }
+    setTemplateName(title.trim());
+    setTargetTemplateData({
+      title: title.trim(),
+      message: message.trim(),
+      target: target.trim(),
+      deepLinkSlug: deepLinkSlug.trim() || undefined,
+    });
+    setShowTemplateModal(true);
+  };
+
+  // Buka modal simpan template dari baris riwayat
+  const openSaveFromLog = (log: PushLog) => {
+    setTemplateName(log.title);
+    setTargetTemplateData({
+      title: log.title,
+      message: log.message,
+      target: log.target,
+      deepLinkSlug: log.deepLinkSlug || undefined,
+    });
+    setShowTemplateModal(true);
+  };
+
+  // Submit simpan template ke API
+  const handleSaveTemplateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!targetTemplateData) return;
+    if (!templateName.trim()) {
+      showToast("Nama template wajib diisi", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/admin/push-notifications/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: templateName.trim(),
+          title: targetTemplateData.title,
+          message: targetTemplateData.message,
+          target: targetTemplateData.target,
+          deepLinkSlug: targetTemplateData.deepLinkSlug,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result?.error || "Gagal menyimpan template");
+      }
+
+      showToast(`⭐ Template "${templateName.trim()}" berhasil disimpan!`);
+      setShowTemplateModal(false);
+      setTemplateName("");
+      setTargetTemplateData(null);
+      fetchTemplates();
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Gagal menyimpan template";
+      showToast(errMsg, "error");
+    }
+  };
+
+  // Hapus template
+  const handleDeleteTemplate = async (id: string, name: string) => {
+    if (!window.confirm(`Hapus template "${name}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/push-notifications/templates?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Gagal menghapus template");
+      showToast(`Template "${name}" dihapus`);
+      fetchTemplates();
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Gagal menghapus template";
+      showToast(errMsg, "error");
+    }
+  };
+
+  // Hapus 1 riwayat
+  const handleDeleteSingleLog = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/push-notifications?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Gagal menghapus log notifikasi");
+      showToast("1 riwayat notifikasi dihapus");
+      setLogs((prev) => prev.filter((l) => l.id !== id));
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Gagal menghapus log";
+      showToast(errMsg, "error");
+    }
+  };
+
+  // Bersihkan seluruh riwayat notifikasi
+  const handleClearAllHistory = async () => {
+    setClearing(true);
+    try {
+      const res = await fetch("/api/admin/push-notifications", {
+        method: "DELETE",
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result?.error || "Gagal membersihkan riwayat");
+      showToast("🧹 Seluruh riwayat notifikasi berhasil dibersihkan!");
+      setLogs([]);
+      setConfirmClearHistory(false);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Gagal membersihkan riwayat";
+      showToast(errMsg, "error");
+    } finally {
+      setClearing(false);
+    }
+  };
+
   const formatDate = (iso: string) => {
     try {
       const d = new Date(iso);
@@ -142,12 +363,15 @@ export default function PushNotificationsPage() {
             Push Notifikasi
           </h1>
           <p className="text-slate-400 text-xs mt-1">
-            Kirim notifikasi tingkat OS (FCM) langsung ke smartphone pembaca Novesia.
+            Kirim broadcast tingkat OS (FCM) langsung ke smartphone pembaca Novesia.
           </p>
         </div>
 
         <button
-          onClick={fetchPushData}
+          onClick={() => {
+            fetchPushData();
+            fetchTemplates();
+          }}
           disabled={loading}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition cursor-pointer"
         >
@@ -156,13 +380,13 @@ export default function PushNotificationsPage() {
         </button>
       </div>
 
-      {/* Info Callout Banner (Gaya Komiku) */}
+      {/* Info Callout Banner */}
       <div className="rounded-xl p-4 bg-[#B99762]/10 border border-[#B99762]/30 flex items-start gap-3">
         <div className="p-1.5 rounded-lg bg-[#B99762]/20 text-[#e6ca91] mt-0.5 shrink-0">
           <Info size={18} />
         </div>
         <div className="text-xs text-slate-300 leading-relaxed">
-          <span className="font-bold text-[#e6ca91]">Push notification OS-level ASLI</span> (muncul di atas layar HP kayak notifikasi pada umumnya) — beda dari &quot;Notifikasi&quot; (itu banner in-app doang). Di sini buat kirim MANUAL ke semua device pembaca atau target spesifik.
+          <span className="font-bold text-[#e6ca91]">Push notification OS-level ASLI</span> (muncul di status bar HP dengan logo Novesia) — kamu bisa simpan pesan favorit jadi <span className="font-semibold text-white">Template</span> dan <span className="font-semibold text-white">Kirim Ulang</span> kapan saja dengan 1 klik.
         </div>
       </div>
 
@@ -181,22 +405,109 @@ export default function PushNotificationsPage() {
 
         <div className="p-4 rounded-xl bg-[#0e1117] border border-white/5 flex items-center justify-between">
           <div className="space-y-1">
-            <div className="text-xs font-medium text-slate-400">Total Broadcast Dikirim</div>
-            <div className="text-2xl font-bold text-slate-100">{logs.length}</div>
-            <div className="text-[11px] text-slate-500">Riwayat pengiriman tersimpan di log server</div>
+            <div className="text-xs font-medium text-slate-400">Total Template Tersimpan</div>
+            <div className="text-2xl font-bold text-slate-100">{templates.length}</div>
+            <div className="text-[11px] text-slate-500">Template siap pakai untuk kirim ulang instan</div>
           </div>
           <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300">
-            <Users size={24} />
+            <Layers size={24} />
           </div>
         </div>
       </div>
 
-      {/* Form Kirim Push Notifikasi */}
+      {/* SECTION 1: DAFTAR TEMPLATE NOTIFIKASI */}
       <div className="p-5 rounded-xl bg-[#0e1117] border border-white/5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-          <Send size={15} className="text-[#D4A843]" />
-          Kirim Notifikasi Baru
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <Bookmark className="text-[#D4A843]" size={16} />
+            Template Notifikasi ({templates.length})
+          </h2>
+          <span className="text-[11px] text-slate-500">
+            Klik &quot;Gunakan&quot; untuk isi formulir atau &quot;Kirim Ulang&quot; langsung
+          </span>
+        </div>
+
+        {templates.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 text-xs bg-[#141820]/40 rounded-xl border border-white/5">
+            Belum ada template. Buat di formulir bawah lalu klik &quot;Jadikan Template&quot;.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            {templates.map((tpl) => (
+              <div
+                key={tpl.id}
+                className="p-3.5 rounded-xl bg-[#141820] border border-white/10 hover:border-[#B99762]/40 transition flex flex-col justify-between space-y-3 group"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#B99762]/20 text-[#e6ca91] border border-[#B99762]/30 truncate max-w-[170px]">
+                      {tpl.name}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteTemplate(tpl.id, tpl.name)}
+                      className="text-slate-500 hover:text-red-400 transition p-1 cursor-pointer"
+                      title="Hapus template ini"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                  <div className="font-semibold text-xs text-slate-100 line-clamp-1">{tpl.title}</div>
+                  <div className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                    {tpl.message}
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => handleApplyTemplate(tpl)}
+                    className="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-medium bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <FileText size={12} />
+                    Gunakan
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleDirectSend({
+                        title: tpl.title,
+                        message: tpl.message,
+                        target: tpl.target,
+                        deepLinkSlug: tpl.deepLinkSlug,
+                      })
+                    }
+                    disabled={sending}
+                    className="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#B99762]/20 hover:bg-[#B99762]/30 text-[#e6ca91] border border-[#B99762]/40 transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <RotateCcw size={12} />
+                    Kirim Ulang
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* SECTION 2: FORMULIR KIRIM NOTIFIKASI */}
+      <div className="p-5 rounded-xl bg-[#0e1117] border border-white/5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <Send size={15} className="text-[#D4A843]" />
+            Formulir Notifikasi
+          </h2>
+          {(title || message) && (
+            <button
+              type="button"
+              onClick={() => {
+                setTitle("");
+                setMessage("");
+                setDeepLinkSlug("");
+              }}
+              className="text-[11px] text-slate-400 hover:text-slate-200 cursor-pointer"
+            >
+              Kosongkan Form
+            </button>
+          )}
+        </div>
 
         <form onSubmit={handleSend} className="space-y-4">
           <div className="space-y-1.5">
@@ -205,7 +516,7 @@ export default function PushNotificationsPage() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="mis. Promo VIP Akhir Bulan!"
+              placeholder="mis. Chapter Baru Telah Rilis!"
               className="w-full bg-[#141820] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#B99762]/60"
             />
           </div>
@@ -216,7 +527,7 @@ export default function PushNotificationsPage() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={3}
-              placeholder="Isi notifikasi yang tampil ke user..."
+              placeholder="Isi notifikasi yang tampil ke layar HP user..."
               className="w-full bg-[#141820] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#B99762]/60 resize-none"
             />
           </div>
@@ -247,7 +558,16 @@ export default function PushNotificationsPage() {
             </div>
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex items-center justify-between pt-2 border-t border-white/5">
+            <button
+              type="button"
+              onClick={openSaveFromForm}
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 flex items-center gap-2 transition cursor-pointer"
+            >
+              <BookmarkPlus size={14} className="text-[#D4A843]" />
+              Jadikan Template
+            </button>
+
             <button
               type="submit"
               disabled={sending}
@@ -260,16 +580,28 @@ export default function PushNotificationsPage() {
         </form>
       </div>
 
-      {/* Tabel Riwayat Notifikasi */}
+      {/* SECTION 3: TABEL RIWAYAT NOTIFIKASI + TOMBOL CLEAR */}
       <div className="p-5 rounded-xl bg-[#0e1117] border border-white/5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-          <Clock size={15} className="text-slate-400" />
-          Riwayat Notifikasi
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <Clock size={15} className="text-slate-400" />
+            Riwayat Notifikasi ({logs.length})
+          </h2>
+
+          {logs.length > 0 && (
+            <button
+              onClick={() => setConfirmClearHistory(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400 hover:text-red-300 bg-red-950/20 hover:bg-red-950/40 border border-red-900/40 transition cursor-pointer"
+            >
+              <Trash2 size={13} />
+              Clear Riwayat
+            </button>
+          )}
+        </div>
 
         {logs.length === 0 ? (
-          <div className="text-center py-12 text-slate-500 text-xs">
-            Belum ada riwayat broadcast notifikasi manual.
+          <div className="text-center py-12 text-slate-500 text-xs bg-[#141820]/30 rounded-xl border border-white/5">
+            Belum ada riwayat broadcast notifikasi tersimpan.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -280,6 +612,7 @@ export default function PushNotificationsPage() {
                   <th className="py-3 px-4">Target</th>
                   <th className="py-3 px-4">Terkirim</th>
                   <th className="py-3 px-4">Waktu</th>
+                  <th className="py-3 px-4 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -310,6 +643,39 @@ export default function PushNotificationsPage() {
                     <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
                       {formatDate(log.createdAt)}
                     </td>
+                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() =>
+                            handleDirectSend({
+                              title: log.title,
+                              message: log.message,
+                              target: log.target,
+                              deepLinkSlug: log.deepLinkSlug,
+                            })
+                          }
+                          disabled={sending}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-[#B99762]/20 text-slate-300 hover:text-[#e6ca91] border border-white/10 transition cursor-pointer"
+                          title="Kirim ulang notifikasi ini"
+                        >
+                          <RotateCcw size={13} />
+                        </button>
+                        <button
+                          onClick={() => openSaveFromLog(log)}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-[#D4A843] border border-white/10 transition cursor-pointer"
+                          title="Jadikan sebagai template"
+                        >
+                          <BookmarkPlus size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSingleLog(log.id)}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-red-950/40 text-slate-400 hover:text-red-400 border border-white/10 transition cursor-pointer"
+                          title="Hapus baris ini"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -317,6 +683,99 @@ export default function PushNotificationsPage() {
           </div>
         )}
       </div>
+
+      {/* MODAL: JADIKAN TEMPLATE */}
+      {showTemplateModal && targetTemplateData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#0e1117] border border-white/15 rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <BookmarkPlus className="text-[#D4A843]" size={18} />
+                Jadikan Template Notifikasi
+              </h3>
+              <button
+                onClick={() => setShowTemplateModal(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTemplateSubmit} className="space-y-3.5">
+              <div className="space-y-1.5">
+                <label className="text-xs text-slate-300 font-medium">Nama Template</label>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="mis. Chapter Baru Rilis"
+                  className="w-full bg-[#141820] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-[#B99762]"
+                  autoFocus
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1.5 text-xs">
+                <div className="font-semibold text-slate-200">{targetTemplateData.title}</div>
+                <div className="text-slate-400 text-[11px] leading-relaxed">{targetTemplateData.message}</div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTemplateModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#D4A843] hover:bg-[#B99762] text-black shadow-lg"
+                >
+                  Simpan Template
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: KONFIRMASI CLEAR ALL HISTORY */}
+      {confirmClearHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#0e1117] border border-red-900/40 rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3 text-red-400">
+              <div className="p-2 rounded-xl bg-red-950/50 border border-red-900/50">
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-100">Bersihkan Semua Riwayat?</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Tindakan ini akan menghapus seluruh {logs.length} riwayat broadcast notifikasi dari database.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setConfirmClearHistory(false)}
+                disabled={clearing}
+                className="px-4 py-2 rounded-xl text-xs text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleClearAllHistory}
+                disabled={clearing}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow-lg cursor-pointer disabled:opacity-50"
+              >
+                {clearing ? "Membersihkan…" : "Ya, Hapus Semua"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

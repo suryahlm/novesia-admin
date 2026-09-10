@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiGet, apiPost } from "@/lib/apiClient";
+import { apiGet, apiPost, apiDelete } from "@/lib/apiClient";
 
 interface PushDataResponse {
   logs: Array<{
@@ -36,6 +36,23 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Gagal mengirim push notifikasi";
     console.error("[Admin API] Push Notifications POST error:", error);
+    return NextResponse.json(
+      { error: message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    const endpoint = id ? `/api/admin/push-notifications?id=${encodeURIComponent(id)}` : "/api/admin/push-notifications";
+    const data = await apiDelete(endpoint);
+    return NextResponse.json(data);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Gagal menghapus riwayat push notifikasi";
+    console.error("[Admin API] Push Notifications DELETE error:", error);
     return NextResponse.json(
       { error: message },
       { status: 500 }
