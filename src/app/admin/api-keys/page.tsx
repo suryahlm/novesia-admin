@@ -19,8 +19,17 @@ export interface ApiKeyConfig {
   name: string;
   key: string;
   baseUrl?: string;
+  model?: string;
   roles: string[];
 }
+
+const AVAILABLE_MODELS = [
+  { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
+  { id: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash' },
+  { id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna' },
+  { id: 'gpt-5-mini', label: 'GPT-5 mini' },
+  { id: 'gpt-4o-mini', label: 'GPT-4o mini' },
+];
 
 const AVAILABLE_ROLES = [
   { id: 'primary', label: 'Primary' },
@@ -113,6 +122,7 @@ export default function ApiKeysPage() {
         name: `Akun ${apiKeys.length + 1}`,
         key: '',
         baseUrl: '',
+        model: 'gemini-3.7-flash',
         roles: []
       }
     ]);
@@ -279,6 +289,24 @@ export default function ApiKeysPage() {
                       placeholder="https://api.gutsai.id/v1"
                       className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-[#D4A843] transition-colors font-mono"
                     />
+                  </div>
+                </div>
+
+                {/* Model Selection */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 border-t border-neutral-800/80 pt-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-neutral-400 block uppercase tracking-wider">
+                      Model Terjemahan
+                    </label>
+                    <select
+                      value={item.model || 'gemini-3.7-flash'}
+                      onChange={(e) => handleChange(item.id, 'model', e.target.value)}
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-[#D4A843] transition-colors appearance-none cursor-pointer"
+                    >
+                      {AVAILABLE_MODELS.map(model => (
+                        <option key={model.id} value={model.id}>{model.label}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 

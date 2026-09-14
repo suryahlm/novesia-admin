@@ -476,6 +476,7 @@ export interface ApiKeyConfig {
   name: string;
   key: string;
   baseUrl?: string;
+  model?: string;
   roles: string[];
 }
 
@@ -533,7 +534,9 @@ const RATE_LIMIT_COOLDOWN_MS = 30_000;
 
 async function executeChatCompletion(chunk: string, systemPrompt: string, keyConfig: ApiKeyConfig, attempt: number = 1): Promise<string> {
   const isGroq = keyConfig.key.startsWith('gsk_');
-  const defaultModel = isGroq ? "openai/gpt-oss-120b" : GUTSAI_MODEL;
+  
+  // Use custom model from config, fallback to default based on key type
+  const targetModel = keyConfig.model || (isGroq ? "openai/gpt-oss-120b" : GUTSAI_MODEL);
   
   // Custom baseUrl or default to Groq/GutsAI
   let baseUrl = keyConfig.baseUrl;
@@ -550,7 +553,7 @@ async function executeChatCompletion(chunk: string, systemPrompt: string, keyCon
       Authorization: `Bearer ${keyConfig.key}`,
     },
     body: JSON.stringify({
-      model: defaultModel,
+      model: targetModel,
       temperature: 0.3,
       max_tokens: 8192,
       messages: [
