@@ -303,17 +303,6 @@ async function runBackgroundLoop(job: TranslationJobState) {
 
         // Query in batches to handle large novels safely
         while (!job.aborted) {
-          const batchRes = await apiGet<any>(`/api/chapters/${novelSlug}`, {
-            pending: true,
-            includeContent: true,
-            limit: 50,
-          }).catch(() => null);
-
-          const rawBatch = batchRes?.chapters || [];
-          // Exclude chapters already attempted in this run to avoid infinite loop on stubborn chapters
-          const batch = rawBatch.filter((ch: any) => !attemptedChapterIds.has(ch.id));
-          if (!batch || batch.length === 0) break;
-
           // Check if turbo mode is applicable for this batch (only if primary key is OpenKey)
           let isTurboMode = false;
           try {
@@ -326,6 +315,19 @@ async function runBackgroundLoop(job: TranslationJobState) {
               isTurboMode = true;
             }
           } catch(e) {}
+
+          const batchLimit = isTurboMode ? 100 : 50;
+
+          const batchRes = await apiGet<any>(`/api/chapters/${novelSlug}`, {
+            pending: true,
+            includeContent: true,
+            limit: batchLimit,
+          }).catch(() => null);
+
+          const rawBatch = batchRes?.chapters || [];
+          // Exclude chapters already attempted in this run to avoid infinite loop on stubborn chapters
+          const batch = rawBatch.filter((ch: any) => !attemptedChapterIds.has(ch.id));
+          if (!batch || batch.length === 0) break;
 
           const processChapter = async (ch: any) => {
             if (job.aborted) return;
