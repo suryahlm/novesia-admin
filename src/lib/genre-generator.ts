@@ -1,6 +1,5 @@
-import Groq from "groq-sdk";
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+import { apiGet } from "./apiClient";
+import { ApiKeyConfig } from "./translator";
 
 // Fallback keyword dictionary in case Groq is unavailable
 const GENRE_KEYWORDS: Record<string, string[]> = {
@@ -56,9 +55,37 @@ export async function generateNovelGenres(title: string, synopsis?: string): Pro
     return ["General"];
   }
 
-  // 1. Coba gunakan Groq AI (openai/gpt-oss-120b)
-  if (process.env.GROQ_API_KEY) {
-    try {
+  try {
+    const configResp = await apiGet<any>("/api/config");
+    let keysRaw = configResp?.translation_api_keys || configResp?.data?.translation_api_keys;
+    if (typeof keysRaw === "string") {
+      try { keysRaw = JSON.parse(keysRaw); } catch { /* ignore */ }
+    }
+    
+    let apiKeys: ApiKeyConfig[] = [];
+    if (Array.isArray(keysRaw)) {
+      apiKeys = keysRaw;
+    }
+
+    let candidates = apiKeys.filter(k => k.roles.includes("generate_genre"));
+    if (candidates.length === 0) candidates = apiKeys.filter(k => k.roles.includes("primary"));
+    if (candidates.length === 0 && process.env.GROQ_API_KEY) {
+      candidates.push({
+        id: "env-groq",
+        name: "ENV Groq",
+        key: process.env.GROQ_API_KEY,
+        roles: ["primary"]
+      });
+    }
+
+    if (candidates.length > 0) {
+      const keyConfig = candidates[0];
+      const isGroq = keyConfig.key.startsWith('gsk_');
+      let baseUrl = keyConfig.baseUrl;
+      if (!baseUrl) {
+        baseUrl = isGroq ? "https://api.groq.com/openai/v1" : "https://api.gutsai.id/v1";
+      }
+
       const prompt = `Kamu adalah pakar kurasi novel. Analisis judul dan sinopsis web novel berikut, lalu tentukan 3 hingga 5 genre yang paling tepat dan relevan.
 Gunakan genre standar seperti: Action, Adventure, Fantasy, Romance, Comedy, Drama, Horror, Mystery, Psychological, Sci-Fi, Slice of Life, Supernatural, Martial Arts, Cultivation, Isekai, Transmigration, Reincarnation, System, Wuxia, Xuanhuan, Historical, Urban, Shoujo, Josei.
 
@@ -69,24 +96,35 @@ Kembalikan HANYA format JSON valid berupa array string, tanpa penjelasan apapun.
 Contoh format output:
 ["Fantasy", "Action", "Adventure"]`;
 
-      const response = await groq.chat.completions.create({
-        model: "openai/gpt-oss-120b",
-        temperature: 0.1,
-        max_tokens: 150,
-        messages: [{ role: "user", content: prompt }],
+      const response = await fetch(`${baseUrl.replace(/\/+$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${keyConfig.key}`
+        },
+        body: JSON.stringify({
+          model: isGroq ? "openai/gpt-oss-120b" : "gemini-3.7-flash",
+          temperature: 0.1,
+          max_tokens: 150,
+          messages: [{ role: "user", content: prompt }]
+        }),
+        signal: AbortSignal.timeout(30000)
       });
 
-      const raw = response.choices[0]?.message?.content?.trim() || "[]";
-      const jsonMatch = raw.match(/\[[\s\S]*?\]/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((x) => String(x).trim()).filter(Boolean).slice(0, 5);
+      if (response.ok) {
+        const data = await response.json();
+        const raw = data.choices?.[0]?.message?.content?.trim() || "[]";
+        const jsonMatch = raw.match(/\\[[\\s\\S]*?\\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map((x) => String(x).trim()).filter(Boolean).slice(0, 5);
+          }
         }
       }
-    } catch (err: any) {
-      console.warn("[GroqGenre] Gagal generate genre via Groq AI, menggunakan fallback kamus kata kunci:", err?.message || err);
     }
+  } catch (err: any) {
+    console.warn("[GenreGenerator] Gagal via API Key dinamis, menggunakan fallback kamus kata kunci:", err?.message || err);
   }
 
   // 2. Fallback kamus kata kunci

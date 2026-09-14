@@ -1,4 +1,5 @@
-import { translateToIndonesian as translateViaGroq } from "./groq";
+
+import { apiGet } from "./apiClient";
 
 const GUTSAI_API_KEY = process.env.GUTSAI_API_KEY || "sk-guts-7cd666aba27b935669cb9b3aad5bf2fe3e2f3d5e";
 const GUTSAI_BASE_URL = process.env.GUTSAI_BASE_URL || "https://api.gutsai.id/v1";
@@ -469,9 +470,16 @@ DILARANG memberikan:
 Jangan membungkus keseluruhan terjemahan dengan tanda kutip.
 OUTPUT = TEKS NOVEL TERJEMAHAN SAJA.`;
 
-// State for adaptive rate limiting & cooldown
-let lastGutsRateLimitTime = 0;
-const GUTS_RATE_LIMIT_COOLDOWN_MS = 30_000; // 30s cooldown if 429 occurred
+
+export interface ApiKeyConfig {
+  id: string;
+  name: string;
+  key: string;
+  baseUrl?: string;
+  roles: string[];
+}
+
+// Removed unused rate limit vars
 
 export { isInvalidOrBrokenTranslation } from "./translation-validator";
 import { isInvalidOrBrokenTranslation } from "./translation-validator";
@@ -518,102 +526,147 @@ function chunkTextByParagraphs(text: string, maxChunkLength: number = 9500): str
   return chunks;
 }
 
+
+// Track cooldown per key to avoid hitting the same rate-limited key
+const keyCooldowns: Record<string, number> = {};
+const RATE_LIMIT_COOLDOWN_MS = 30_000;
+
+async function executeChatCompletion(chunk: string, systemPrompt: string, keyConfig: ApiKeyConfig, attempt: number = 1): Promise<string> {
+  const isGroq = keyConfig.key.startsWith('gsk_');
+  const defaultModel = isGroq ? "openai/gpt-oss-120b" : GUTSAI_MODEL;
+  
+  // Custom baseUrl or default to Groq/GutsAI
+  let baseUrl = keyConfig.baseUrl;
+  if (!baseUrl) {
+    baseUrl = isGroq ? "https://api.groq.com/openai/v1" : GUTSAI_BASE_URL;
+  }
+  
+  const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${keyConfig.key}`,
+    },
+    body: JSON.stringify({
+      model: defaultModel,
+      temperature: 0.3,
+      max_tokens: 8192,
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: chunk,
+        },
+      ],
+    }),
+    signal: AbortSignal.timeout(90_000),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content?.trim() || "";
+  } else {
+    if (response.status === 429) {
+      keyCooldowns[keyConfig.key] = Date.now(); // Put this key on cooldown
+    }
+    const errText = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${errText}`);
+  }
+}
+
 async function translateSingleChunk(
   chunk: string,
   type: "synopsis" | "chapter",
+  apiKeys: ApiKeyConfig[],
   meta?: ChapterCleanerMeta
 ): Promise<string> {
   const systemPrompt = type === "synopsis" ? SYNOPSIS_SYSTEM_PROMPT : CHAPTER_SYSTEM_PROMPT;
+  const userPrompt = type === "synopsis"
+    ? `Terjemahkan sinopsis berikut ke Bahasa Indonesia:\n\n${chunk}`
+    : `Terjemahkan teks novel berikut ke Bahasa Indonesia:\n\n${chunk}`;
 
-  // === 1. JALUR UTAMA SINOPSIS: GROQ (openai/gpt-oss-120b) ===
-  if (type === "synopsis" && process.env.GROQ_API_KEY) {
-    try {
-      const groqResult = await translateViaGroq(chunk, systemPrompt);
-      if (groqResult && !isInvalidOrBrokenTranslation(groqResult, chunk)) {
-        return groqResult.trim();
-      }
-      console.warn("[Groq] Terjemahan sinopsis tidak valid, beralih ke Guts AI...");
-    } catch (groqErr: any) {
-      console.warn("[Groq] Gagal terjemahkan sinopsis via Groq, beralih ke Guts AI:", groqErr?.message || groqErr);
-    }
+  const roleNeeded = type === "synopsis" ? "translate_novel" : "translate_chapter";
+  
+  // Cari kandidat key yang sesuai role
+  let candidates = apiKeys.filter(k => k.roles.includes(roleNeeded));
+  
+  // Fallback: Jika tidak ada, gunakan yang 'primary'
+  if (candidates.length === 0) {
+    candidates = apiKeys.filter(k => k.roles.includes("primary"));
+  }
+  // Fallback: Jika masih kosong, gunakan 'fallback'
+  if (candidates.length === 0) {
+    candidates = apiKeys.filter(k => k.roles.includes("fallback"));
   }
 
-  // === 2. JALUR UTAMA BAB NOVEL (ATAU FALLBACK SINOPSIS): GUTS AI (Gemini 3.7 Flash) ===
-  const isInGutsCooldown = Date.now() - lastGutsRateLimitTime < GUTS_RATE_LIMIT_COOLDOWN_MS;
+  // Jika DB kosong/gagal, kita gunakan fallback .env
+  if (candidates.length === 0 && GUTSAI_API_KEY) {
+    candidates.push({
+      id: "env-guts",
+      name: "ENV GutsAI",
+      key: GUTSAI_API_KEY,
+      baseUrl: GUTSAI_BASE_URL,
+      roles: ["primary"]
+    });
+  }
 
-  if (GUTSAI_API_KEY && !isInGutsCooldown) {
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const endpoint = `${GUTSAI_BASE_URL.replace(/\/+$/, "")}/chat/completions`;
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${GUTSAI_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: GUTSAI_MODEL,
-            temperature: 0.3,
-            max_tokens: 8192,
-            messages: [
-              { role: "system", content: systemPrompt },
-              {
-                role: "user",
-                content:
-                  type === "synopsis"
-                    ? `Terjemahkan sinopsis berikut ke Bahasa Indonesia:\n\n${chunk}`
-                    : `Terjemahkan teks novel berikut ke Bahasa Indonesia:\n\n${chunk}`,
-              },
-            ],
-          }),
-          signal: AbortSignal.timeout(90_000),
-        });
+  if (candidates.length === 0) {
+    throw new Error("Tidak ada API key yang tersedia untuk translasi.");
+  }
 
-        if (response.ok) {
-          const data = await response.json();
-          const rawContent = data.choices?.[0]?.message?.content?.trim();
+  // Coba semua kandidat secara berurutan jika ada yang gagal/cooldown
+  for (const keyConfig of candidates) {
+    const cooldownTime = keyCooldowns[keyConfig.key] || 0;
+    if (Date.now() - cooldownTime < RATE_LIMIT_COOLDOWN_MS) {
+      console.warn(`[Translator] Key ${keyConfig.name} sedang cooldown. Skip...`);
+      continue;
+    }
 
+    try {
+      // Kita coba max 2 attempts per key (untuk network error sementara)
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const rawContent = await executeChatCompletion(userPrompt, systemPrompt, keyConfig, attempt);
           if (rawContent && !isInvalidOrBrokenTranslation(rawContent, chunk)) {
             return rawContent.trim();
           }
-
-          console.warn(`[GutsAI] Attempt ${attempt} menghasilkan output rusak/HTML error. Mengabaikan...`);
-        } else {
-          const errText = await response.text().catch(() => "");
-          console.warn(`[GutsAI] Attempt ${attempt} HTTP ${response.status}:`, errText);
-
-          if (response.status === 429) {
-            lastGutsRateLimitTime = Date.now();
-            if (attempt === 1) {
-              await new Promise((r) => setTimeout(r, 12000));
-              continue;
-            }
+          console.warn(`[Translator] Attempt ${attempt} dgn key ${keyConfig.name} hasil rusak. Mengabaikan...`);
+        } catch (err: any) {
+          console.warn(`[Translator] Attempt ${attempt} dgn key ${keyConfig.name} error:`, err?.message || err);
+          if (attempt === 1 && !err.message.includes("HTTP 429")) {
+            await new Promise((r) => setTimeout(r, 3000));
+            continue;
           }
-        }
-      } catch (err) {
-        console.warn(`[GutsAI] Attempt ${attempt} error:`, err);
-        if (attempt === 1) {
-          await new Promise((r) => setTimeout(r, 3000));
-          continue;
+          break; // Jika 429 atau attempt 2 gagal, break attempt loop & pindah ke key berikutnya
         }
       }
+    } catch (err) {
+       // Pindah ke kandidat berikutnya
     }
   }
 
-  // === 3. FALLBACK CADANGAN BAB NOVEL KE GROQ (openai/gpt-oss-120b) ===
-  if (type === "chapter") {
+  // Jika semua kandidat khusus gagal, coba gunakan fallback apa saja (jika belum dicoba)
+  const fallbackCandidates = apiKeys.filter(k => k.roles.includes("fallback") && !candidates.includes(k));
+  for (const keyConfig of fallbackCandidates) {
+    const cooldownTime = keyCooldowns[keyConfig.key] || 0;
+    if (Date.now() - cooldownTime < RATE_LIMIT_COOLDOWN_MS) continue;
+    
     try {
-      const groqResult = await translateViaGroq(chunk, systemPrompt);
-      if (groqResult && !isInvalidOrBrokenTranslation(groqResult, chunk)) {
-        return groqResult.trim();
+      const rawContent = await executeChatCompletion(userPrompt, systemPrompt, keyConfig);
+      if (rawContent && !isInvalidOrBrokenTranslation(rawContent, chunk)) {
+        return rawContent.trim();
       }
-    } catch (groqErr: any) {
-      console.error("[Groq] Translation fallback failed:", groqErr?.message || groqErr);
+    } catch (err) {
+      // Continue
     }
   }
 
-  throw new Error("Gagal menerjemahkan chunk dengan AI (Gemini & Groq fallback gagal).");
+  throw new Error(`Gagal menerjemahkan chunk dengan AI. Semua key (termasuk fallback) gagal.`);
 }
+
+
 
 export async function translateText(
   text: string,
@@ -624,23 +677,38 @@ export async function translateText(
     return "";
   }
 
-  // Pre-clean chapter text to strip navigation links and duplicate header lines
+  // Pre-clean chapter text
   const inputToTranslate = type === "chapter" ? cleanChapterText(text, meta) : text.trim();
   if (!inputToTranslate || !inputToTranslate.trim()) {
     return "";
   }
 
-  // Untuk chapter panjang (>11.000 karakter atau ~1.800 kata), pecah per paragraf agar tidak kena token limit / timeout
+  // 1. Fetch API Keys dari backend
+  let apiKeys: ApiKeyConfig[] = [];
+  try {
+    const configResp = await apiGet<any>("/api/config");
+    let keysRaw = configResp?.translation_api_keys || configResp?.data?.translation_api_keys;
+    if (typeof keysRaw === "string") {
+      try { keysRaw = JSON.parse(keysRaw); } catch { /* ignore */ }
+    }
+    if (Array.isArray(keysRaw)) {
+      apiKeys = keysRaw;
+    }
+  } catch (err) {
+    console.warn("[Translator] Gagal fetch API keys dari DB, akan fallback ke .env", err);
+  }
+
+  // 2. Pecah per paragraf jika terlalu panjang (>11.000 karakter)
   if (type === "chapter" && inputToTranslate.length > 11000) {
     const chunks = chunkTextByParagraphs(inputToTranslate, 9500);
     const translatedParts: string[] = [];
 
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
-      const part = await translateSingleChunk(chunk, type, meta);
+      const part = await translateSingleChunk(chunk, type, apiKeys, meta);
       translatedParts.push(part);
 
-      // Jeda kecil antar chunk agar rate limit TPM aman
+      // Jeda kecil antar chunk agar aman
       if (i < chunks.length - 1) {
         await new Promise((r) => setTimeout(r, 1200));
       }
@@ -650,7 +718,9 @@ export async function translateText(
     return cleanChapterText(combined, meta).trim();
   }
 
-  // Teks normal (<11.000 karakter): terjemahkan langsung dalam 1 kali request
-  const rawResult = await translateSingleChunk(inputToTranslate, type, meta);
+  // 3. Teks normal (<11.000 karakter)
+  const rawResult = await translateSingleChunk(inputToTranslate, type, apiKeys, meta);
   return (type === "chapter" ? cleanChapterText(rawResult, meta) : rawResult).trim();
 }
+
+
