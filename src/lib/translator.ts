@@ -677,6 +677,9 @@ async function translateSingleChunk(
 
 
 
+let cachedApiKeys: ApiKeyConfig[] = [];
+let lastApiKeysFetch = 0;
+
 export async function translateText(
   text: string,
   type: "synopsis" | "chapter" = "chapter",
@@ -692,19 +695,24 @@ export async function translateText(
     return "";
   }
 
-  // 1. Fetch API Keys dari backend
-  let apiKeys: ApiKeyConfig[] = [];
-  try {
-    const configResp = await apiGet<any>("/api/config");
-    let keysRaw = configResp?.translation_api_keys || configResp?.data?.translation_api_keys;
-    if (typeof keysRaw === "string") {
-      try { keysRaw = JSON.parse(keysRaw); } catch { /* ignore */ }
+  // 1. Fetch API Keys dari backend (dengan cache 30 detik untuk menghindari DDOS)
+  let apiKeys: ApiKeyConfig[] = cachedApiKeys;
+  const now = Date.now();
+  if (now - lastApiKeysFetch > 30000 || apiKeys.length === 0) {
+    try {
+      const configResp = await apiGet<any>("/api/config");
+      let keysRaw = configResp?.translation_api_keys || configResp?.data?.translation_api_keys;
+      if (typeof keysRaw === "string") {
+        try { keysRaw = JSON.parse(keysRaw); } catch { /* ignore */ }
+      }
+      if (Array.isArray(keysRaw)) {
+        apiKeys = keysRaw;
+        cachedApiKeys = apiKeys;
+        lastApiKeysFetch = now;
+      }
+    } catch (err) {
+      console.warn("[Translator] Gagal fetch API keys dari DB, menggunakan cache atau .env", err);
     }
-    if (Array.isArray(keysRaw)) {
-      apiKeys = keysRaw;
-    }
-  } catch (err) {
-    console.warn("[Translator] Gagal fetch API keys dari DB, akan fallback ke .env", err);
   }
 
   // 2. Pecah per paragraf jika terlalu panjang (>11.000 karakter)

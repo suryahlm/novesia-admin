@@ -314,17 +314,28 @@ async function runBackgroundLoop(job: TranslationJobState) {
           const batch = rawBatch.filter((ch: any) => !attemptedChapterIds.has(ch.id));
           if (!batch || batch.length === 0) break;
 
-          for (let i = 0; i < batch.length; i++) {
-            if (job.aborted) break;
+          // Check if turbo mode is applicable for this batch (only if primary key is OpenKey)
+          let isTurboMode = false;
+          try {
+            const configResp = await apiGet<any>("/api/config");
+            let keysRaw = configResp?.translation_api_keys || configResp?.data?.translation_api_keys;
+            if (typeof keysRaw === "string") keysRaw = JSON.parse(keysRaw);
+            let candidates = (keysRaw || []).filter((k: any) => k.roles?.includes("translate_chapter"));
+            candidates.sort((a: any, b: any) => (b.roles.includes("primary") ? 1 : 0) - (a.roles.includes("primary") ? 1 : 0));
+            if (candidates.length > 0 && candidates[0].name.toLowerCase().includes("openkey")) {
+              isTurboMode = true;
+            }
+          } catch(e) {}
 
-            const ch = batch[i];
+          const processChapter = async (ch: any) => {
+            if (job.aborted) return;
             attemptedChapterIds.add(ch.id);
 
             const chNumber = ch.chapter_number ?? ch.chapterNumber;
             const contentOrig = ch.content_original ?? ch.contentOriginal;
 
             if (!contentOrig || !contentOrig.trim()) {
-              continue;
+              return;
             }
 
             currentChIndex++;
@@ -381,19 +392,31 @@ async function runBackgroundLoop(job: TranslationJobState) {
               }).catch(() => {});
             }
 
-            // Adaptive rate limit delay between chapters based on text length
-            if (!job.aborted) {
+            // Adaptive rate limit delay between chapters based on text length (Skip delay for Turbo Mode)
+            if (!job.aborted && !isTurboMode) {
               const chLength = contentOrig.length;
               let delayMs = 3000;
               if (chLength > 25000) {
-                delayMs = 8000; // Bab jumbo (>25k char): beri jeda agar jendela TPM Guts AI pulih
+                delayMs = 8000; // Bab jumbo (>25k char)
               } else if (chLength > 15000) {
                 delayMs = 4500;
               }
               await new Promise((r) => setTimeout(r, delayMs));
             }
+          };
+
+          if (isTurboMode) {
+            // Turbo mode: execute all 50 chapters concurrently
+            console.log(`[BackgroundTranslate] Turbo mode ON (OpenKey). Menerjemahkan ${batch.length} chapter serentak...`);
+            await Promise.all(batch.map((ch: any) => processChapter(ch)));
+          } else {
+            // Standard mode: execute sequentially
+            for (let i = 0; i < batch.length; i++) {
+              if (job.aborted) break;
+              await processChapter(batch[i]);
+            }
           }
-        }
+        } // end while
 
         // Mark novel as having Indonesian translation if any chapter was translated
         if (novelTranslated > 0) {
