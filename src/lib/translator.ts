@@ -592,6 +592,13 @@ async function translateSingleChunk(
   // Cari kandidat key yang sesuai role
   let candidates = apiKeys.filter(k => k.roles.includes(roleNeeded));
   
+  // Prioritaskan key yang juga memiliki role 'primary' ke urutan teratas
+  candidates.sort((a, b) => {
+    const aPrimary = a.roles.includes("primary") ? 1 : 0;
+    const bPrimary = b.roles.includes("primary") ? 1 : 0;
+    return bPrimary - aPrimary;
+  });
+
   // Fallback: Jika tidak ada, gunakan yang 'primary'
   if (candidates.length === 0) {
     candidates = apiKeys.filter(k => k.roles.includes("primary"));

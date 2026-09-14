@@ -68,6 +68,14 @@ export async function generateNovelGenres(title: string, synopsis?: string): Pro
     }
 
     let candidates = apiKeys.filter(k => k.roles.includes("generate_genre"));
+    
+    // Prioritaskan key yang juga memiliki role 'primary' ke urutan teratas
+    candidates.sort((a, b) => {
+      const aPrimary = a.roles.includes("primary") ? 1 : 0;
+      const bPrimary = b.roles.includes("primary") ? 1 : 0;
+      return bPrimary - aPrimary;
+    });
+
     if (candidates.length === 0) candidates = apiKeys.filter(k => k.roles.includes("primary"));
     if (candidates.length === 0 && process.env.GROQ_API_KEY) {
       candidates.push({
