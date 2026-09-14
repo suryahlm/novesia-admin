@@ -546,6 +546,8 @@ async function executeChatCompletion(chunk: string, systemPrompt: string, keyCon
   
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
+  console.log(`[Translator] Mengirim request ke ${keyConfig.name} menggunakan model: ${targetModel}`);
+
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
