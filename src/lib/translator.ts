@@ -631,6 +631,8 @@ async function translateSingleChunk(
       continue;
     }
 
+    console.log(`[Translator] Sedang menggunakan API Key: ${keyConfig.name} (Role: ${keyConfig.roles.join(', ')})`);
+
     try {
       // Kita coba max 2 attempts per key (untuk network error sementara)
       for (let attempt = 1; attempt <= 2; attempt++) {
