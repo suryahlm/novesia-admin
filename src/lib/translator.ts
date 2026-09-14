@@ -679,6 +679,7 @@ async function translateSingleChunk(
 
 let cachedApiKeys: ApiKeyConfig[] = [];
 let lastApiKeysFetch = 0;
+let apiKeysFetchPromise: Promise<ApiKeyConfig[]> | null = null;
 
 export async function translateText(
   text: string,
@@ -695,25 +696,31 @@ export async function translateText(
     return "";
   }
 
-  // 1. Fetch API Keys dari backend (dengan cache 30 detik untuk menghindari DDOS)
-  let apiKeys: ApiKeyConfig[] = cachedApiKeys;
+  // 1. Fetch API Keys dari backend (dengan cache 30 detik & promise lock untuk konkurensi 50)
   const now = Date.now();
-  if (now - lastApiKeysFetch > 30000 || apiKeys.length === 0) {
-    try {
-      const configResp = await apiGet<any>("/api/config");
-      let keysRaw = configResp?.translation_api_keys || configResp?.data?.translation_api_keys;
-      if (typeof keysRaw === "string") {
-        try { keysRaw = JSON.parse(keysRaw); } catch { /* ignore */ }
-      }
-      if (Array.isArray(keysRaw)) {
-        apiKeys = keysRaw;
-        cachedApiKeys = apiKeys;
-        lastApiKeysFetch = now;
-      }
-    } catch (err) {
-      console.warn("[Translator] Gagal fetch API keys dari DB, menggunakan cache atau .env", err);
+  if (now - lastApiKeysFetch > 30000 || cachedApiKeys.length === 0) {
+    if (!apiKeysFetchPromise) {
+      apiKeysFetchPromise = (async () => {
+        try {
+          const configResp = await apiGet<any>("/api/config");
+          let keysRaw = configResp?.translation_api_keys || configResp?.data?.translation_api_keys;
+          if (typeof keysRaw === "string") {
+            try { keysRaw = JSON.parse(keysRaw); } catch { /* ignore */ }
+          }
+          if (Array.isArray(keysRaw)) {
+            cachedApiKeys = keysRaw;
+            lastApiKeysFetch = Date.now();
+          }
+        } catch (err) {
+          console.warn("[Translator] Gagal fetch API keys dari DB, menggunakan cache atau .env", err);
+        }
+        apiKeysFetchPromise = null; // release lock
+        return cachedApiKeys;
+      })();
     }
+    await apiKeysFetchPromise;
   }
+  let apiKeys: ApiKeyConfig[] = cachedApiKeys;
 
   // 2. Pecah per paragraf jika terlalu panjang (>11.000 karakter)
   if (type === "chapter" && inputToTranslate.length > 11000) {
