@@ -22,6 +22,7 @@ import {
   Rocket,
   Languages,
   BellRing,
+  Key,
 } from "lucide-react";
 
 const navItems = [
@@ -40,6 +41,7 @@ const navItems = [
   { href: "/admin/banners", label: "Banner Beranda", icon: Rocket },
   { href: "/admin/blacklist", label: "Blacklist", icon: Ban },
   { href: "/admin/logs", label: "Scraping & Logs", icon: ScrollText },
+  { href: "/admin/api-keys", label: "API Keys", icon: Key },
   { href: "/admin/config", label: "Pengaturan", icon: Settings },
 ];
 
