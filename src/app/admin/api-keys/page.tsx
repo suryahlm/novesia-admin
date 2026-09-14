@@ -29,6 +29,10 @@ const AVAILABLE_MODELS = [
   { id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna' },
   { id: 'gpt-5-mini', label: 'GPT-5 mini' },
   { id: 'gpt-4o-mini', label: 'GPT-4o mini' },
+  { id: 'openai/gpt-oss-120b', label: 'Groq GPT-OSS-120B' },
+  { id: 'llama3-70b-8192', label: 'Groq Llama 3 70B' },
+  { id: 'llama3-8b-8192', label: 'Groq Llama 3 8B' },
+  { id: 'mixtral-8x7b-32768', label: 'Groq Mixtral 8x7B' },
 ];
 
 const AVAILABLE_ROLES = [
