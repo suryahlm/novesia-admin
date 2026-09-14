@@ -316,7 +316,7 @@ async function runBackgroundLoop(job: TranslationJobState) {
             }
           } catch(e) {}
 
-          const batchLimit = isTurboMode ? 100 : 50;
+          const batchLimit = isTurboMode ? 400 : 50;
 
           const batchRes = await apiGet<any>(`/api/chapters/${novelSlug}`, {
             pending: true,
