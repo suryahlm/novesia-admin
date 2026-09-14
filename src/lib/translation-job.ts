@@ -335,8 +335,15 @@ async function runBackgroundLoop(job: TranslationJobState) {
 
             const chNumber = ch.chapter_number ?? ch.chapterNumber;
             const contentOrig = ch.content_original ?? ch.contentOriginal;
+            const contentTrans = ch.content_translated ?? ch.contentTranslated;
 
+            // Skip jika konten asli kosong
             if (!contentOrig || !contentOrig.trim()) {
+              return;
+            }
+
+            // [DOUBLE PROTECTION] Skip jika chapter ini ternyata sudah berhasil diterjemahkan
+            if (ch.translation_status === "done" && contentTrans && contentTrans.trim().length > 50) {
               return;
             }
 
