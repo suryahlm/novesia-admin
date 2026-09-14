@@ -408,9 +408,14 @@ async function runBackgroundLoop(job: TranslationJobState) {
           };
 
           if (isTurboMode) {
-            // Turbo mode: execute all 50 chapters concurrently
-            console.log(`[BackgroundTranslate] Turbo mode ON (OpenKey). Menerjemahkan ${batch.length} chapter serentak...`);
-            await Promise.all(batch.map((ch: any) => processChapter(ch)));
+            // Turbo mode: execute all chapters concurrently in waves to prevent OpenKey NGINX 429 rate limits
+            console.log(`[BackgroundTranslate] Turbo mode ON (OpenKey). Menerjemahkan ${batch.length} chapter serentak (staggered)...`);
+            const promises = batch.map(async (ch: any, idx: number) => {
+              // Stagger start time (30ms delay per chapter) to spread 400 requests over 12 detik
+              await new Promise(r => setTimeout(r, idx * 30));
+              return processChapter(ch);
+            });
+            await Promise.all(promises);
           } else {
             // Standard mode: execute sequentially
             for (let i = 0; i < batch.length; i++) {
