@@ -340,8 +340,8 @@ export default function ApiKeysPage() {
             <div key={item.id} className="bg-[#0e1117] border border-neutral-800/80 rounded-2xl p-5 shadow-lg flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-neutral-800/80 pb-4">
                 
-                {/* Input Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+                {/* 4 Input Fields in a Clean Responsive Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-semibold text-neutral-400 block uppercase tracking-wider">
                       Label / Nama Key
@@ -364,13 +364,13 @@ export default function ApiKeysPage() {
                         type={showKeyId === item.id ? "text" : "password"}
                         value={item.key}
                         onChange={(e) => handleChange(item.id, 'key', e.target.value)}
-                        placeholder="sk-or-v1-... atau sk-..."
-                        className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 pl-3 pr-10 text-xs text-white focus:outline-none focus:border-[#D4A843] font-mono transition-colors"
+                        placeholder="sk-or-v1-... / sk-..."
+                        className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 pl-3 pr-9 text-xs text-white focus:outline-none focus:border-[#D4A843] font-mono transition-colors"
                       />
                       <button
                         type="button"
                         onClick={() => setShowKeyId(showKeyId === item.id ? null : item.id)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
                       >
                         {showKeyId === item.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -389,10 +389,7 @@ export default function ApiKeysPage() {
                       className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-[#D4A843] transition-colors font-mono"
                     />
                   </div>
-                </div>
 
-                {/* Model Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 border-t border-neutral-800/80 pt-4">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-semibold text-neutral-400 block uppercase tracking-wider">
                       Model Terjemahan
@@ -400,7 +397,7 @@ export default function ApiKeysPage() {
                     <select
                       value={item.model || 'gemini-3.7-flash'}
                       onChange={(e) => handleModelChange(item.id, e.target.value)}
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-[#D4A843] transition-colors cursor-pointer"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-[#D4A843] transition-colors cursor-pointer text-ellipsis overflow-hidden"
                     >
                       {MODEL_GROUPS.map((grp) => (
                         <optgroup key={grp.group} label={grp.group} className="bg-neutral-900 text-[#D4A843] font-bold">
@@ -423,7 +420,7 @@ export default function ApiKeysPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center self-end sm:self-start mt-2 sm:mt-5">
+                <div className="flex items-center self-end sm:self-start mt-2 sm:mt-6 shrink-0">
                   <button
                     type="button"
                     onClick={() => handleRemoveKey(item.id)}
