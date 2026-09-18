@@ -178,33 +178,39 @@ async function runBackgroundLoop(job: TranslationJobState) {
 
       const synopsis = novel.synopsis;
       const synopsisTrans = novel.synopsis_translated || novel.synopsisTranslated;
-      const needsSynopsis = !!synopsis?.trim() && (!synopsisTrans?.trim() || isInvalidOrBrokenTranslation(synopsisTrans, synopsis));
+      const hasSynopsis = Boolean(synopsis && synopsis.trim().length > 0);
+      const hasSynopsisTrans = Boolean(
+        synopsisTrans && synopsisTrans.trim().length > 0 && !isInvalidOrBrokenTranslation(synopsisTrans, synopsis)
+      );
+      const needsSynopsis = hasSynopsis && !hasSynopsisTrans;
       if (needsSynopsis) {
         totalPendingSynopsis++;
       }
 
       const novelSlug = novel.nu_slug || novel.nuSlug || novel.id;
       let pending = 0;
-      try {
-        const chaptersRes = await apiGet<any>(`/api/chapters/${novelSlug}`, { pending: true, limit: 1 });
-        if (chaptersRes?.pendingCount !== undefined && chaptersRes?.pendingCount !== null) {
-          pending = Number(chaptersRes.pendingCount);
-        } else {
+
+      if (novel.pending_chapters !== undefined && novel.pending_chapters !== null) {
+        pending = Number(novel.pending_chapters);
+      } else if (novel.pendingChapters !== undefined && novel.pendingChapters !== null) {
+        pending = Number(novel.pendingChapters);
+      } else {
+        try {
+          const chaptersRes = await apiGet<any>(`/api/chapters/${novelSlug}`, { pending: true, limit: 1 });
+          if (chaptersRes?.pendingCount !== undefined && chaptersRes?.pendingCount !== null) {
+            pending = Number(chaptersRes.pendingCount);
+          } else if (chaptersRes?.total !== undefined && chaptersRes?.total !== null) {
+            pending = Number(chaptersRes.total);
+          } else {
+            const total = Number(novel.total_with_content || novel.total_chapters || novel.totalChapters || 0);
+            const trans = Number(novel.translated_chapters || novel.translatedChapters || 0);
+            pending = Math.max(0, total - trans);
+          }
+        } catch {
           const total = Number(novel.total_with_content || novel.total_chapters || novel.totalChapters || 0);
-          const trans = Number(novel.translated_chapters || 0);
+          const trans = Number(novel.translated_chapters || novel.translatedChapters || 0);
           pending = Math.max(0, total - trans);
         }
-      } catch {
-        const total = Number(novel.total_with_content || novel.total_chapters || novel.totalChapters || 0);
-        const trans = Number(novel.translated_chapters || 0);
-        pending = Math.max(0, total - trans);
-      }
-
-      // Robust fallback: if pending is 0, but total > 0 and translated is 0, pending is total
-      const total = Number(novel.total_with_content || novel.total_chapters || novel.totalChapters || 0);
-      const trans = Number(novel.translated_chapters || 0);
-      if (pending === 0 && total > 0 && trans === 0) {
-        pending = total;
       }
 
       novelPendingMap.set(novel.id, pending);
@@ -219,26 +225,21 @@ async function runBackgroundLoop(job: TranslationJobState) {
       if (job.aborted) break;
 
       const novelSlug = novel.nu_slug || novel.nuSlug || novel.id;
-      let pendingChapterCount = novelPendingMap.get(novel.id) || 0;
+      const pendingChapterCount = novelPendingMap.get(novel.id) || 0;
       const synopsis = novel.synopsis;
       const synopsisTrans = novel.synopsis_translated || novel.synopsisTranslated;
-      const hasPendingSynopsis = !!synopsis?.trim() && (!synopsisTrans?.trim() || isInvalidOrBrokenTranslation(synopsisTrans, synopsis));
-
-      // Re-verify pendingChapterCount from metadata if 0
-      if (pendingChapterCount === 0) {
-        const total = Number(novel.total_with_content || novel.total_chapters || novel.totalChapters || 0);
-        const trans = Number(novel.translated_chapters || 0);
-        if (total > trans) {
-          pendingChapterCount = total - trans;
-        }
-      }
+      const hasSynopsis = Boolean(synopsis && synopsis.trim().length > 0);
+      const hasSynopsisTrans = Boolean(
+        synopsisTrans && synopsisTrans.trim().length > 0 && !isInvalidOrBrokenTranslation(synopsisTrans, synopsis)
+      );
+      const hasPendingSynopsis = hasSynopsis && !hasSynopsisTrans;
 
       // Skip novel only if neither synopsis nor chapters need translation
       if (!hasPendingSynopsis && pendingChapterCount === 0) {
         job.logs.push({
           novelId: novel.id,
           novelTitle: novel.title,
-          synopsisOk: !!synopsisTrans?.trim() && !isInvalidOrBrokenTranslation(synopsisTrans, synopsis),
+          synopsisOk: hasSynopsisTrans,
           translated: 0,
           failed: 0,
           skipped: true,
