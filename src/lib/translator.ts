@@ -530,7 +530,7 @@ function chunkTextByParagraphs(text: string, maxChunkLength: number = 9500): str
 
 // Track cooldown per key to avoid hitting the same rate-limited key
 const keyCooldowns: Record<string, number> = {};
-const RATE_LIMIT_COOLDOWN_MS = 30_000;
+const RATE_LIMIT_COOLDOWN_MS = 45_000;
 
 async function executeChatCompletion(chunk: string, systemPrompt: string, keyConfig: ApiKeyConfig, attempt: number = 1): Promise<string> {
   const isGroq = keyConfig.key.startsWith('gsk_');

@@ -297,6 +297,7 @@ async function runBackgroundLoop(job: TranslationJobState) {
       let novelFailed = 0;
       let currentChIndex = 0;
       const attemptedChapterIds = new Set<string>();
+      const allNovelInFlightPromises: Promise<void>[] = [];
 
       if (pendingChapterCount > 0 && !job.aborted) {
         job.phase = "chapter";
@@ -316,7 +317,7 @@ async function runBackgroundLoop(job: TranslationJobState) {
             }
           } catch(e) {}
 
-          const batchLimit = isTurboMode ? 400 : 50;
+          const batchLimit = isTurboMode ? 200 : 50;
 
           const batchRes = await apiGet<any>(`/api/chapters/${novelSlug}`, {
             pending: true,
@@ -415,14 +416,60 @@ async function runBackgroundLoop(job: TranslationJobState) {
           };
 
           if (isTurboMode) {
-            // Turbo mode: execute all chapters concurrently in waves to prevent OpenKey NGINX 429 rate limits
-            console.log(`[BackgroundTranslate] Turbo mode ON (OpenKey). Menerjemahkan ${batch.length} chapter serentak (staggered)...`);
-            const promises = batch.map(async (ch: any, idx: number) => {
-              // Stagger start time (30ms delay per chapter) to spread 400 requests over 12 detik
-              await new Promise(r => setTimeout(r, idx * 30));
-              return processChapter(ch);
+            // Turbo mode: Dispatch in waves of 40 chapters with 3s delay, wait for 80% completion before next batch
+            const WAVE_SIZE = 40;
+            const WAVE_DELAY_MS = 3000;
+            const thresholdTarget = Math.max(1, Math.ceil(batch.length * 0.8));
+            let completedInBatch = 0;
+            let thresholdTriggered = false;
+            let triggerThreshold: () => void = () => {};
+
+            const thresholdPromise = new Promise<void>((resolve) => {
+              triggerThreshold = resolve;
             });
-            await Promise.all(promises);
+
+            console.log(
+              `[BackgroundTranslate] Turbo mode ON (OpenKey). Total batch: ${batch.length} bab. Mengirim per gelombang (${WAVE_SIZE} bab / ${WAVE_DELAY_MS / 1000}s), ambang batas 80% (${thresholdTarget}/${batch.length} bab)...`
+            );
+
+            const batchPromises: Promise<void>[] = [];
+
+            for (let i = 0; i < batch.length; i += WAVE_SIZE) {
+              if (job.aborted) break;
+
+              const wave = batch.slice(i, i + WAVE_SIZE);
+              const waveNumber = Math.floor(i / WAVE_SIZE) + 1;
+              const totalWaves = Math.ceil(batch.length / WAVE_SIZE);
+              console.log(`[BackgroundTranslate] Menembak Wave ${waveNumber}/${totalWaves} (${wave.length} bab)...`);
+
+              for (const ch of wave) {
+                const p = (async () => {
+                  try {
+                    await processChapter(ch);
+                  } finally {
+                    completedInBatch++;
+                    if (completedInBatch >= thresholdTarget && !thresholdTriggered) {
+                      thresholdTriggered = true;
+                      triggerThreshold();
+                    }
+                  }
+                })();
+                batchPromises.push(p);
+              }
+
+              // Beri jeda 3 detik sebelum wave berikutnya jika masih ada wave tersisa di batch ini
+              if (i + WAVE_SIZE < batch.length && !job.aborted) {
+                await new Promise((r) => setTimeout(r, WAVE_DELAY_MS));
+              }
+            }
+
+            allNovelInFlightPromises.push(...batchPromises);
+
+            // Tunggu hingga minimal 80% dari batch saat ini selesai sebelum lanjut mengambil batch berikutnya
+            await Promise.race([
+              thresholdPromise,
+              Promise.all(batchPromises),
+            ]);
           } else {
             // Standard mode: execute sequentially
             for (let i = 0; i < batch.length; i++) {
@@ -431,6 +478,11 @@ async function runBackgroundLoop(job: TranslationJobState) {
             }
           }
         } // end while
+
+        // Pastikan seluruh in-flight request dari semua wave/batch selesai sebelum menandai status novel
+        if (allNovelInFlightPromises.length > 0) {
+          await Promise.all(allNovelInFlightPromises);
+        }
 
         // Mark novel as having Indonesian translation if any chapter was translated
         if (novelTranslated > 0) {
