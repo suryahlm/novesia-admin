@@ -8,6 +8,7 @@
  */
 
 export const ADULT_GENRES_AND_TAGS = new Set([
+  // Dewasa / Mature / NSFW / Erotica
   "adult",
   "mature",
   "smut",
@@ -21,11 +22,22 @@ export const ADULT_GENRES_AND_TAGS = new Set([
   "ntr",
   "netori",
   "ecchi",
+
+  // Kriminal & Investigasi & Kekerasan / Gore (Sensitif untuk sensor AI)
+  "crime",
+  "criminal",
+  "criminal investigation",
+  "murder",
+  "gore",
+  "bloody",
+  "torture",
+  "serial killer",
+  "homicide",
 ]);
 
-export const ADULT_TITLE_REGEX = /\b(r-?18|18\+|hentai|eroge|erotic|cuckold|netorare|netori|smut|ecchi|sex(?:ual)?|incest|succubus|brothel|aphrodisiac|sensual)\b/i;
+export const ADULT_TITLE_REGEX = /\b(r-?18|18\+|hentai|eroge|erotic|cuckold|netorare|netori|smut|ecchi|sex(?:ual)?|incest|succubus|brothel|aphrodisiac|sensual|criminal\s+investigation|murder|killer(?!\s+whale)|corpse|autopsy|crime|homicide|serial\s+killer|slaughter|torture|bloody|gore)\b/i;
 
-export const ADULT_SYNOPSIS_REGEX = /\b(r-?18|18\+|hentai|eroge|cuckold|netorare|netori|smut|sexually\s+explicit|erotic\s+novel|h-novel)\b/i;
+export const ADULT_SYNOPSIS_REGEX = /\b(r-?18|18\+|hentai|eroge|cuckold|netorare|netori|smut|sexually\s+explicit|erotic\s+novel|h-novel|criminal\s+investigation|murder\s+case|serial\s+killer|autopsy|corpse|brutal\s+murder|homicide|bloody\s+scene|torture)\b/i;
 
 export function isAdultNovel(novel: {
   genres?: string[] | null;
