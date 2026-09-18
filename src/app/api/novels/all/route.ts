@@ -1,4 +1,5 @@
 import { apiGet } from "@/lib/apiClient";
+import { isAdultNovel } from "@/lib/adultFilter";
 import { NextResponse } from "next/server";
 
 // GET: Fetch all novels with translation stats (for Edit Novel page)
@@ -14,6 +15,15 @@ export async function GET() {
         ? Number(n.pending_chapters)
         : Math.max(0, total - translated);
 
+      const genres = Array.isArray(n.genres) ? n.genres : [];
+      const tags = Array.isArray(n.tags) ? n.tags : [];
+      const is_adult = n.is_adult ?? isAdultNovel({
+        genres,
+        tags,
+        title: n.title,
+        synopsis: n.synopsis,
+      });
+
       return {
         id: n.id,
         title: n.title,
@@ -21,7 +31,9 @@ export async function GET() {
         cover_url: n.cover_url || n.coverUrl,
         total_chapters: Number(n.total_chapters ?? n.totalChapters ?? 0),
         rating: n.rating !== undefined && n.rating !== null ? Number(n.rating) : null,
-        genres: Array.isArray(n.genres) ? n.genres : [],
+        genres,
+        tags,
+        is_adult,
         novel_type: n.novel_type || n.novelType || null,
         original_status: n.original_status || n.originalStatus || null,
         source: n.source || "general",
@@ -41,3 +53,4 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

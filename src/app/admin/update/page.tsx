@@ -23,7 +23,10 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  ShieldCheck,
+  Filter,
 } from "lucide-react";
+import { isAdultNovel } from "@/lib/adultFilter";
 
 interface Novel {
   id: string;
@@ -33,12 +36,15 @@ interface Novel {
   total_chapters: number;
   rating: number | null;
   genres: string[];
+  tags?: string[];
+  synopsis?: string | null;
   novel_type: string | null;
   original_status: string | null;
   source: string;
   status: string;
   author: string | null;
   updated_at: string | null;
+  is_adult: boolean;
   // Translation stats
   has_synopsis: boolean;
   has_synopsis_translated: boolean;
@@ -74,6 +80,7 @@ interface TranslateLogEntry {
 
 const SOURCE_TABS = [
   { id: "all", label: "Semua", icon: "📋", color: "from-violet-600 to-indigo-600", shadow: "shadow-violet-500/20" },
+  { id: "adult", label: "Dewasa / 18+", icon: "🔞", color: "from-rose-600 to-red-600", shadow: "shadow-rose-500/20" },
   { id: "akknovel", label: "AkkNovel", icon: "✨", color: "from-rose-600 to-pink-600", shadow: "shadow-rose-500/20" },
   { id: "talesinthevalley", label: "TalesInTheValley", icon: "⚔️", color: "from-blue-600 to-cyan-600", shadow: "shadow-blue-500/20" },
   { id: "tinytranslation", label: "TinyTranslation", icon: "🍄", color: "from-purple-600 to-fuchsia-600", shadow: "shadow-purple-500/20" },
@@ -109,11 +116,12 @@ export default function EditNovelPage() {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(30); // 30 per halaman untuk rendering instan
+  const [adultFilter, setAdultFilter] = useState<"all" | "safe" | "adult">("all");
 
   // Reset page saat filter/search berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, activeSource]);
+  }, [search, activeSource, adultFilter]);
   const [confirmModal, setConfirmModal] = useState<{
     type: "single" | "bulk" | "translate" | "translate-source";
     novelId?: string;
@@ -222,9 +230,20 @@ export default function EditNovelPage() {
           ? Number(n.pending_chapters)
           : Math.max(0, total - translated);
 
+        const genres = Array.isArray(n.genres) ? n.genres : [];
+        const tags = Array.isArray(n.tags) ? n.tags : [];
+        const isAdult = n.is_adult !== undefined ? Boolean(n.is_adult) : isAdultNovel({
+          genres,
+          tags,
+          title: n.title,
+          synopsis: n.synopsis,
+        });
+
         return {
           ...n,
-          genres: Array.isArray(n.genres) ? n.genres : [],
+          genres,
+          tags,
+          is_adult: isAdult,
           has_synopsis: Boolean(n.synopsis || n.has_synopsis),
           has_synopsis_translated: Boolean(n.synopsis_translated || n.synopsisTranslated || n.has_synopsis_translated),
           translated_chapters: translated,
@@ -240,12 +259,32 @@ export default function EditNovelPage() {
     }
   };
 
-  // Filter by source & search
-  const filtered = useMemo(() => {
-    let result = novels;
+  // Base novels for active main source tab
+  const activeSourceNovels = useMemo(() => {
+    if (activeSource === "all") return novels;
+    if (activeSource === "adult") return novels.filter((n) => n.is_adult);
+    return novels.filter((n) => (n.source || "general").toLowerCase() === activeSource.toLowerCase());
+  }, [novels, activeSource]);
 
-    if (activeSource !== "all") {
-      result = result.filter((n) => (n.source || "general") === activeSource);
+  // Sub-filter counts for current active tab
+  const subFilterCounts = useMemo(() => {
+    const total = activeSourceNovels.length;
+    const adult = activeSourceNovels.filter((n) => n.is_adult).length;
+    const safe = total - adult;
+    return { total, safe, adult };
+  }, [activeSourceNovels]);
+
+  // Filter by source, adult sub-filter & search
+  const filtered = useMemo(() => {
+    let result = activeSourceNovels;
+
+    // Sub-filter by safe vs adult (if not on dedicated "adult" tab)
+    if (activeSource !== "adult") {
+      if (adultFilter === "safe") {
+        result = result.filter((n) => !n.is_adult);
+      } else if (adultFilter === "adult") {
+        result = result.filter((n) => n.is_adult);
+      }
     }
 
     if (search) {
@@ -254,17 +293,21 @@ export default function EditNovelPage() {
         (n) =>
           n.title.toLowerCase().includes(q) ||
           (n.nu_slug && n.nu_slug.toLowerCase().includes(q)) ||
-          (n.author && n.author.toLowerCase().includes(q))
+          (n.author && n.author.toLowerCase().includes(q)) ||
+          (n.genres && n.genres.some((g) => g.toLowerCase().includes(q)))
       );
     }
 
     return result;
-  }, [novels, activeSource, search]);
+  }, [activeSourceNovels, activeSource, adultFilter, search]);
 
   // Source counts
-  const sourceCounts: Record<string, number> = { all: novels.length };
+  const sourceCounts: Record<string, number> = {
+    all: novels.length,
+    adult: novels.filter((n) => n.is_adult).length,
+  };
   novels.forEach((n) => {
-    const src = n.source || "general";
+    const src = (n.source || "general").toLowerCase();
     sourceCounts[src] = (sourceCounts[src] || 0) + 1;
   });
 
@@ -304,11 +347,23 @@ export default function EditNovelPage() {
     });
   };
 
+  const allSelected = useMemo(() => {
+    return filtered.length > 0 && filtered.every((n) => selectedIds.has(n.id));
+  }, [filtered, selectedIds]);
+
   const selectAll = () => {
-    if (selectedIds.size === filtered.length) {
-      setSelectedIds(new Set());
+    if (allSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((n) => next.delete(n.id));
+        return next;
+      });
     } else {
-      setSelectedIds(new Set(filtered.map((n) => n.id)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((n) => next.add(n.id));
+        return next;
+      });
     }
   };
 
@@ -428,12 +483,9 @@ export default function EditNovelPage() {
     return `${m}m ${s}s`;
   };
 
-  // Quick translate all novels in current source tab
+  // Quick translate all novels in current filtered source view
   const handleTranslateSource = () => {
-    const sourceNovels = activeSource === "all"
-      ? novels
-      : novels.filter((n) => (n.source || "general") === activeSource);
-    const ids = sourceNovels.map((n) => n.id);
+    const ids = filtered.map((n) => n.id);
     handleBulkTranslate(ids);
   };
 
@@ -441,8 +493,6 @@ export default function EditNovelPage() {
   const handleTranslateSelected = () => {
     handleBulkTranslate(Array.from(selectedIds));
   };
-
-  const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
 
   // Compute translate stats for confirm modal
   const getTranslateStats = (ids: string[]) => {
@@ -461,7 +511,13 @@ export default function EditNovelPage() {
   };
 
   // Active source label
-  const activeSourceLabel = SOURCE_TABS.find((s) => s.id === activeSource)?.label || "Semua";
+  const baseSourceLabel = SOURCE_TABS.find((s) => s.id === activeSource)?.label || "Semua";
+  const activeSourceLabel = useMemo(() => {
+    if (activeSource === "adult") return "Dewasa / 18+";
+    if (adultFilter === "safe") return `${baseSourceLabel} (Aman)`;
+    if (adultFilter === "adult") return `${baseSourceLabel} (18+)`;
+    return baseSourceLabel;
+  }, [activeSource, adultFilter, baseSourceLabel]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-20">
@@ -557,27 +613,34 @@ export default function EditNovelPage() {
       <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
         {SOURCE_TABS.map((src) => {
           const count = sourceCounts[src.id] || 0;
-          if (src.id !== "all" && count === 0) return null;
+          if (src.id !== "all" && src.id !== "adult" && count === 0) return null;
           const isActive = activeSource === src.id;
 
           return (
             <button
               key={src.id}
-              onClick={() => setActiveSource(src.id)}
+              onClick={() => {
+                setActiveSource(src.id);
+                setAdultFilter("all");
+              }}
               className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer shrink-0 ${
                 isActive
-                  ? "bg-gradient-to-b from-[#B99762]/20 to-[#B99762]/5 border-[#B99762]/50 text-[#F5E6C8] shadow-[0_0_15px_-3px_rgba(185,151,98,0.25)]"
+                  ? src.id === "adult"
+                    ? "bg-gradient-to-b from-rose-500/25 to-red-600/10 border-rose-500/60 text-rose-200 shadow-[0_0_15px_-3px_rgba(244,63,94,0.35)] font-bold"
+                    : "bg-gradient-to-b from-[#B99762]/20 to-[#B99762]/5 border-[#B99762]/50 text-[#F5E6C8] shadow-[0_0_15px_-3px_rgba(185,151,98,0.25)] font-bold"
                   : "bg-slate-900/60 hover:bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12] text-slate-400 hover:text-slate-200"
               }`}
             >
               <span className="text-sm">{src.icon}</span>
-              <span className={`text-xs font-semibold ${isActive ? "text-[#F5E6C8]" : "text-slate-200"}`}>
+              <span className={`text-xs font-semibold ${isActive ? (src.id === "adult" ? "text-rose-200" : "text-[#F5E6C8]") : "text-slate-200"}`}>
                 {src.label}
               </span>
               <span
                 className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
                   isActive
-                    ? "bg-[#B99762]/30 text-[#F5E6C8] font-bold"
+                    ? src.id === "adult"
+                      ? "bg-rose-500/30 text-rose-200 font-bold"
+                      : "bg-[#B99762]/30 text-[#F5E6C8] font-bold"
                     : "bg-white/[0.05] text-slate-400"
                 }`}
               >
@@ -588,13 +651,92 @@ export default function EditNovelPage() {
         })}
       </div>
 
+      {/* Adult Dedicated Tab Banner */}
+      {activeSource === "adult" && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 backdrop-blur-md shadow-lg shadow-rose-950/20">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl p-2 bg-rose-500/20 rounded-xl border border-rose-500/30">🔞</span>
+            <div>
+              <h3 className="text-sm font-bold text-slate-100">Koleksi Novel Dewasa / 18+ (Mature / NSFW)</h3>
+              <p className="text-xs text-slate-300/80 mt-0.5">
+                Menampilkan seluruh {sourceCounts.adult || 0} novel berkonten dewasa dari semua sumber scraping.
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-rose-500/20 text-rose-200 border border-rose-500/40 shrink-0 self-start sm:self-auto">
+            {filtered.length} Novel Terdaftar
+          </span>
+        </div>
+      )}
+
+      {/* Sub-filter Safe vs Adult Pills for Source Tabs */}
+      {activeSource !== "adult" && (
+        <div className="flex flex-wrap items-center justify-between gap-2.5 bg-slate-900/40 border border-white/[0.06] p-2 sm:p-2.5 rounded-2xl backdrop-blur-md">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-semibold text-slate-400 px-2 flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5 text-[#B99762]" />
+              <span>Filter Konten:</span>
+            </span>
+            <button
+              onClick={() => setAdultFilter("all")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                adultFilter === "all"
+                  ? "bg-[#B99762]/20 text-[#F5E6C8] border border-[#B99762]/40 shadow-sm font-bold"
+                  : "text-slate-400 hover:text-slate-200 bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06]"
+              }`}
+            >
+              <span>🔘 Semua Novel</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-white/[0.06] text-slate-300">
+                {subFilterCounts.total}
+              </span>
+            </button>
+            <button
+              onClick={() => setAdultFilter("safe")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                adultFilter === "safe"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm font-bold"
+                  : "text-slate-400 hover:text-emerald-400 bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06]"
+              }`}
+              title="Hanya tampilkan novel aman / non-dewasa (aman translate massal tanpa sensor AI)"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Aman / Non-18+</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300">
+                {subFilterCounts.safe}
+              </span>
+            </button>
+            <button
+              onClick={() => setAdultFilter("adult")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                adultFilter === "adult"
+                  ? "bg-rose-500/25 text-rose-300 border border-rose-500/50 shadow-sm font-bold"
+                  : "text-slate-400 hover:text-rose-400 bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06]"
+              }`}
+              title="Hanya tampilkan novel berkonten dewasa / 18+"
+            >
+              <span>🔞 Dewasa 18+</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-300">
+                {subFilterCounts.adult}
+              </span>
+            </button>
+          </div>
+
+          {adultFilter === "safe" && subFilterCounts.adult > 0 && (
+            <span className="text-[11px] text-emerald-400/90 font-medium px-2.5 py-1 bg-emerald-500/10 rounded-xl border border-emerald-500/20 flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{subFilterCounts.adult} novel 18+ disembunyikan (Aman Translate)</span>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Search & Selection Toolbar */}
       <div className="bg-slate-900/60 backdrop-blur-xl border border-white/[0.07] rounded-2xl p-2.5 sm:p-3 flex flex-col sm:flex-row gap-3 items-center justify-between shadow-xl">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B99762]/70" />
           <input
             type="text"
-            placeholder="Cari novel berdasarkan judul, slug, atau author..."
+            placeholder="Cari novel berdasarkan judul, slug, author, atau genre..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-10 py-2.5 bg-black/40 border border-white/[0.08] rounded-xl text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#B99762] focus:ring-1 focus:ring-[#B99762]/40 transition-all"
@@ -875,6 +1017,18 @@ export default function EditNovelPage() {
                             ? "Draft"
                             : novel.status}
                         </span>
+                        {novel.is_adult && (
+                          <>
+                            <span className="text-slate-600 text-[10px]">•</span>
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm"
+                              title="Novel Dewasa / 18+ (Mature / NSFW)"
+                            >
+                              <span>🔞</span>
+                              <span>18+</span>
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1166,9 +1320,7 @@ export default function EditNovelPage() {
             {(confirmModal.type === "translate" || confirmModal.type === "translate-source") && (() => {
               const targetIds = confirmModal.type === "translate"
                 ? Array.from(selectedIds)
-                : (activeSource === "all"
-                    ? novels.map((n) => n.id)
-                    : novels.filter((n) => (n.source || "general") === activeSource).map((n) => n.id));
+                : filtered.map((n) => n.id);
               const stats = getTranslateStats(targetIds);
 
               return (

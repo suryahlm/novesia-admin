@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { BookOpen, Search, X, Trash2, Loader2 } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
+import { isAdultNovel } from "@/lib/adultFilter";
 
 export interface Novel {
   id: string;
@@ -13,6 +14,9 @@ export interface Novel {
   total_chapters: number;
   rating: number | null;
   genres: string[];
+  tags?: string[];
+  synopsis?: string | null;
+  is_adult?: boolean;
   novel_type: string | null;
   original_status: string | null;
   source: string;
@@ -446,6 +450,14 @@ export default function NovelGrid({
                   >
                     {isCompleted ? "Tamat" : "Ongoing"}
                   </div>
+
+                  {/* 18+ Adult Badge */}
+                  {isAdultNovel(novel) && (
+                    <div className="absolute top-2 left-16 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-600/90 text-white border border-rose-400 shadow-md flex items-center gap-0.5">
+                      <span>🔞</span>
+                      <span>18+</span>
+                    </div>
+                  )}
 
                   {/* Draft Watermark */}
                   {isDraft && (
