@@ -344,8 +344,20 @@ async function runBackgroundLoop(job: TranslationJobState) {
               return;
             }
 
-            // [DOUBLE PROTECTION] Skip jika chapter ini ternyata sudah berhasil diterjemahkan
-            if (ch.translation_status === "done" && contentTrans && contentTrans.trim().length > 50) {
+            // [TOKEN SAVER & DOUBLE PROTECTION]
+            // Skip jika chapter ini ternyata sudah memiliki terjemahan valid di database
+            if (
+              contentTrans &&
+              contentTrans.trim().length > 50 &&
+              !isInvalidOrBrokenTranslation(contentTrans, contentOrig)
+            ) {
+              if (ch.translation_status !== "done") {
+                await apiPatch(`/api/chapters/${ch.id}`, {
+                  translation_status: "done",
+                }).catch(() => {});
+              }
+              job.completedChapters++;
+              novelTranslated++;
               return;
             }
 

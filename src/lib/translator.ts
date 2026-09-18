@@ -574,7 +574,11 @@ async function executeChatCompletion(chunk: string, systemPrompt: string, keyCon
     return data.choices?.[0]?.message?.content?.trim() || "";
   } else {
     if (response.status === 429) {
-      keyCooldowns[keyConfig.key] = Date.now(); // Put this key on cooldown
+      keyCooldowns[keyConfig.key] = Date.now(); // Put this key on temporary 45s cooldown
+    } else if (response.status === 401 || response.status === 402 || response.status === 403) {
+      // Put invalid/quota-exhausted key on 1 hour cooldown so other concurrent requests don't waste attempts
+      keyCooldowns[keyConfig.key] = Date.now() + 3_600_000 - RATE_LIMIT_COOLDOWN_MS;
+      console.error(`[Translator] Key ${keyConfig.name} mengalami error fatal (HTTP ${response.status}). Key dinonaktifkan sementara selama 1 jam.`);
     }
     const errText = await response.text().catch(() => "");
     throw new Error(`HTTP ${response.status}: ${errText}`);
