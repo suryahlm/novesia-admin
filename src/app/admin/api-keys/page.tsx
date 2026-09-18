@@ -23,17 +23,78 @@ export interface ApiKeyConfig {
   roles: string[];
 }
 
-const AVAILABLE_MODELS = [
-  { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
-  { id: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash' },
-  { id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna' },
-  { id: 'gpt-5-mini', label: 'GPT-5 mini' },
-  { id: 'gpt-4o-mini', label: 'GPT-4o mini' },
-  { id: 'openai/gpt-oss-120b', label: 'Groq GPT-OSS-120B' },
-  { id: 'llama3-70b-8192', label: 'Groq Llama 3 70B' },
-  { id: 'llama3-8b-8192', label: 'Groq Llama 3 8B' },
-  { id: 'mixtral-8x7b-32768', label: 'Groq Mixtral 8x7B' },
+export interface ModelOption {
+  id: string;
+  label: string;
+}
+
+export interface ModelGroup {
+  group: string;
+  models: ModelOption[];
+}
+
+const MODEL_GROUPS: ModelGroup[] = [
+  {
+    group: 'OpenRouter (18+ Konten Dewasa & Kriminal / Tanpa Sensor)',
+    models: [
+      { id: 'deepseek/deepseek-chat', label: 'deepseek/deepseek-chat (DeepSeek V3 - Rekomendasi 18+)' },
+      { id: 'meta-llama/llama-3.3-70b-instruct', label: 'meta-llama/llama-3.3-70b-instruct (Llama 3.3 70B)' },
+      { id: 'qwen/qwen-2.5-72b-instruct', label: 'qwen/qwen-2.5-72b-instruct (Qwen 2.5 72B)' },
+      { id: 'mistralai/mistral-large-2411', label: 'mistralai/mistral-large-2411 (Mistral Large)' },
+      { id: 'nousresearch/hermes-3-llama-3.1-70b', label: 'nousresearch/hermes-3-llama-3.1-70b (Zero Filter)' },
+      { id: 'deepseek/deepseek-r1', label: 'deepseek/deepseek-r1 (DeepSeek R1 Reasoning)' },
+    ],
+  },
+  {
+    group: 'Guts AI / Gemini (Standar)',
+    models: [
+      { id: 'gemini-3.7-flash', label: 'gemini-3.7-flash (Utama)' },
+      { id: 'gemini-3.8-flash', label: 'gemini-3.8-flash' },
+      { id: 'gemini-3.6-flash', label: 'gemini-3.6-flash' },
+      { id: 'gemini-3.5-flash', label: 'gemini-3.5-flash' },
+      { id: 'gpt-5.6-luna', label: 'gpt-5.6-luna' },
+      { id: 'gpt-5.6-sol', label: 'gpt-5.6-sol' },
+      { id: 'gpt-5.6-terra', label: 'gpt-5.6-terra' },
+      { id: 'gpt-6-astra', label: 'gpt-6-astra' },
+      { id: 'gpt-5-mini', label: 'gpt-5-mini' },
+      { id: 'gpt-5.4', label: 'gpt-5.4' },
+      { id: 'gpt-5.4-mini', label: 'gpt-5.4-mini' },
+      { id: 'gpt-5.5', label: 'gpt-5.5' },
+      { id: 'claude-sonnet-5', label: 'claude-sonnet-5' },
+      { id: 'claude-haiku-4.5', label: 'claude-haiku-4.5' },
+      { id: 'claude-opus-5', label: 'claude-opus-5' },
+      { id: 'grok-4.5', label: 'grok-4.5' },
+      { id: 'grok-4.6', label: 'grok-4.6' },
+      { id: 'kimi-k3', label: 'kimi-k3' },
+      { id: 'kimi-k2.7-code', label: 'kimi-k2.7-code' },
+      { id: 'glm-5.3', label: 'glm-5.3' },
+      { id: 'glm-5.3-flash', label: 'glm-5.3-flash' },
+    ],
+  },
+  {
+    group: 'Groq AI (Fast Text)',
+    models: [
+      { id: 'openai/gpt-oss-120b', label: 'Groq GPT-OSS-120B (openai/gpt-oss-120b)' },
+      { id: 'llama-3.3-70b-versatile', label: 'Groq Llama 3.3 70B (llama-3.3-70b-versatile)' },
+      { id: 'llama-3.1-8b-instant', label: 'Groq Llama 3.1 8B (llama-3.1-8b-instant)' },
+      { id: 'llama3-70b-8192', label: 'Groq Llama 3 70B (llama3-70b-8192)' },
+      { id: 'llama3-8b-8192', label: 'Groq Llama 3 8B (llama3-8b-8192)' },
+      { id: 'mixtral-8x7b-32768', label: 'Groq Mixtral 8x7B (mixtral-8x7b-32768)' },
+    ],
+  },
+  {
+    group: 'OpenAI / OpenKey',
+    models: [
+      { id: 'gpt-4o-mini', label: 'GPT-4o mini (gpt-4o-mini)' },
+      { id: 'gpt-4o', label: 'GPT-4o (gpt-4o)' },
+      { id: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (gpt-3.5-turbo)' },
+    ],
+  },
 ];
+
+const ALL_PREDEFINED_MODEL_IDS = new Set(
+  MODEL_GROUPS.flatMap((g) => g.models.map((m) => m.id))
+);
 
 const AVAILABLE_ROLES = [
   { id: 'primary', label: 'Primary' },
@@ -140,6 +201,39 @@ export default function ApiKeysPage() {
     setApiKeys(apiKeys.map(k => k.id === id ? { ...k, [field]: value } : k));
   };
 
+  const handleModelChange = (id: string, newModel: string) => {
+    setApiKeys(apiKeys.map(k => {
+      if (k.id !== id) return k;
+
+      let newBaseUrl = k.baseUrl || '';
+      const isOpenRouter = newModel.startsWith('deepseek/') || 
+                           newModel.startsWith('meta-llama/') || 
+                           newModel.startsWith('qwen/') || 
+                           newModel.startsWith('mistralai/') || 
+                           newModel.startsWith('nousresearch/');
+      
+      const isGroq = newModel.startsWith('openai/gpt-oss') || 
+                     newModel.startsWith('llama-3.3-70b-versatile') ||
+                     newModel.startsWith('llama-3.1-8b-instant') ||
+                     newModel.startsWith('llama3-') || 
+                     newModel.startsWith('mixtral-');
+
+      if (isOpenRouter && (!newBaseUrl || newBaseUrl.includes('gutsai.id') || newBaseUrl.includes('groq.com'))) {
+        newBaseUrl = 'https://openrouter.ai/api/v1';
+      } else if (isGroq && (!newBaseUrl || newBaseUrl.includes('openrouter.ai') || newBaseUrl.includes('gutsai.id'))) {
+        newBaseUrl = 'https://api.groq.com/openai/v1';
+      } else if (!isOpenRouter && !isGroq && (!newBaseUrl || newBaseUrl.includes('openrouter.ai') || newBaseUrl.includes('groq.com'))) {
+        newBaseUrl = 'https://api.gutsai.id/v1';
+      }
+
+      return {
+        ...k,
+        model: newModel,
+        baseUrl: newBaseUrl,
+      };
+    }));
+  };
+
   const toggleRole = (id: string, roleId: string) => {
     setApiKeys(apiKeys.map(k => {
       if (k.id !== id) return k;
@@ -186,7 +280,7 @@ export default function ApiKeysPage() {
             Manajemen API Keys Translasi
           </h1>
           <p className="text-neutral-400 text-xs mt-1">
-            Kelola API Key GutsAI untuk translasi novel, dan atur peran (role) untuk tiap API Key secara dinamis.
+            Kelola API Key (GutsAI, OpenRouter, Groq, OpenAI) untuk translasi novel, dan atur peran (role) untuk tiap API Key secara dinamis.
           </p>
         </div>
 
@@ -215,8 +309,9 @@ export default function ApiKeysPage() {
       <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-900/30 text-xs text-neutral-300 flex items-start gap-3">
         <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <p className="font-semibold text-amber-200">Panduan Pembagian Peran (Roles)</p>
+          <p className="font-semibold text-amber-200">Panduan Pembagian Peran & Model AI</p>
           <ul className="text-neutral-400 text-[11px] leading-relaxed list-disc list-inside">
+            <li><strong className="text-neutral-300">OpenRouter (18+ Dewasa & Kriminal):</strong> Gunakan model <code className="text-amber-300 font-mono">deepseek/deepseek-chat</code>, <code className="text-amber-300 font-mono">meta-llama/llama-3.3-70b-instruct</code>, <code className="text-amber-300 font-mono">qwen/qwen-2.5-72b-instruct</code>, atau <code className="text-amber-300 font-mono">mistralai/mistral-large-2411</code> untuk novel dewasa & kriminal tanpa sensor/blokir.</li>
             <li><strong className="text-neutral-300">Primary:</strong> API Key utama yang akan selalu digunakan terlebih dahulu.</li>
             <li><strong className="text-neutral-300">Fallback:</strong> API Key cadangan yang otomatis dipakai jika Primary mengalami Error atau Limit.</li>
             <li><strong className="text-neutral-300">Translate Novel:</strong> API Key khusus untuk menerjemahkan sinopsis & detail novel baru.</li>
@@ -255,7 +350,7 @@ export default function ApiKeysPage() {
                       type="text"
                       value={item.name}
                       onChange={(e) => handleChange(item.id, 'name', e.target.value)}
-                      placeholder="GutsAI - Akun 1"
+                      placeholder="OpenRouter / GutsAI / Groq"
                       className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-[#D4A843] transition-colors"
                     />
                   </div>
@@ -269,7 +364,7 @@ export default function ApiKeysPage() {
                         type={showKeyId === item.id ? "text" : "password"}
                         value={item.key}
                         onChange={(e) => handleChange(item.id, 'key', e.target.value)}
-                        placeholder="sk-..."
+                        placeholder="sk-or-v1-... atau sk-..."
                         className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 pl-3 pr-10 text-xs text-white focus:outline-none focus:border-[#D4A843] font-mono transition-colors"
                       />
                       <button
@@ -290,7 +385,7 @@ export default function ApiKeysPage() {
                       type="text"
                       value={item.baseUrl || ''}
                       onChange={(e) => handleChange(item.id, 'baseUrl', e.target.value)}
-                      placeholder="https://api.gutsai.id/v1"
+                      placeholder="https://openrouter.ai/api/v1"
                       className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-[#D4A843] transition-colors font-mono"
                     />
                   </div>
@@ -304,12 +399,25 @@ export default function ApiKeysPage() {
                     </label>
                     <select
                       value={item.model || 'gemini-3.7-flash'}
-                      onChange={(e) => handleChange(item.id, 'model', e.target.value)}
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-[#D4A843] transition-colors appearance-none cursor-pointer"
+                      onChange={(e) => handleModelChange(item.id, e.target.value)}
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-[#D4A843] transition-colors cursor-pointer"
                     >
-                      {AVAILABLE_MODELS.map(model => (
-                        <option key={model.id} value={model.id}>{model.label}</option>
+                      {MODEL_GROUPS.map((grp) => (
+                        <optgroup key={grp.group} label={grp.group} className="bg-neutral-900 text-[#D4A843] font-bold">
+                          {grp.models.map((model) => (
+                            <option key={model.id} value={model.id} className="bg-neutral-950 text-white font-normal py-1">
+                              {model.label}
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
+                      {item.model && !ALL_PREDEFINED_MODEL_IDS.has(item.model) && (
+                        <optgroup label="Model Kustom / Lainnya" className="bg-neutral-900 text-amber-400 font-bold">
+                          <option value={item.model} className="bg-neutral-950 text-white font-mono">
+                            {item.model} (Custom)
+                          </option>
+                        </optgroup>
+                      )}
                     </select>
                   </div>
                 </div>

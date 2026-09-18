@@ -533,27 +533,44 @@ const keyCooldowns: Record<string, number> = {};
 const RATE_LIMIT_COOLDOWN_MS = 45_000;
 
 async function executeChatCompletion(chunk: string, systemPrompt: string, keyConfig: ApiKeyConfig, attempt: number = 1): Promise<string> {
-  const isGroq = keyConfig.key.startsWith('gsk_');
+  const isGroq = keyConfig.key.startsWith('gsk_') || keyConfig.baseUrl?.includes('groq.com');
+  const isOpenRouter = keyConfig.key.startsWith('sk-or-') || 
+                       keyConfig.baseUrl?.includes('openrouter.ai') || 
+                       (Boolean(keyConfig.model?.includes('/')) && !keyConfig.model?.startsWith('openai/gpt-oss'));
   
   // Use custom model from config, fallback to default based on key type
-  const targetModel = keyConfig.model || (isGroq ? "openai/gpt-oss-120b" : GUTSAI_MODEL);
+  const targetModel = keyConfig.model || (isOpenRouter ? "deepseek/deepseek-chat" : isGroq ? "openai/gpt-oss-120b" : GUTSAI_MODEL);
   
-  // Custom baseUrl or default to Groq/GutsAI
+  // Custom baseUrl or default to OpenRouter/Groq/GutsAI
   let baseUrl = keyConfig.baseUrl;
   if (!baseUrl) {
-    baseUrl = isGroq ? "https://api.groq.com/openai/v1" : GUTSAI_BASE_URL;
+    if (isOpenRouter) {
+      baseUrl = "https://openrouter.ai/api/v1";
+    } else if (isGroq) {
+      baseUrl = "https://api.groq.com/openai/v1";
+    } else {
+      baseUrl = GUTSAI_BASE_URL;
+    }
   }
   
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
-  console.log(`[Translator] Mengirim request ke ${keyConfig.name} menggunakan model: ${targetModel}`);
+  console.log(`[Translator] Mengirim request ke ${keyConfig.name} menggunakan model: ${targetModel} (${endpoint})`);
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${keyConfig.key}`,
+  };
+
+  // OpenRouter recommended headers for rate tracking & attribution
+  if (baseUrl.includes("openrouter.ai") || keyConfig.key.startsWith("sk-or-")) {
+    headers["HTTP-Referer"] = "https://novesia.cc";
+    headers["X-Title"] = "Novesia Novel";
+  }
 
   const response = await fetch(endpoint, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${keyConfig.key}`,
-    },
+    headers,
     body: JSON.stringify({
       model: targetModel,
       temperature: 0.3,

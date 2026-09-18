@@ -88,11 +88,23 @@ export async function generateNovelGenres(title: string, synopsis?: string): Pro
 
     if (candidates.length > 0) {
       const keyConfig = candidates[0];
-      const isGroq = keyConfig.key.startsWith('gsk_');
+      const isGroq = keyConfig.key.startsWith('gsk_') || keyConfig.baseUrl?.includes('groq.com');
+      const isOpenRouter = keyConfig.key.startsWith('sk-or-') || 
+                           keyConfig.baseUrl?.includes('openrouter.ai') || 
+                           (Boolean(keyConfig.model?.includes('/')) && !keyConfig.model?.startsWith('openai/gpt-oss'));
+
       let baseUrl = keyConfig.baseUrl;
       if (!baseUrl) {
-        baseUrl = isGroq ? "https://api.groq.com/openai/v1" : "https://api.gutsai.id/v1";
+        if (isOpenRouter) {
+          baseUrl = "https://openrouter.ai/api/v1";
+        } else if (isGroq) {
+          baseUrl = "https://api.groq.com/openai/v1";
+        } else {
+          baseUrl = "https://api.gutsai.id/v1";
+        }
       }
+
+      const targetModel = keyConfig.model || (isOpenRouter ? "deepseek/deepseek-chat" : isGroq ? "openai/gpt-oss-120b" : "gemini-3.7-flash");
 
       const prompt = `Kamu adalah pakar kurasi novel. Analisis judul dan sinopsis web novel berikut, lalu tentukan 3 hingga 5 genre yang paling tepat dan relevan.
 Gunakan genre standar seperti: Action, Adventure, Fantasy, Romance, Comedy, Drama, Horror, Mystery, Psychological, Sci-Fi, Slice of Life, Supernatural, Martial Arts, Cultivation, Isekai, Transmigration, Reincarnation, System, Wuxia, Xuanhuan, Historical, Urban, Shoujo, Josei.
@@ -104,14 +116,21 @@ Kembalikan HANYA format JSON valid berupa array string, tanpa penjelasan apapun.
 Contoh format output:
 ["Fantasy", "Action", "Adventure"]`;
 
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${keyConfig.key}`
+      };
+
+      if (baseUrl.includes("openrouter.ai") || keyConfig.key.startsWith("sk-or-")) {
+        headers["HTTP-Referer"] = "https://novesia.cc";
+        headers["X-Title"] = "Novesia Novel";
+      }
+
       const response = await fetch(`${baseUrl.replace(/\/+$/, "")}/chat/completions`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${keyConfig.key}`
-        },
+        headers,
         body: JSON.stringify({
-          model: isGroq ? "openai/gpt-oss-120b" : "gemini-3.7-flash",
+          model: targetModel,
           temperature: 0.1,
           max_tokens: 150,
           messages: [{ role: "user", content: prompt }]
